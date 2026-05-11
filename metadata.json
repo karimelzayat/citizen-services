@@ -1,0 +1,12 @@
+{
+  "name": "الخط الساخن لخدمة المواطنين",
+  "description": "تطبيق متكامل لمتابعة شكاوى الخط الساخن، الإدارة، وتكليفات المدير مع معالجة البيانات عبر Firebase",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "firebase",
+    "authentication",
+    "data_visualization"
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "entities": {
+    "Complaint": {
+      "title": "Complaint",
+      "description": "Represents a citizen complaint record",
+      "type": "object",
+      "properties": {
+        "timestamp": { "type": "string", "format": "date-time" },
+        "callerName": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "governorate": { "type": "string" },
+        "isEmergency": { "type": "boolean" },
+        "hospitalType": { "type": "string" },
+        "responsibleEntity": { "type": "string" },
+        "hospitalName": { "type": "string" },
+        "hospitalAddress": { "type": "string" },
+        "diagnosis": { "type": "string" },
+        "subject": { "type": "string" },
+        "details": { "type": "string" },
+        "status": { "type": "string" },
+        "followUpStatus": { "type": "string" },
+        "followUpNotes": { "type": "string" },
+        "employeeName": { "type": "string" },
+        "employeeEmail": { "type": "string" },
+        "attachmentUrl": { "type": "string" },
+        "isCabinetComplaint": { "type": "boolean" },
+        "cabinetId": { "type": "string" },
+        "cabinetNumber": { "type": "string" },
+        "nationalId": { "type": "string" },
+        "city": { "type": "string" }
+      }
+    },
+    "AdminComplaint": {
+      "title": "Admin Complaint",
+      "description": "Records for administration work",
+      "type": "object",
+      "properties": {
+        "timestamp": { "type": "string", "format": "date-time" },
+        "workType": { "type": "string" },
+        "complaintNo": { "type": "string" },
+        "governorate": { "type": "string" },
+        "status": { "type": "string" },
+        "notes": { "type": "string" },
+        "registrant": { "type": "string" },
+        "employeeName": { "type": "string" },
+        "employeeEmail": { "type": "string" }
+      }
+    },
+    "DirectorCase": {
+      "title": "Director Case",
+      "description": "Assignments from the Director's office",
+      "type": "object",
+      "properties": {
+        "timestamp": { "type": "string", "format": "date-time" },
+        "source": { "type": "string" },
+        "caseName": { "type": "string" },
+        "phone": { "type": "string" },
+        "details": { "type": "string" },
+        "employee": { "type": "string" },
+        "action": { "type": "string" },
+        "status": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "attachmentUrl": { "type": "string" }
+      }
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "System and user notifications",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "message": { "type": "string" },
+        "status": { "type": "string", "enum": ["unread", "read"] },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "actionLink": { "type": "string" }
+      }
+    },
+    "Schedule": {
+      "title": "Schedule",
+      "description": "Monthly shift schedules",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string" },
+        "monthYear": { "type": "string" },
+        "shifts": {
+          "type": "object",
+          "properties": {
+            "morning": { "type": "string" },
+            "evening": { "type": "string" },
+            "night": { "type": "string" },
+            "overnight": { "type": "string" }
+          }
+        }
+      }
+    },
+    "Inquiry": {
+      "title": "Inquiry",
+      "description": "Instant inquiries between employees",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "question": { "type": "string" },
+        "qUser": { "type": "string" },
+        "answer": { "type": "string" },
+        "aUser": { "type": "string" }
+      }
+    },
+    "FAQ": {
+      "title": "FAQ",
+      "description": "FAQ entries",
+      "type": "object",
+      "properties": {
+        "question": { "type": "string" },
+        "answer": { "type": "string" },
+        "category": { "type": "string" }
+      }
+    },
+    "UserPermission": {
+      "title": "User Permission",
+      "description": "User roles and capabilities",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "complaints": { "schema": "Complaint", "description": "Hotline complaints" },
+    "admin_complaints": { "schema": "AdminComplaint", "description": "Administration work items" },
+    "director_cases": { "schema": "DirectorCase", "description": "Director assignments" },
+    "notifications": { "schema": "Notification", "description": "User notifications" },
+    "schedules": { "schema": "Schedule", "description": "Monthly shift schedules" },
+    "inquiries": { "schema": "Inquiry", "description": "Instant inquiries" },
+    "faq": { "schema": "FAQ", "description": "FAQ database" },
+    "user_permissions": { "schema": "UserPermission", "description": "User role management" }
+  }
+}

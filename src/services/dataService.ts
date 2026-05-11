@@ -1,0 +1,298 @@
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  query, 
+  where, 
+  getDocs, 
+  orderBy, 
+  limit, 
+  Timestamp, 
+  serverTimestamp,
+  onSnapshot
+} from 'firebase/firestore';
+import { db, auth, storage, isConfigured } from '../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { Complaint, AdminComplaint, DirectorCase, Inquiry, UserPermissions } from '../types';
+import { ROLE_CAPABILITIES, EMPLOYEE_MAP } from '../constants';
+
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const err = error as any;
+  const isRead = operationType === OperationType.LIST || operationType === OperationType.GET;
+  
+  if (err?.code === 'permission-denied') {
+    console.warn(`[Firebase] Permission denied: ${operationType} on ${path}.`);
+    if (isRead) return; // Return silently for public reads that might fail
+  }
+
+  const errInfo: FirestoreErrorInfo = {
+    error: err?.message || String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+    },
+    operationType,
+    path
+  };
+  
+  console.error('Firestore Error Details:', errInfo);
+  throw new Error(JSON.stringify(errInfo));
+}
+
+// Role management
+export async function getUserPermissions(email: string): Promise<UserPermissions> {
+  const normalizedEmail = email.toLowerCase();
+  if (!normalizedEmail) return { role: "Guest", ...ROLE_CAPABILITIES["Guest"] };
+  
+  try {
+    const q = query(collection(db, 'user_permissions'), where('email', '==', normalizedEmail));
+    const snapshot = await getDocs(q);
+    
+    if (!snapshot.empty) {
+      const data = snapshot.docs[0].data();
+      const role = data.role as any;
+      return { role, ...(ROLE_CAPABILITIES[role as keyof typeof ROLE_CAPABILITIES] || ROLE_CAPABILITIES["Guest"]) };
+    }
+  } catch (e) {
+    console.error("Firebase error checking permissions", e);
+  }
+  
+  if (normalizedEmail === 'karimelzayat3@gmail.com' || normalizedEmail === 'karimelzayat.1997@gmail.com') {
+    return { role: "Admin", ...ROLE_CAPABILITIES["Admin"] };
+  }
+
+  if (EMPLOYEE_MAP[normalizedEmail]) {
+    return { role: "Employee", ...ROLE_CAPABILITIES["Employee"] };
+  }
+  
+  return { role: "Guest", ...ROLE_CAPABILITIES["Guest"] };
+}
+
+// Helper to recursively remove undefined values before sending to Firestore
+function sanitize(data: any): any {
+  if (data === undefined) return null;
+  if (data === null || typeof data !== 'object') return data;
+  if (data instanceof Date || data instanceof Timestamp) return data;
+  
+  const cleaned: any = Array.isArray(data) ? [] : {};
+  Object.keys(data).forEach(key => {
+    const val = data[key];
+    if (val !== undefined) {
+      cleaned[key] = sanitize(val);
+    }
+  });
+  return cleaned;
+}
+
+// Complaints
+export async function addComplaint(complaint: Partial<Complaint>, file?: File) {
+  const user = auth.currentUser;
+  
+  let attachmentUrl = "";
+  if (file) {
+    const fileName = `${Date.now()}_${file.name}`;
+    const storageRef = ref(storage, `complaints/${fileName}`);
+    try {
+      await uploadBytes(storageRef, file);
+      attachmentUrl = await getDownloadURL(storageRef);
+    } catch (err) {
+      console.error("Storage upload failed", err);
+    }
+  }
+
+  const employeeName = user ? (EMPLOYEE_MAP[user.email || ""] || user.email || "Unknown") : "مواطن (ضيف)";
+
+  try {
+    const docData = sanitize({
+      ...complaint,
+      timestamp: serverTimestamp(),
+      employeeName,
+      employeeEmail: user?.email || "guest@citizen.service",
+      attachmentUrl: attachmentUrl || "",
+      status: complaint.status || "جديد"
+    });
+    const docRef = await addDoc(collection(db, 'complaints'), docData);
+    return docRef.id;
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, 'complaints');
+  }
+}
+
+export async function searchComplaints(params: { date?: string, phoneNumber?: string }) {
+  try {
+    const colRef = collection(db, 'complaints');
+    let results: Complaint[] = [];
+
+    // If phone number is provided, search by phone number primarily
+    if (params.phoneNumber) {
+      const p = params.phoneNumber.trim();
+      console.log(`[Search] Searching by phone: ${p}`);
+      const q = query(colRef, where('phoneNumber', '==', p));
+      const snapshot = await getDocs(q);
+      results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
+      
+      // If none found as string, maybe they are stored differently? (Shouldn't be, but defensive)
+      if (results.length === 0) {
+        const q2 = query(colRef, where('phoneNumber', '==', Number(p)));
+        const snapshot2 = await getDocs(q2);
+        results = snapshot2.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
+      }
+      
+      // Filter by date in memory if provided
+      if (params.date) {
+        console.log(`[Search] Filtering ${results.length} results by date: ${params.date}`);
+        results = results.filter(c => {
+          if (!c.timestamp) return false;
+          const ts = (c.timestamp as any).toDate ? (c.timestamp as any).toDate() : new Date(c.timestamp as any);
+          return ts.toISOString().split('T')[0] === params.date;
+        });
+      }
+    } 
+    // If only date is provided, use a range query
+    else if (params.date) {
+      console.log(`[Search] Searching by date range: ${params.date}`);
+      const start = new Date(params.date + 'T00:00:00');
+      const end = new Date(params.date + 'T23:59:59');
+      const q = query(colRef, 
+        where('timestamp', '>=', Timestamp.fromDate(start)),
+        where('timestamp', '<=', Timestamp.fromDate(end)),
+        orderBy('timestamp', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
+    }
+    // Default: Get 50 most recent (useful for empty search)
+    else {
+      console.log(`[Search] No params provided, fetching recent complaints`);
+      const q = query(colRef, orderBy('timestamp', 'desc'), limit(50));
+      const snapshot = await getDocs(q);
+      results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
+    }
+
+    console.log(`[Search] Found ${results.length} results`);
+    return results;
+  } catch (e) {
+    const err = e as any;
+    if (err.code === 'permission-denied') return [];
+    console.error('[Search] Error in searchComplaints', e);
+    return [];
+  }
+}
+
+// Admin Work
+export async function addAdminComplaint(data: Partial<AdminComplaint>) {
+  const user = auth.currentUser;
+  const employeeName = user ? (EMPLOYEE_MAP[user.email || ""] || user.email || "Unknown") : "ضيف";
+
+  try {
+    const docData = sanitize({
+      ...data,
+      timestamp: serverTimestamp(),
+      employeeName,
+      employeeEmail: user?.email || "guest@admin.service"
+    });
+    await addDoc(collection(db, 'admin_complaints'), docData);
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, 'admin_complaints');
+  }
+}
+
+// Director Office
+export async function addDirectorCase(data: Partial<DirectorCase>, file?: File) {
+  let attachmentUrl = "";
+  if (file) {
+    const storageRef = ref(storage, `director/${Date.now()}_${file.name}`);
+    await uploadBytes(storageRef, file);
+    attachmentUrl = await getDownloadURL(storageRef);
+  }
+
+  try {
+    const docData = sanitize({
+      ...data,
+      timestamp: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      attachmentUrl,
+      status: "جديد"
+    });
+    await addDoc(collection(db, 'director_cases'), docData);
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, 'director_cases');
+  }
+}
+
+export function listenToDirectorCases(callback: (cases: DirectorCase[]) => void) {
+  const q = query(collection(db, 'director_cases'), orderBy('timestamp', 'desc'));
+  return onSnapshot(q, (snapshot) => {
+    const cases = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DirectorCase));
+    callback(cases);
+  }, (error) => {
+    handleFirestoreError(error, OperationType.LIST, 'director_cases');
+  });
+}
+
+// Inquiries
+export async function addInquiry(question: string) {
+  const user = auth.currentUser;
+  const employeeName = user ? (EMPLOYEE_MAP[user.email || ""] || user.email || "Unknown") : "ضيف";
+
+  try {
+    await addDoc(collection(db, 'inquiries'), {
+      question,
+      qUser: employeeName,
+      timestamp: serverTimestamp(),
+      answer: "",
+      aUser: ""
+    });
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, 'inquiries');
+  }
+}
+
+export function listenToInquiries(callback: (inquiries: Inquiry[]) => void) {
+  const q = query(collection(db, 'inquiries'), orderBy('timestamp', 'desc'), limit(50));
+  return onSnapshot(q, (snapshot) => {
+    const inquiries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Inquiry));
+    callback(inquiries);
+  }, (error) => {
+    handleFirestoreError(error, OperationType.LIST, 'inquiries');
+  });
+}
+
+// FAQ
+export async function getFAQs() {
+  try {
+    const q = query(collection(db, 'faq'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => doc.data() as any);
+  } catch (e) {
+    const err = e as any;
+    if (err.code === 'permission-denied') return [];
+    handleFirestoreError(e, OperationType.LIST, 'faq');
+    return [];
+  }
+}

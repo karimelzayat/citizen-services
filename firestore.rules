@@ -1,0 +1,65 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && (request.auth.token.email == 'karimelzayat3@gmail.com');
+    }
+
+    function isOwner(data) {
+      return isSignedIn() && (data.employeeEmail == request.auth.token.email);
+    }
+
+    // Complaints
+    match /complaints/{complaintId} {
+      allow read: if true; // Public search allowed
+      allow create: if true; // Citizens can post without login
+      allow update: if isAdmin() || isOwner(resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // Admin Complaints
+    match /admin_complaints/{id} {
+      allow read: if isSignedIn();
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    // Director Cases
+    match /director_cases/{id} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Inquiries
+    match /inquiries/{id} {
+      allow read, create: if true; // Public list and create
+      allow update: if isSignedIn(); // Staff can answer
+      allow delete: if isAdmin();
+    }
+
+    // User Permissions
+    match /user_permissions/{id} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // Schedules, FAQ (Publicly readable)
+    match /schedules/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /faq/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /notifications/{id} { 
+      allow read: if isSignedIn() && resource.data.userEmail == request.auth.token.email;
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource.data.userEmail == request.auth.token.email;
+    }
+  }
+}
