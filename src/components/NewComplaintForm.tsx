@@ -99,7 +99,7 @@ export default function NewComplaintForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-3">
-        <div className="glass-card p-5 space-y-5 transition-all duration-700">
+        <div className="glass-card p-5 space-y-5 transition-all duration-700 border-[#0023ff]">
           {/* Section: Basic Identity */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-black text-xs border-b border-slate-100 dark:border-white/5 pb-2 transition-colors duration-500">

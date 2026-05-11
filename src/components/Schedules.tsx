@@ -1,17 +1,30 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { SCHEDULE_DATA } from '../data/schedulesData';
+import { listenToSchedules } from '../services/dataService';
 
 export default function Schedules() {
+  const [selectedMonth, setSelectedMonth] = useState('مايو 2026');
+  const [dbSchedules, setDbSchedules] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    const unsubscribe = listenToSchedules(selectedMonth, (data) => {
+      setDbSchedules(data);
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [selectedMonth]);
+
   const months = useMemo(() => {
     const m = Array.from(new Set(SCHEDULE_DATA.map(item => item.month)));
     return m.length > 0 ? m : ['مايو 2026'];
   }, []);
 
-  const [selectedMonth, setSelectedMonth] = useState(months[0]);
-
   const filteredData = useMemo(() => {
+    if (dbSchedules.length > 0) return dbSchedules;
     return SCHEDULE_DATA.filter(item => item.month === selectedMonth);
-  }, [selectedMonth]);
+  }, [selectedMonth, dbSchedules]);
 
   return (
     <div className="tab-content block pb-10">
@@ -22,7 +35,10 @@ export default function Schedules() {
         
         <div>
           <label className="block text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-1 transition-colors duration-500">اختر الفترة الزمنية:</label>
-          <div className="text-lg font-bold text-slate-800 dark:text-white">{selectedMonth}</div>
+          <div className="text-lg font-bold text-slate-800 dark:text-white">
+            {selectedMonth}
+            {dbSchedules.length > 0 && <span className="mr-2 text-[10px] bg-blue-100 dark:bg-blue-900/40 text-blue-600 px-2 py-0.5 rounded-full">مُحدث مباشرة</span>}
+          </div>
         </div>
 
         <select 
@@ -37,7 +53,10 @@ export default function Schedules() {
       </div>
 
       <div className="glass-card overflow-hidden">
-        <div className="overflow-x-auto">
+        {loading ? (
+          <div className="p-20 text-center text-blue-600 animate-pulse font-bold">جاري جلب البيانات...</div>
+        ) : (
+          <div className="overflow-x-auto">
           <table className="w-full border-collapse min-w-[1200px]">
             <thead>
               <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-white/5">
@@ -78,6 +97,7 @@ export default function Schedules() {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </div>
   );

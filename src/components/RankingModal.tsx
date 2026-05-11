@@ -1,17 +1,22 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trophy, Medal, Star, User, X, Hash } from 'lucide-react';
 import { motion } from 'motion/react';
+import { getUserRanking } from '../services/dataService';
 
 export default function RankingModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
-  if (!isOpen) return null;
+  const [rankings, setRankings] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const rankings = [
-    { name: 'كريم الزيات', calls: 94, rank: 1, trend: 'up' },
-    { name: 'أحمد محمد', calls: 88, rank: 2, trend: 'flat' },
-    { name: 'سارة أحمد', calls: 82, rank: 3, trend: 'up' },
-    { name: 'محمود علي', calls: 75, rank: 4, trend: 'down' },
-    { name: 'رنا يوسف', calls: 71, rank: 5, trend: 'flat' },
-  ];
+  useEffect(() => {
+    if (isOpen) {
+      getUserRanking().then(data => {
+        setRankings(data);
+        setLoading(false);
+      });
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -36,10 +41,13 @@ export default function RankingModal({ isOpen, onClose }: { isOpen: boolean, onC
           </button>
         </div>
 
-        <div className="p-6 space-y-3 bg-white dark:bg-slate-900">
-          {rankings.map((user, idx) => (
-            <motion.div 
-              key={idx}
+        <div className="p-6 space-y-3 bg-white dark:bg-slate-900 min-h-[200px]">
+          {loading ? (
+            <div className="h-40 flex items-center justify-center text-blue-600 font-bold animate-pulse">جاري جلب الإحصائيات...</div>
+          ) : rankings.length > 0 ? (
+            rankings.map((user, idx) => (
+              <motion.div 
+                key={idx}
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.1 }}
@@ -63,7 +71,13 @@ export default function RankingModal({ isOpen, onClose }: { isOpen: boolean, onC
                 <Star className="w-4 h-4 text-slate-400" />
               ) : null}
             </motion.div>
-          ))}
+          ))
+          ) : (
+            <div className="h-40 flex flex-col items-center justify-center text-slate-400 font-bold opacity-50">
+              <User className="w-10 h-10 mb-2" />
+              <span>لا توجد بيانات أداء حتى الآن</span>
+            </div>
+          )}
         </div>
 
         <div className="p-4 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-white/5">

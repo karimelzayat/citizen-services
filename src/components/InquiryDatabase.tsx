@@ -31,7 +31,7 @@ export default function InquiryDatabase() {
 
   return (
     <div className="glass-card flex flex-col h-[500px] hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-700">
-      <div className="p-5 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-slate-800/30 flex items-center justify-between transition-colors duration-500">
+      <div className="p-5 border-b border-slate-100 dark:border-white/5 bg-slate-50/10 dark:bg-slate-800/30 flex items-center justify-between transition-colors duration-500">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center">
             <MessageSquare className="w-5 h-5" />
@@ -74,7 +74,7 @@ export default function InquiryDatabase() {
           <input 
             type="text" 
             placeholder="البحث في الأسئلة والردود..." 
-            className="w-full h-10 pr-10 pl-4 text-xs font-bold bg-slate-100 dark:bg-slate-800/50 border border-slate-200 dark:border-white/5 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 outline-none transition-all" 
+            className="w-full h-10 pr-10 pl-4 text-xs font-bold bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-white/5 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 outline-none transition-all" 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />

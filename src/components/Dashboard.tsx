@@ -3,6 +3,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearSca
 import { Pie, Bar, Doughnut } from 'react-chartjs-2';
 import { Phone, Calendar, Clock, Briefcase, MapPin, Building2, Stethoscope, ChevronRight, TrendingUp } from 'lucide-react';
 import { motion } from 'motion/react';
+import { getDashboardStats } from '../services/dataService';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, PointElement, LineElement);
 
@@ -10,15 +11,20 @@ export default function Dashboard() {
   const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
-    // Mocked response
-    setStats({
-      todayCount: 45,
-      monthCount: 1250,
-      ongoingCount: 12,
-      directorActive: 8,
-      topGovs: { "القاهرة": 120, "الجيزة": 95, "الاسكندرية": 80 },
-      topEntities: { "التأمين الصحي": 45, "المستشفيات": 30 },
-      topSubjects: { "سعار": 15, "تطعيم": 20 }
+    getDashboardStats().then(data => {
+      if (data) setStats(data);
+      else {
+        // Fallback or empty state
+        setStats({
+          todayCount: 0,
+          monthCount: 0,
+          ongoingCount: 0,
+          directorActive: 0,
+          topGovs: {},
+          topEntities: {},
+          topSubjects: {}
+        });
+      }
     });
   }, []);
 
@@ -36,10 +42,10 @@ export default function Dashboard() {
            <h2 className="text-xl font-black text-slate-800 dark:text-white">نظرة عامة على البيانات</h2>
            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-tight">متابعة فورية لإحصائيات الخط الساخن والعمليات الجارية</p>
         </div>
-        <div className="flex items-center gap-2 bg-white dark:bg-slate-900/50 p-1 rounded-xl border border-slate-100 dark:border-white/5 shadow-xs transition-all duration-700">
+        <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 p-1 rounded-xl shadow-xs transition-all duration-700">
            <button className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold shadow-md shadow-blue-500/20 transition-all active:scale-95">الكل</button>
-           <button className="px-3 py-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all duration-500">الشهر الحالي</button>
-           <button className="px-3 py-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all duration-500">اليوم</button>
+           <button className="px-3 py-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all duration-500">الشهر الحالي</button>
+           <button className="px-3 py-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all duration-500">اليوم</button>
         </div>
       </div>
 
@@ -89,28 +95,32 @@ export default function Dashboard() {
             <span className="text-[9px] font-black text-slate-400 bg-slate-100/50 dark:bg-white/5 px-2 py-0.5 rounded-full uppercase transition-colors duration-500">Monthly</span>
           </div>
           <div className="w-full flex-1">
-            <Bar 
-              data={{
-                labels: Object.keys(stats.topGovs),
-                datasets: [{ 
-                  label: 'العدد', 
-                  data: Object.values(stats.topGovs), 
-                  backgroundColor: '#3b82f6', 
-                  borderRadius: 8,
-                  hoverBackgroundColor: '#2563eb',
-                  barThickness: 16
-                }]
-              }}
-              options={{ 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                plugins: { legend: { display: false }, tooltip: { bodyFont: { family: 'Cairo', weight: 'bold' } } },
-                scales: {
-                  x: { grid: { display: false }, ticks: { font: { weight: 'bold', family: 'Cairo', size: 10 } } },
-                  y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { weight: 'bold', size: 10 } } }
-                }
-              }}
-            />
+            {Object.keys(stats.topGovs).length > 0 ? (
+              <Bar 
+                data={{
+                  labels: Object.keys(stats.topGovs),
+                  datasets: [{ 
+                    label: 'العدد', 
+                    data: Object.values(stats.topGovs), 
+                    backgroundColor: '#3b82f6', 
+                    borderRadius: 8,
+                    hoverBackgroundColor: '#2563eb',
+                    barThickness: 16
+                  }]
+                }}
+                options={{ 
+                  responsive: true, 
+                  maintainAspectRatio: false, 
+                  plugins: { legend: { display: false }, tooltip: { bodyFont: { family: 'Cairo', weight: 'bold' } } },
+                  scales: {
+                    x: { grid: { display: false }, ticks: { font: { weight: 'bold', family: 'Cairo', size: 10 } } },
+                    y: { grid: { color: 'rgba(0,0,0,0.03)' }, ticks: { font: { weight: 'bold', size: 10 } } }
+                  }
+                }}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-slate-400 text-[10px] font-bold italic">لا توجد بيانات بالمحافظات</div>
+            )}
           </div>
         </div>
 
@@ -123,29 +133,35 @@ export default function Dashboard() {
             </h4>
           </div>
           <div className="w-full flex-1 relative">
-            <Doughnut 
-               data={{
-                 labels: Object.keys(stats.topEntities),
-                 datasets: [{ 
-                   data: Object.values(stats.topEntities), 
-                   backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#8b5cf6'], 
-                   borderWidth: 0,
-                   hoverOffset: 12
-                 }]
-               }}
-               options={{ 
-                 responsive: true, 
-                 maintainAspectRatio: false, 
-                 cutout: '70%',
-                 plugins: { 
-                   legend: { position: 'bottom', labels: { boxWidth: 8, font: { weight: 'bold', family: 'Cairo', size: 9 }, padding: 12 } } 
-                 } 
-               }}
-            />
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none -mt-3">
-               <span className="text-xl font-black text-slate-800 dark:text-white">75%</span>
-               <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">الإنجاز</span>
-            </div>
+            {Object.keys(stats.topEntities).length > 0 ? (
+              <>
+                <Doughnut 
+                   data={{
+                     labels: Object.keys(stats.topEntities),
+                     datasets: [{ 
+                       data: Object.values(stats.topEntities), 
+                       backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#8b5cf6'], 
+                       borderWidth: 0,
+                       hoverOffset: 12
+                     }]
+                   }}
+                   options={{ 
+                     responsive: true, 
+                     maintainAspectRatio: false, 
+                     cutout: '70%',
+                     plugins: { 
+                       legend: { position: 'bottom', labels: { boxWidth: 8, font: { weight: 'bold', family: 'Cairo', size: 9 }, padding: 12 } } 
+                     } 
+                   }}
+                />
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none -mt-3">
+                   <span className="text-xl font-black text-slate-800 dark:text-white">75%</span>
+                   <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">الإنجاز</span>
+                </div>
+              </>
+            ) : (
+              <div className="h-full flex items-center justify-center text-slate-400 text-[10px] font-bold italic">لا توجد بيانات بالجهات</div>
+            )}
           </div>
         </div>
 
@@ -158,24 +174,28 @@ export default function Dashboard() {
             </h4>
           </div>
           <div className="w-full flex-1">
-            <Pie 
-              data={{
-                labels: Object.keys(stats.topSubjects),
-                datasets: [{ 
-                  data: Object.values(stats.topSubjects), 
-                  backgroundColor: ['#f97316', '#22c55e', '#ec4899', '#a855f7', '#3b82f6'], 
-                  borderWidth: 0,
-                  hoverOffset: 8
-                }]
-              }}
-              options={{ 
-                responsive: true, 
-                maintainAspectRatio: false, 
-                plugins: { 
-                  legend: { position: 'bottom', labels: { boxWidth: 8, font: { weight: 'bold', family: 'Cairo', size: 9 }, padding: 12 } } 
-                } 
-              }}
-            />
+            {Object.keys(stats.topSubjects).length > 0 ? (
+              <Pie 
+                data={{
+                  labels: Object.keys(stats.topSubjects),
+                  datasets: [{ 
+                    data: Object.values(stats.topSubjects), 
+                    backgroundColor: ['#f97316', '#22c55e', '#ec4899', '#a855f7', '#3b82f6'], 
+                    borderWidth: 0,
+                    hoverOffset: 8
+                  }]
+                }}
+                options={{ 
+                  responsive: true, 
+                  maintainAspectRatio: false, 
+                  plugins: { 
+                    legend: { position: 'bottom', labels: { boxWidth: 8, font: { weight: 'bold', family: 'Cairo', size: 9 }, padding: 12 } } 
+                  } 
+                }}
+              />
+            ) : (
+              <div className="h-full flex items-center justify-center text-slate-400 text-[10px] font-bold italic">لا توجد بيانات بالموضوعات</div>
+            )}
           </div>
         </div>
       </div>

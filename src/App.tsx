@@ -94,7 +94,7 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-50 dark:bg-[#0b0f19] text-blue-600 transition-colors duration-300">
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-white dark:bg-slate-950 text-blue-600 transition-colors duration-300">
         <div className="relative">
           <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
           <div className="absolute inset-0 flex items-center justify-center">
@@ -128,7 +128,7 @@ export default function App() {
 
   if (viewMode === ViewMode.Landing) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-[#0b0f19] transition-colors duration-300 flex items-center justify-center p-6">
+      <div className="min-h-screen bg-white dark:bg-slate-950 transition-colors duration-300 flex items-center justify-center p-6">
         <div className="w-full max-w-5xl">
           <div className="text-center mb-16 space-y-4 animate-slide-in-down">
              <div className="inline-block px-4 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold tracking-widest uppercase mb-2">منظومة خدمة المواطنين الذكية</div>
@@ -181,7 +181,7 @@ export default function App() {
   }
 
   return (
-    <div className={`flex min-h-screen transition-all duration-700 overflow-x-hidden ${isDarkMode ? 'dark bg-[#0b0f19]' : 'bg-slate-50'}`}>
+    <div className={`flex min-h-screen transition-all duration-700 overflow-x-hidden ${isDarkMode ? 'dark bg-slate-950' : 'bg-white'}`}>
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div 
@@ -218,11 +218,11 @@ export default function App() {
 
       <main className="flex-1 flex flex-col min-w-0 transition-colors duration-700">
         {/* Top Header / Welcome Bar */}
-        <header className="h-16 flex items-center justify-between px-4 md:px-6 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border-b border-slate-200/60 dark:border-white/5 sticky top-0 z-40 transition-all duration-700">
+        <header className="h-16 flex items-center justify-between px-4 md:px-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-100 dark:border-white/5 sticky top-0 z-40 transition-all duration-700">
            <div className="flex items-center gap-3">
              <button 
                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-               className="lg:hidden w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-400"
+               className="lg:hidden w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-500 dark:text-slate-400"
              >
                {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
              </button>
@@ -273,7 +273,7 @@ export default function App() {
 
                  <button 
                    onClick={() => setIsDarkMode(!isDarkMode)} 
-                   className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 hover:scale-105 transition-all shadow-sm"
+                   className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 hover:scale-105 transition-all shadow-sm"
                  >
                    <i className={`fas ${isDarkMode ? 'fa-sun text-amber-500' : 'fa-moon text-blue-600'} text-xs`}></i>
                  </button>
@@ -284,7 +284,7 @@ export default function App() {
         {/* Content Area */}
         <div className="p-3 md:p-6 flex-1">
           <div className="max-w-7xl mx-auto flex flex-col xl:flex-row gap-8">
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 md:bg-white/40 dark:md:bg-transparent rounded-[32px] md:p-6 transition-colors duration-700">
                {viewMode === ViewMode.Hotline ? renderContent() : <AdminView activeSubTab={adminSubTab} />}
             </div>
 

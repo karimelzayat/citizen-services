@@ -56,6 +56,8 @@ service cloud.firestore {
     // Schedules, FAQ (Publicly readable)
     match /schedules/{id} { allow read: if true; allow write: if isAdmin(); }
     match /faq/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /phonebook/{id} { allow read: if true; allow write: if isAdmin(); }
+    match /hotline_tree/{id} { allow read: if true; allow write: if isAdmin(); }
     match /notifications/{id} { 
       allow read: if isSignedIn() && resource.data.userEmail == request.auth.token.email;
       allow create: if isSignedIn();

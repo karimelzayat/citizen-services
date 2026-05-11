@@ -125,6 +125,28 @@
         "email": { "type": "string" },
         "role": { "type": "string" }
       }
+    },
+    "PhonebookEntry": {
+      "title": "Phonebook Entry",
+      "description": "Contact information for a specific entity and governorate",
+      "type": "object",
+      "properties": {
+        "entity": { "type": "string" },
+        "governorate": { "type": "string" },
+        "phone": { "type": "string" },
+        "name": { "type": "string" }
+      }
+    },
+    "HotlineTreeEntry": {
+      "title": "Hotline Tree Entry",
+      "description": "A node in the hotline guidance tree",
+      "type": "object",
+      "properties": {
+        "label": { "type": "string" },
+        "phone": { "type": "string" },
+        "info": { "type": "string" },
+        "parentId": { "type": "string" }
+      }
     }
   },
   "firestore": {
@@ -135,6 +157,8 @@
     "schedules": { "schema": "Schedule", "description": "Monthly shift schedules" },
     "inquiries": { "schema": "Inquiry", "description": "Instant inquiries" },
     "faq": { "schema": "FAQ", "description": "FAQ database" },
-    "user_permissions": { "schema": "UserPermission", "description": "User role management" }
+    "user_permissions": { "schema": "UserPermission", "description": "User role management" },
+    "phonebook": { "schema": "PhonebookEntry", "description": "Staff and entity phone directory" },
+    "hotline_tree": { "schema": "HotlineTreeEntry", "description": "Hotline routing tree" }
   }
 }

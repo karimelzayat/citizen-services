@@ -11,7 +11,8 @@ import {
   limit, 
   Timestamp, 
   serverTimestamp,
-  onSnapshot
+  onSnapshot,
+  setDoc
 } from 'firebase/firestore';
 import { db, auth, storage, isConfigured } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -294,5 +295,128 @@ export async function getFAQs() {
     if (err.code === 'permission-denied') return [];
     handleFirestoreError(e, OperationType.LIST, 'faq');
     return [];
+  }
+}
+
+// Schedules
+export function listenToSchedules(monthYear: string, callback: (schedules: any[]) => void) {
+  const q = query(collection(db, 'schedules'), where('monthYear', '==', monthYear));
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  }, (e) => handleFirestoreError(e, OperationType.LIST, 'schedules'));
+}
+
+export async function updateSchedule(date: string, monthYear: string, data: any) {
+  try {
+    const docId = `${monthYear}_${date}`.replace(/\//g, '_');
+    await setDoc(doc(db, 'schedules', docId), sanitize({
+      ...data,
+      date,
+      monthYear
+    }));
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, 'schedules');
+  }
+}
+
+// Hotline Tree
+export async function getHotlineTree() {
+  try {
+    const snapshot = await getDocs(collection(db, 'hotline_tree'));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (e) {
+    return [];
+  }
+}
+
+// Phonebook
+export async function searchPhonebook(entity: string, governorate: string) {
+  try {
+    const q = query(
+      collection(db, 'phonebook'), 
+      where('entity', '==', entity),
+      where('governorate', '==', governorate)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => doc.data());
+  } catch (e) {
+    return [];
+  }
+}
+
+// Cabinet Tracking (Special complaints)
+export function listenToCabinetComplaints(callback: (complaints: Complaint[]) => void) {
+  const q = query(collection(db, 'complaints'), where('isCabinetComplaint', '==', true), orderBy('timestamp', 'desc'));
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint)));
+  }, (e) => handleFirestoreError(e, OperationType.LIST, 'complaints'));
+}
+
+// Ranking (Based on active complaints)
+export async function getUserRanking() {
+  try {
+    const q = query(collection(db, 'complaints'), limit(500)); // Sample recent
+    const snapshot = await getDocs(q);
+    const counts: Record<string, number> = {};
+    
+    snapshot.docs.forEach(doc => {
+      const email = doc.data().employeeEmail;
+      const name = doc.data().employeeName;
+      if (email && email !== 'guest@citizen.service') {
+        counts[name || email] = (counts[name || email] || 0) + 1;
+      }
+    });
+
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, calls: count }))
+      .sort((a, b) => b.calls - a.calls)
+      .slice(0, 5)
+      .map((user, idx) => ({ ...user, rank: idx + 1 }));
+  } catch (e) {
+    return [];
+  }
+}
+
+// Dashboard Stats
+export async function getDashboardStats() {
+  try {
+    const colRef = collection(db, 'complaints');
+    const snapshot = await getDocs(query(colRef, limit(1000)));
+    const docs = snapshot.docs.map(d => d.data());
+    
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const monthStr = todayStr.substring(0, 7);
+
+    let todayCount = 0;
+    let monthCount = 0;
+    const govs: Record<string, number> = {};
+    const entities: Record<string, number> = {};
+    const subjects: Record<string, number> = {};
+
+    docs.forEach(d => {
+      const ts = d.timestamp?.toDate ? d.timestamp.toDate() : new Date(d.timestamp);
+      const dStr = ts.toISOString().split('T')[0];
+      
+      if (dStr === todayStr) todayCount++;
+      if (dStr.startsWith(monthStr)) monthCount++;
+      
+      if (d.governorate) govs[d.governorate] = (govs[d.governorate] || 0) + 1;
+      if (d.complaintEntity) entities[d.complaintEntity] = (entities[d.complaintEntity] || 0) + 1;
+      if (d.complaintSubject) subjects[d.complaintSubject] = (subjects[d.complaintSubject] || 0) + 1;
+    });
+
+    return {
+      todayCount,
+      monthCount,
+      ongoingCount: docs.filter(d => d.complaintStatus === 'جاري المتابعة').length,
+      directorActive: 0, // Placeholder
+      topGovs: govs,
+      topEntities: entities,
+      topSubjects: subjects
+    };
+  } catch (e) {
+    console.error("Dashboard stats error", e);
+    return null;
   }
 }

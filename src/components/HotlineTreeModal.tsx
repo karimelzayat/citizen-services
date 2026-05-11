@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, ChevronRight, Hash, Phone, Building2, MapPin, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { getHotlineTree } from '../services/dataService';
 
 interface TreeNode {
   id: string;
@@ -38,13 +39,30 @@ const TREE_DATA: TreeNode[] = [
 export default function HotlineTreeModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const [search, setSearch] = useState('');
   const [path, setPath] = useState<TreeNode[]>([]);
+  const [dbTree, setDbTree] = useState<TreeNode[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isOpen) {
+      getHotlineTree().then(data => {
+        if (data && data.length > 0) {
+          // Reconstruct tree from flat data if parentId is used, 
+          // or just use as is if stored as nested objects. 
+          // For simplicity, we assume we might get some flat data or nested.
+          setDbTree(data as any);
+        }
+        setLoading(false);
+      });
+    }
+  }, [isOpen]);
   
   if (!isOpen) return null;
 
-  const currentNodes = path.length > 0 ? path[path.length - 1].children || [] : TREE_DATA;
+  const currentTree = dbTree.length > 0 ? dbTree : TREE_DATA;
+  const currentNodes = path.length > 0 ? path[path.length - 1].children || [] : currentTree;
 
   const filteredNodes = search 
-    ? TREE_DATA.reduce((acc: any[], node) => {
+    ? currentTree.reduce((acc: any[], node) => {
         const matches = node.label.includes(search) || (node.phone && node.phone.includes(search));
         const childMatches = node.children?.filter(c => c.label.includes(search) || (c.phone && c.phone.includes(search)));
         
@@ -118,8 +136,11 @@ export default function HotlineTreeModal({ isOpen, onClose }: { isOpen: boolean,
 
         {/* List Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-3 custom-scrollbar">
-          <AnimatePresence mode="popLayout">
-            {filteredNodes.length > 0 ? (
+          {loading ? (
+            <div className="h-full flex items-center justify-center text-blue-600 font-bold animate-pulse">جاري جلب بيانات الشجرة...</div>
+          ) : (
+            <AnimatePresence mode="popLayout">
+              {filteredNodes.length > 0 ? (
               filteredNodes.map((node, idx) => (
                 <motion.div
                   key={node.id}
@@ -162,6 +183,7 @@ export default function HotlineTreeModal({ isOpen, onClose }: { isOpen: boolean,
               </div>
             )}
           </AnimatePresence>
+          )}
         </div>
 
         {/* Footer */}
