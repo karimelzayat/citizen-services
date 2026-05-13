@@ -59,7 +59,7 @@ export default function Reports() {
               
               <button 
                 type="submit" 
-                className={`btn-primary w-full flex items-center justify-center gap-3 h-14 ${activeSubTab === 'entity' ? 'bg-emerald-600 shadow-emerald-600/20' : activeSubTab === 'emergency' ? 'bg-blue-600 shadow-blue-600/20' : 'bg-rose-600 shadow-rose-600/20'}`}
+                className={`btn-primary w-full flex items-center justify-center gap-3 ${activeSubTab === 'entity' ? 'bg-emerald-600 shadow-emerald-600/20' : activeSubTab === 'emergency' ? 'bg-blue-600 shadow-blue-600/20' : 'bg-rose-600 shadow-rose-600/20'}`}
               >
                 <Download className="w-5 h-5" />
                 <span>تحميل التقرير (PDF)</span>

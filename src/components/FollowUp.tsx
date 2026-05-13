@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { Complaint } from '../types';
-import { Clock, CheckCircle2, Calendar, Database, User, Phone, MapPin, ChevronRight, Loader2, Info, Search } from 'lucide-react';
+import { Clock, CheckCircle2, Calendar, Database, Phone, ChevronRight, Loader2, Info, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function FollowUp() {
@@ -64,16 +64,16 @@ export default function FollowUp() {
                <p className="text-slate-500 dark:text-slate-400 font-bold tracking-tight">جاري استرجاع المكالمات الجارية...</p>
             </div>
           ) : ongoingComplaints.length > 0 ? (
-            <div className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/40 dark:shadow-none overflow-hidden transition-all duration-700">
+            <div className="bg-white dark:bg-slate-900 rounded-[40px] border border-slate-100 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden transition-all duration-700">
                <div className="overflow-x-auto">
                  <table className="w-full text-right border-collapse">
                    <thead>
                      <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-white/5">
-                        <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">التوقيت</th>
-                        <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">المتصل</th>
-                        <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">رقم التليفون</th>
-                        <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">جهة الشكوى</th>
-                        <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-center">الإجراء</th>
+                        <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">التوقيت</th>
+                        <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">المتصل</th>
+                        <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">التليفون</th>
+                        <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">جهة الشكوى</th>
+                        <th className="px-8 py-5 text-xs font-black text-slate-400 uppercase tracking-widest text-center">الإجراء</th>
                      </tr>
                    </thead>
                    <tbody className="divide-y divide-slate-100 dark:divide-white/5">
@@ -83,36 +83,36 @@ export default function FollowUp() {
                          initial={{ opacity: 0, scale: 0.98 }}
                          animate={{ opacity: 1, scale: 1 }}
                          transition={{ delay: idx * 0.05 }}
-                         className="group hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-colors"
+                         className="group hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-all border-r-4 border-r-transparent hover:border-r-emerald-500"
                        >
-                         <td className="px-6 py-5">
+                         <td className="px-8 py-6">
                             <div className="flex flex-col">
-                               <span className="text-sm font-bold text-slate-900 dark:text-white">{(c.timestamp as any)?.toDate().toLocaleDateString('ar-EG')}</span>
-                               <span className="text-[10px] text-emerald-600 font-bold">{(c.timestamp as any)?.toDate().toLocaleTimeString('ar-EG')}</span>
+                               <span className="text-sm font-black text-slate-900 dark:text-white mb-1">{(c.timestamp as any)?.toDate().toLocaleDateString('ar-EG')}</span>
+                               <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-widest">{(c.timestamp as any)?.toDate().toLocaleTimeString('ar-EG')}</span>
                             </div>
                          </td>
-                         <td className="px-6 py-5">
+                         <td className="px-8 py-6">
                             <div className="flex items-center gap-3">
-                               <div className="w-9 h-9 rounded-2xl bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black text-xs">
-                                  {c.callerName.charAt(0)}
+                               <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black text-sm border border-emerald-100 dark:border-emerald-900/20 shadow-sm">
+                                   {c.callerName.charAt(0)}
                                </div>
-                               <span className="font-black text-slate-900 dark:text-white group-hover:text-emerald-600 transition-colors">{c.callerName}</span>
+                               <span className="font-black text-base text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors uppercase tracking-tight">{c.callerName}</span>
                             </div>
                          </td>
-                         <td className="px-6 py-5">
-                            <div className="flex items-center gap-2 text-sm font-mono tracking-wider dark:text-slate-300">
-                               <Phone className="w-3 h-3 text-slate-400" />
+                         <td className="px-8 py-6">
+                            <div className="flex items-center gap-2 text-sm font-mono tracking-widest dark:text-slate-300">
+                               <Phone className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-500 transition-colors" />
                                {c.phoneNumber}
                             </div>
                          </td>
-                         <td className="px-6 py-5">
+                         <td className="px-8 py-6">
                             <div className="flex flex-col">
-                               <span className="text-sm font-bold text-slate-700 dark:text-slate-300">{c.complaintEntity}</span>
-                               <span className="text-[10px] text-slate-400 font-medium">بواسطة: {c.employeeName}</span>
+                               <span className="text-sm font-black text-slate-800 dark:text-slate-200">{c.complaintEntity}</span>
+                               <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">بواسطة: {c.employeeName}</span>
                             </div>
                          </td>
-                         <td className="px-6 py-5 text-center">
-                            <button className="px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-emerald-600/20 hover:scale-105 active:scale-95 transition-all">
+                         <td className="px-8 py-6 text-center">
+                            <button className="px-6 py-2.5 bg-emerald-600 text-white rounded-xl font-black text-[10px] shadow-lg shadow-emerald-600/25 hover:bg-emerald-500 hover:-translate-y-0.5 active:scale-95 transition-all uppercase tracking-widest">
                                متابعة الآن
                             </button>
                          </td>

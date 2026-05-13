@@ -141,37 +141,37 @@ export default function NewComplaintForm() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="glass-card p-10 space-y-10 transition-all duration-700 border-slate-100 dark:border-white/5 bg-white dark:bg-slate-900 w-full max-w-4xl shadow-2xl shadow-slate-200/40 dark:shadow-none">
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <div className="glass-card p-14 space-y-12 transition-all duration-700 border-slate-100 dark:border-white/5 bg-white dark:bg-slate-900 w-full max-w-6xl shadow-2xl shadow-slate-200/40 dark:shadow-none">
           {/* Section: Basic Identity */}
-          <div className="space-y-6">
-            <div className="flex items-center gap-4 text-blue-600 dark:text-blue-400 font-black text-base border-b border-slate-100 dark:border-white/5 pb-4">
-               <User className="w-6 h-6" />
+          <div className="space-y-8">
+            <div className="flex items-center gap-5 text-blue-600 dark:text-blue-400 font-black text-xl border-b border-slate-100 dark:border-white/5 pb-6">
+               <User className="w-8 h-8" />
                <span>بيانات المتصل الأساسية</span>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="space-y-3">
-                <label className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">الاسم بالكامل</label>
+                <label className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest leading-none block mb-1">الاسم بالكامل</label>
                 <div className="relative">
-                   <User className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                   <input type="text" name="callerName" required value={formData.callerName} onChange={handleInputChange} className="form-input h-16 pr-14 text-base shadow-sm focus:shadow-lg focus:shadow-blue-500/5 transition-all" placeholder="أدخل اسم المتصل" />
+                   <User className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                   <input type="text" name="callerName" required value={formData.callerName} onChange={handleInputChange} className="form-input pr-10" placeholder="أدخل اسم المتصل" />
                 </div>
               </div>
 
               <div className="space-y-3">
-                <label className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">رقم الهاتف المميز</label>
+                <label className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest leading-none block mb-1">رقم الهاتف المميز</label>
                 <div className="relative">
-                   <Phone className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                   <input type="tel" name="phoneNumber" required pattern="[0-9]{11}" placeholder="01xxxxxxxxx" value={formData.phoneNumber} onChange={handleInputChange} className="form-input h-16 pr-14 font-mono text-base shadow-sm focus:shadow-lg focus:shadow-blue-500/5 transition-all" />
+                   <Phone className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                   <input type="tel" name="phoneNumber" required pattern="[0-9]{11}" placeholder="01xxxxxxxxx" value={formData.phoneNumber} onChange={handleInputChange} className="form-input pr-10 font-mono" />
                 </div>
               </div>
 
               <div className="space-y-3">
-                <label className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest">المحافظة</label>
+                <label className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest leading-none block mb-1">المحافظة</label>
                 <div className="relative">
-                   <MapPin className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 pointer-events-none" />
-                   <select name="governorate" required value={formData.governorate} onChange={handleInputChange} className="form-input h-16 pr-14 appearance-none text-base shadow-sm focus:shadow-lg focus:shadow-blue-500/5 transition-all">
+                   <MapPin className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                   <select name="governorate" required value={formData.governorate} onChange={handleInputChange} className="form-input pr-10 appearance-none">
                     <option value="">اختر المحافظة...</option>
                     {GOVERNORATES_LIST.map(g => <option key={g} value={g}>{g}</option>)}
                   </select>
@@ -391,21 +391,21 @@ export default function NewComplaintForm() {
            <button 
               type="submit" 
               disabled={isSubmitting}
-              className="btn-primary min-w-[240px] h-16 flex items-center justify-center gap-3 text-lg"
+              className="btn-primary min-w-[200px]"
            >
               {isSubmitting ? (
                 <>
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                  <span>جاري المعالجة...</span>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>جاري الحفظ...</span>
                 </>
               ) : (
                 <>
-                  <Save className="w-6 h-6" />
-                  <span>حفظ وإرسال المكالمة</span>
+                  <Save className="w-5 h-5" />
+                  <span>حفظ المكالمة</span>
                 </>
               )}
            </button>
-           <button type="button" onClick={resetForm} className="px-8 h-16 rounded-[20px] font-black text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">إلغاء</button>
+           <button type="button" onClick={resetForm} className="px-6 h-12 rounded-xl font-bold text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">إلغاء</button>
         </div>
       </form>
     </div>

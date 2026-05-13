@@ -162,14 +162,14 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
                       <li key={item.id}>
                         <button
                           onClick={() => onTabChange(item.id)}
-                          className={`w-full group flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-300 
+                          className={`w-full group flex items-center gap-4 p-4.5 rounded-[24px] transition-all duration-300 
                             ${activeTab === item.id 
-                              ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/30 font-black' 
+                              ? 'bg-blue-600 text-white shadow-2xl shadow-blue-500/40 font-black scale-[1.02]' 
                               : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'} 
                             ${collapsed ? 'justify-center px-0' : ''}`}
                         >
-                          <item.icon className={`w-5 h-5 flex-shrink-0 transition-all group-hover:scale-110 ${activeTab === item.id ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
-                          {!collapsed && <span className="text-sm truncate tracking-tight">{item.label}</span>}
+                          <item.icon className={`w-6 h-6 flex-shrink-0 transition-all group-hover:scale-110 ${activeTab === item.id ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
+                          {!collapsed && <span className="text-base font-bold truncate tracking-tight">{item.label}</span>}
                         </button>
                       </li>
                     ))}

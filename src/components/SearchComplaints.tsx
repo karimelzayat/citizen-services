@@ -45,45 +45,45 @@ export default function SearchComplaints() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-8">
         <div>
-           <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">البحث والمراجعة</h2>
-           <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">استرجاع البيانات المسجلة وتصفية المكالمات المكررة</p>
+           <h2 className="text-2xl font-black text-slate-950 dark:text-white tracking-tight">البحث والمراجعة المتقدمة</h2>
+           <p className="text-[12px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mt-1">استرجع البيانات المسجلة بالدقة اللازمة</p>
         </div>
-        <div className="hidden md:flex items-center gap-4">
-           <div className="bg-blue-600/10 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-xl flex items-center gap-2">
-              <Database className="w-3.5 h-3.5" />
-              <span className="text-[10px] font-bold leading-none">{results.length} نتيجة</span>
+        <div className="hidden md:flex items-center gap-6">
+           <div className="bg-blue-600 text-white px-5 py-2.5 rounded-2xl flex items-center gap-3 shadow-lg shadow-blue-500/20 transition-transform hover:scale-105">
+              <Database className="w-5 h-5" />
+              <span className="text-xs font-black leading-none uppercase tracking-widest">{results.length} نتيجة بحث</span>
            </div>
         </div>
       </div>
 
       {/* Search Section */}
-      <div className="glass-card bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/40 dark:shadow-none p-6 rounded-[32px] border border-slate-100 dark:border-white/5 transition-all duration-700">
+      <div className="glass-card bg-white dark:bg-slate-900 shadow-2xl shadow-slate-200/40 dark:shadow-none p-6 rounded-[32px] border border-slate-100 dark:border-white/5 transition-all duration-700">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
           <div className="space-y-2">
-            <label className="text-xs font-black text-slate-700 dark:text-slate-300 flex items-center gap-2">
-               <CalendarIcon className="w-4 h-4 text-blue-600" />
+            <label className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-2 uppercase tracking-widest leading-none block mb-1">
+               <CalendarIcon className="w-3.5 h-3.5 text-blue-600" />
                البحث بالتاريخ
             </label>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="form-input h-14 text-sm bg-slate-50 dark:bg-slate-800 border-transparent transition-all" />
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="form-input" />
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-black text-slate-700 dark:text-slate-300 flex items-center gap-2">
-               <Phone className="w-4 h-4 text-blue-600" />
+            <label className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-2 uppercase tracking-widest leading-none block mb-1">
+               <Phone className="w-3.5 h-3.5 text-blue-600" />
                رقم التليفون
             </label>
-            <input type="tel" placeholder="01xxxxxxxxx" value={phone} onChange={(e) => setPhone(e.target.value)} className="form-input h-14 font-mono tracking-widest text-sm bg-slate-50 dark:bg-slate-800 border-transparent transition-all" />
+            <input type="tel" placeholder="01xxxxxxxxx" value={phone} onChange={(e) => setPhone(e.target.value)} className="form-input font-mono" />
           </div>
 
          <button 
             onClick={() => handleSearch()} 
             disabled={loading}
-            className="btn-primary h-14 flex items-center justify-center gap-3 text-lg shadow-xl shadow-blue-500/25 active:scale-95 transition-all col-span-1 md:col-span-2"
+            className="btn-primary flex items-center justify-center gap-2 col-span-1 md:col-span-2"
           >
-            {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : <Search className="w-6 h-6" />}
-            <span>{phone || date ? 'بدأ البحث المخصص' : 'تحديث القائمة'}</span>
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
+            <span className="font-black uppercase tracking-widest">{phone || date ? 'بدأ البحث المتقدم' : 'تحديث البيانات'}</span>
           </button>
         </div>
       </div>
@@ -110,73 +110,73 @@ export default function SearchComplaints() {
       )}
 
       {/* Results Area */}
-      <div className="min-h-[300px]">
+      <div className="min-h-[400px]">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 space-y-4">
+          <div className="flex flex-col items-center justify-center py-32 space-y-6">
              <div className="relative">
-                <div className="w-12 h-12 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
-                <Database className="absolute inset-0 m-auto w-4 h-4 text-blue-600 animate-pulse" />
+                <div className="w-20 h-20 border-8 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+                <Database className="absolute inset-0 m-auto w-8 h-8 text-blue-600 animate-pulse" />
              </div>
-             <p className="text-slate-400 text-sm font-bold">جاري استرجاع البيانات...</p>
+             <p className="text-slate-400 text-lg font-black uppercase tracking-[0.3em] italic">مزامنة البيانات الحية...</p>
           </div>
         ) : filteredResults.length > 0 ? (
-          <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/40 dark:shadow-none overflow-hidden transition-all duration-700">
+          <div className="bg-white dark:bg-slate-900 rounded-[40px] border border-slate-100 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden transition-all duration-700">
             <div className="overflow-x-auto">
               <table className="w-full text-right border-collapse">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-white/5">
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">التوقيت</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">المتصل</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">التليفون</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">المحافظة</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">الحالة</th>
-                    <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">الإجراء</th>
+                    <th className="px-10 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">التوقيت</th>
+                    <th className="px-10 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">المتصل</th>
+                    <th className="px-10 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">التليفون</th>
+                    <th className="px-10 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">المحافظة</th>
+                    <th className="px-10 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">الحالة</th>
+                    <th className="px-10 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">الإجراء</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                   {filteredResults.map((c, idx) => (
                     <motion.tr 
                       key={c.id}
-                      initial={{ opacity: 0, x: -5 }}
+                      initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.02 }}
-                      className="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer"
+                      className="group hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-all cursor-pointer"
                       onClick={() => setSelectedComplaint(c)}
                     >
-                      <td className="px-6 py-4">
+                      <td className="px-10 py-7">
                          <div className="flex flex-col">
-                            <span className="text-xs font-bold text-slate-900 dark:text-white">
+                            <span className="text-sm font-black text-slate-900 dark:text-white mb-1">
                               {c.timestamp && typeof (c.timestamp as any).toDate === 'function' 
                                 ? (c.timestamp as any).toDate().toLocaleDateString('ar-EG') 
                                 : new Date().toLocaleDateString('ar-EG')}
                             </span>
-                            <span className="text-[9px] text-slate-400">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                               {c.timestamp && typeof (c.timestamp as any).toDate === 'function' 
                                 ? (c.timestamp as any).toDate().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) 
                                 : new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
                             </span>
                          </div>
                       </td>
-                      <td className="px-6 py-4">
-                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-slate-800 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-xs">
+                      <td className="px-10 py-7">
+                         <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-slate-800 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-sm shadow-sm border border-blue-100 dark:border-white/5">
                                {c.callerName.charAt(0)}
                             </div>
-                            <span className="font-bold text-xs text-slate-700 dark:text-slate-200 group-hover:text-blue-600 transition-colors">{c.callerName}</span>
+                            <span className="font-black text-base text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition-colors">{c.callerName}</span>
                          </div>
                       </td>
-                      <td className="px-6 py-4 text-xs font-mono tracking-tight text-slate-500 dark:text-slate-400">{c.phoneNumber}</td>
-                      <td className="px-6 py-4">
-                         <span className="px-2.5 py-1 bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded-lg text-[10px] font-bold border border-slate-100 dark:border-white/5">{c.governorate}</span>
+                      <td className="px-10 py-7 text-sm font-mono tracking-widest text-slate-500 dark:text-slate-400">{c.phoneNumber}</td>
+                      <td className="px-10 py-7">
+                         <span className="px-4 py-1.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl text-xs font-black border border-slate-100 dark:border-white/5 uppercase tracking-widest">{c.governorate}</span>
                       </td>
-                      <td className="px-6 py-4">
-                         <span className={`px-2.5 py-1 rounded-full text-[9px] font-black transition-colors duration-500 ${c.complaintStatus === 'تم الرد' ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : 'bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400'}`}>
+                      <td className="px-10 py-7">
+                         <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-500 shadow-sm ${c.complaintStatus === 'تم الرد' ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30' : 'bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30'}`}>
                            {c.complaintStatus}
                          </span>
                       </td>
-                      <td className="px-6 py-4 text-center">
-                         <div className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-300 dark:text-slate-700 group-hover:bg-blue-600 group-hover:text-white transition-all mx-auto">
-                            <ChevronRight className="w-4 h-4" />
+                      <td className="px-10 py-7 text-center">
+                         <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-slate-300 dark:text-slate-700 bg-slate-50 dark:bg-slate-800 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 shadow-sm transition-all mx-auto">
+                            <ChevronRight className="w-6 h-6" />
                          </div>
                       </td>
                     </motion.tr>
@@ -189,12 +189,12 @@ export default function SearchComplaints() {
           <motion.div 
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-[32px] transition-all duration-700 shadow-sm"
+            className="flex flex-col items-center justify-center py-32 bg-white dark:bg-slate-900 border-2 border-dashed border-slate-100 dark:border-white/5 rounded-[48px] transition-all duration-700"
           >
-             <div className="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
-                <Database className="w-8 h-8 text-slate-200 dark:text-slate-700" />
+             <div className="w-24 h-24 bg-slate-50 dark:bg-slate-800 rounded-full flex items-center justify-center mb-6 shadow-sm">
+                <Database className="w-12 h-12 text-slate-200 dark:text-slate-700" />
              </div>
-             <p className="text-slate-400 font-bold text-sm tracking-tight italic">لا توجد بيانات للعرض حالياً</p>
+             <p className="text-slate-400 font-black text-lg tracking-[0.2em] uppercase italic">قاعدة البيانات خالية حالياً</p>
           </motion.div>
         )}
       </div>

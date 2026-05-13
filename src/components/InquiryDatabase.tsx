@@ -37,8 +37,8 @@ export default function InquiryDatabase() {
             <MessageSquare className="w-5 h-5" />
           </div>
           <div>
-             <h3 className="text-sm font-black text-slate-900 dark:text-white leading-none">استفسارات الزملاء</h3>
-             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 block">قاعدة المعرفة الحية</span>
+             <h3 className="text-base font-black text-slate-900 dark:text-white leading-none">استفسارات الزملاء</h3>
+             <span className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1.5 block">قاعدة المعرفة الحية</span>
           </div>
         </div>
         <div className="flex -space-x-2 rtl:space-x-reverse">
@@ -55,7 +55,7 @@ export default function InquiryDatabase() {
           <input 
             type="text" 
             placeholder="اسأل الزملاء..." 
-            className="form-input pr-12 h-12 text-sm bg-slate-50 dark:bg-slate-800/50 border-transparent transition-all" 
+            className="form-input pr-12" 
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handlePost()}
@@ -74,7 +74,7 @@ export default function InquiryDatabase() {
           <input 
             type="text" 
             placeholder="البحث في الأسئلة والردود..." 
-            className="w-full h-10 pr-10 pl-4 text-xs font-bold bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-white/5 rounded-xl focus:bg-white dark:focus:bg-slate-800 focus:border-blue-500 outline-none transition-all" 
+            className="form-input pr-10" 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -91,10 +91,10 @@ export default function InquiryDatabase() {
               transition={{ delay: idx * 0.05 }}
               className="group p-4 bg-slate-50/50 dark:bg-slate-900/60 border border-slate-100 dark:border-white/5 rounded-2xl hover:border-blue-500/30 transition-all shadow-sm"
             >
-              <div className="flex justify-between items-start mb-2">
-                 <span className="font-black text-xs text-slate-800 dark:text-slate-200 leading-relaxed block flex-1">{inquiry.question}</span>
-                 <div className="flex items-center gap-1 text-[8px] font-bold text-slate-400 shrink-0">
-                    <Clock className="w-2 h-2" />
+              <div className="flex justify-between items-start mb-3">
+                 <span className="font-black text-sm text-slate-900 dark:text-slate-100 leading-relaxed block flex-1">{inquiry.question}</span>
+                 <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 shrink-0 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">
+                    <Clock className="w-2.5 h-2.5" />
                     {new Date(inquiry.timestamp || Date.now()).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
                  </div>
               </div>

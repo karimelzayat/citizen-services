@@ -95,8 +95,8 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
                   <div className="space-y-3">
-                    <label className="text-xs font-black text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                       <Hash className="w-5 h-5 text-blue-600" />
+                    <label className="text-xs font-black text-slate-700 dark:text-slate-300 flex items-center gap-2 uppercase tracking-widest leading-none">
+                       <Hash className="w-4 h-4 text-blue-600" />
                        رقم الشكوى بالنظام
                     </label>
                     <input 
@@ -104,14 +104,14 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
                       value={formData.complaintNo} 
                       onChange={(e) => setFormData({...formData, complaintNo: e.target.value})} 
                       required 
-                      className="form-input font-mono text-2xl h-16 tracking-widest bg-slate-50 dark:bg-slate-800 border-transparent transition-all" 
+                      className="form-input font-mono tracking-widest" 
                       placeholder="0000-0000"
                     />
                   </div>
 
                   {workType === 'الجاري' && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                    <div className="space-y-3">
+                      <label className="text-xs font-black text-slate-700 dark:text-slate-300 flex items-center gap-2 uppercase tracking-widest leading-none">
                          <MapPin className="w-4 h-4 text-blue-600" />
                          المحافظة
                       </label>
@@ -119,7 +119,7 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
                         value={formData.governorate} 
                         onChange={(e) => setFormData({...formData, governorate: e.target.value})} 
                         required 
-                        className="form-input appearance-none bg-slate-50 dark:bg-slate-800 border-transparent transition-all"
+                        className="form-input appearance-none"
                       >
                         <option value="">اختر المحافظة...</option>
                         {GOVERNORATES_LIST.map(g => <option key={g} value={g}>{g}</option>)}
@@ -128,8 +128,8 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
                   )}
 
                   {workType === 'توجية خطأ' && (
-                    <div className="space-y-2">
-                      <label className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                    <div className="space-y-3">
+                      <label className="text-xs font-black text-slate-700 dark:text-slate-300 flex items-center gap-2 uppercase tracking-widest leading-none">
                          <FileText className="w-4 h-4 text-amber-600" />
                          مسجل الشكوى الحالي
                       </label>
@@ -138,7 +138,7 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
                         value={formData.registrant} 
                         onChange={(e) => setFormData({...formData, registrant: e.target.value})} 
                         required 
-                        className="form-input bg-slate-50 dark:bg-slate-800 border-transparent transition-all"
+                        className="form-input"
                         placeholder="اسم الموظف"
                       />
                     </div>
@@ -195,10 +195,10 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
             <button 
               type="submit" 
               disabled={isSubmitting}
-              className="btn-primary w-full md:w-auto md:min-w-[240px] h-16 flex items-center justify-center gap-3 text-lg"
+              className="btn-primary w-full md:w-auto md:min-w-[200px]"
             >
-              {isSubmitting ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
-              <span>حفظ البيانات الآن</span>
+              {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+              <span>حفظ البيانات</span>
             </button>
           </form>
         </div>

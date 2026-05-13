@@ -337,13 +337,13 @@ export default function App() {
 
         {/* Content Area */}
         <div className="p-4 md:p-10 flex-1 bg-slate-50/50 dark:bg-transparent transition-colors duration-700">
-          <div className="max-w-[1600px] mx-auto flex flex-col xl:flex-row gap-10">
-            <div className="flex-1 min-w-0 bg-white dark:bg-slate-900/30 backdrop-blur-md rounded-[48px] p-8 md:p-12 transition-all duration-700 border border-slate-200/60 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none">
+          <div className="max-w-[1800px] mx-auto flex flex-col xl:flex-row gap-12">
+            <div className="flex-1 min-w-0 bg-white dark:bg-slate-900/30 backdrop-blur-md rounded-[48px] p-8 md:p-14 transition-all duration-700 border border-slate-200/60 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none">
                {viewMode === ViewMode.Hotline ? renderContent() : <AdminView activeSubTab={adminSubTab} />}
             </div>
 
             {viewMode === ViewMode.Hotline && (
-              <div className="w-full xl:w-[400px] flex flex-col gap-8 flex-shrink-0">
+              <div className="w-full xl:w-[320px] flex flex-col gap-10 flex-shrink-0">
                  <InquiryDatabase />
                  <CabinetTracking />
                  
