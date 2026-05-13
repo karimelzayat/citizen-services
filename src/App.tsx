@@ -45,6 +45,20 @@ export default function App() {
   const [showNotifications, setShowNotifications] = useState(false);
 
   useEffect(() => {
+    const handleSwitchTab = (e: any) => {
+      const tab = e.detail;
+      if (tab === 'search') {
+        setActiveTab('searchComplaint');
+      } else {
+        setActiveTab(tab);
+      }
+    };
+    
+    window.addEventListener('switchTab', handleSwitchTab);
+    return () => window.removeEventListener('switchTab', handleSwitchTab);
+  }, []);
+
+  useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       if (!u) {
         // No user signed in, handle as guest

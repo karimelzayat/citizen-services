@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { searchComplaints } from '../services/dataService';
 import { Complaint } from '../types';
-import { Search, Calendar as CalendarIcon, Phone, User, MapPin, Database, Filter, Layers, ChevronRight, Loader2, Info } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Search, Calendar as CalendarIcon, Phone, User, MapPin, Database, Filter, Layers, ChevronRight, Loader2, Info, X, Clock, FileText, Download, UserCheck } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function SearchComplaints() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -10,12 +10,22 @@ export default function SearchComplaints() {
   const [results, setResults] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'duplicates'>('all');
+  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
 
-  const handleSearch = async () => {
+  useEffect(() => {
+    handleSearch();
+  }, []);
+
+  const handleSearch = async (overrideDate?: string) => {
     setLoading(true);
     try {
-      const data = await searchComplaints({ date, phoneNumber: phone });
+      const searchDate = overrideDate !== undefined ? overrideDate : date;
+      const data = await searchComplaints({ date: searchDate, phoneNumber: phone });
       setResults(data);
+      if (overrideDate !== undefined) {
+        setDate(overrideDate);
+        setPhone('');
+      }
     } catch (err: any) {
       alert('حدث خطأ أثناء البحث: ' + err.message);
     } finally {
@@ -26,6 +36,11 @@ export default function SearchComplaints() {
   const filteredResults = filterType === 'duplicates' 
     ? results.filter((item, index) => results.findIndex(r => r.phoneNumber === item.phoneNumber) !== index)
     : results;
+
+  const viewAllForDate = (dateStr: string) => {
+    handleSearch(dateStr);
+    setSelectedComplaint(null);
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -63,7 +78,7 @@ export default function SearchComplaints() {
           </div>
 
          <button 
-            onClick={handleSearch} 
+            onClick={() => handleSearch()} 
             disabled={loading}
             className="btn-primary h-10 flex items-center justify-center gap-2 text-sm"
           >
@@ -73,7 +88,7 @@ export default function SearchComplaints() {
           
           {(phone || date) && (
             <button 
-              onClick={() => { setPhone(''); setDate(''); handleSearch(); }}
+              onClick={() => { setPhone(''); setDate(''); setResults([]); }}
               className="text-[10px] font-bold text-slate-400 hover:text-rose-500 transition-colors"
             >
               مسح الفلاتر
@@ -134,7 +149,8 @@ export default function SearchComplaints() {
                       initial={{ opacity: 0, x: -5 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: idx * 0.03 }}
-                      className="group hover:bg-blue-50/20 dark:hover:bg-blue-900/10 transition-colors"
+                      className="group hover:bg-blue-50/20 dark:hover:bg-blue-900/10 transition-colors cursor-pointer"
+                      onClick={() => setSelectedComplaint(c)}
                     >
                       <td className="px-4 py-3.5">
                          <div className="flex flex-col">
@@ -145,8 +161,8 @@ export default function SearchComplaints() {
                             </span>
                             <span className="text-[9px] text-slate-400">
                               {c.timestamp && typeof (c.timestamp as any).toDate === 'function' 
-                                ? (c.timestamp as any).toDate().toLocaleTimeString('ar-EG') 
-                                : new Date().toLocaleTimeString('ar-EG')}
+                                ? (c.timestamp as any).toDate().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) 
+                                : new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
                             </span>
                          </div>
                       </td>
@@ -189,6 +205,171 @@ export default function SearchComplaints() {
           </motion.div>
         )}
       </div>
+
+      {/* Details Modal */}
+      <AnimatePresence>
+        {selectedComplaint && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedComplaint(null)}
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              {/* Modal Header */}
+              <div className="p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-white dark:bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center">
+                    <User className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-black text-slate-800 dark:text-white">{selectedComplaint.callerName}</h3>
+                    <p className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">تفاصيل المكالمة والشكوى</p>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedComplaint(null)} className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                {/* Status and Time badges */}
+                <div className="flex flex-wrap gap-2">
+                  <div className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold flex items-center gap-2 border border-blue-100 dark:border-blue-900/30">
+                    <Clock className="w-3.5 h-3.5" />
+                    {selectedComplaint.timestamp && typeof (selectedComplaint.timestamp as any).toDate === 'function' 
+                      ? (selectedComplaint.timestamp as any).toDate().toLocaleString('ar-EG') 
+                      : 'توقيت غير مسجل'}
+                  </div>
+                  <div className={`px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-2 border ${selectedComplaint.complaintStatus === 'تم الرد' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>
+                    <Info className="w-3.5 h-3.5" />
+                    {selectedComplaint.complaintStatus}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Personal Info */}
+                  <div className="space-y-4">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-1">بيانات المتصل</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Phone className="w-4 h-4 text-blue-500" />
+                        <div>
+                          <p className="text-[9px] text-slate-400 font-bold">رقم الهاتف</p>
+                          <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{selectedComplaint.phoneNumber}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <MapPin className="w-4 h-4 text-blue-500" />
+                        <div>
+                          <p className="text-[9px] text-slate-400 font-bold">المحافظة</p>
+                          <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{selectedComplaint.governorate}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Complaint Header */}
+                  <div className="space-y-4">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-1">تصنيف الشكوى</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <Layers className="w-4 h-4 text-blue-500" />
+                        <div>
+                          <p className="text-[9px] text-slate-400 font-bold">الجهة الموجه إليها</p>
+                          <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{selectedComplaint.complaintEntity}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <FileText className="w-4 h-4 text-blue-500" />
+                        <div>
+                          <p className="text-[9px] text-slate-400 font-bold">موضوع الشكوى</p>
+                          <p className="text-sm font-bold text-slate-700 dark:text-slate-200">{selectedComplaint.complaintSubject}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Complaint Body */}
+                <div className="space-y-3 p-5 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-white/5">
+                  <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic flex items-center gap-2">
+                    <FileText className="w-3.5 h-3.5" />
+                    تفاصيل الشكوى:
+                  </h4>
+                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                    {selectedComplaint.subject || 'لا توجد تفاصيل إضافية مسجلة'}
+                  </p>
+                </div>
+
+                {/* Employee Info */}
+                <div className="flex items-center justify-between p-4 bg-blue-50/30 dark:bg-blue-900/10 rounded-2xl border border-blue-50 dark:border-blue-900/20">
+                   <div className="flex items-center gap-3">
+                      <UserCheck className="w-5 h-5 text-blue-500" />
+                      <div>
+                        <p className="text-[8px] text-slate-400 font-black uppercase">الموظف القائم بالتسجيل</p>
+                        <p className="text-xs font-bold text-slate-700 dark:text-blue-300">{selectedComplaint.employeeName}</p>
+                      </div>
+                   </div>
+                   <div className="text-[9px] text-slate-400 italic">
+                      ID: {selectedComplaint.employeeEmail?.split('@')[0]}
+                   </div>
+                </div>
+
+                {/* Documents / Photos */}
+                {selectedComplaint.photoUrl && (
+                  <div className="space-y-3">
+                    <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-1">المرفقات</h4>
+                    <div className="relative group rounded-3xl overflow-hidden border-4 border-white dark:border-slate-800 shadow-xl">
+                      <img src={selectedComplaint.photoUrl} alt="Complaint Attachment" className="w-full h-auto max-h-60 object-cover transition-transform duration-700 group-hover:scale-105" />
+                      <a 
+                        href={selectedComplaint.photoUrl} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        className="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]"
+                      >
+                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center text-blue-600 shadow-2xl scale-0 group-hover:scale-100 transition-transform">
+                          <Download className="w-6 h-6" />
+                        </div>
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Modal Footer */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-white/5 flex flex-wrap gap-3">
+                <button 
+                  onClick={() => {
+                    const complaintDate = selectedComplaint.timestamp && typeof (selectedComplaint.timestamp as any).toDate === 'function' 
+                      ? (selectedComplaint.timestamp as any).toDate().toISOString().split('T')[0]
+                      : new Date().toISOString().split('T')[0];
+                    viewAllForDate(complaintDate);
+                  }}
+                  className="flex-1 bg-blue-600 text-white rounded-2xl px-6 py-3 text-sm font-black shadow-lg shadow-blue-500/30 flex items-center justify-center gap-2 hover:bg-blue-700 transition-all active:scale-95"
+                >
+                  <CalendarIcon className="w-4 h-4" />
+                  عرض كل مكالمات اليوم
+                </button>
+                <button 
+                  onClick={() => setSelectedComplaint(null)}
+                  className="px-8 py-3 rounded-2xl bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-bold border border-slate-200 dark:border-white/5 hover:bg-slate-50 transition-all"
+                >
+                  إغلاق
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

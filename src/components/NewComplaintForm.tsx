@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GOVERNORATES_LIST, GOVERNORATES_ENTITIES, COMPLAINT_SUBJECTS, CABINET_CITIES_MAP } from '../constants';
 import { addComplaint } from '../services/dataService';
-import { User, MapPin, Phone, Building2, AlertCircle, PenTool, CheckCircle2, Timer, Save, Loader2, Info } from 'lucide-react';
+import { User, MapPin, Phone, Building2, AlertCircle, PenTool, CheckCircle2, Timer, Save, Loader2, Info, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function NewComplaintForm() {
@@ -31,6 +31,8 @@ export default function NewComplaintForm() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [lastComplaintId, setLastComplaintId] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,36 +50,81 @@ export default function NewComplaintForm() {
         submissionData.hospitalType = hospitalType;
       }
       
-      await addComplaint(submissionData);
-      alert('تم تسجيل البيانات بنجاح!');
-      // Reset form instead of reload
-      setFormData({
-        callerName: '',
-        phoneNumber: '',
-        governorate: '',
-        complaintEntity: '',
-        complaintSubject: '',
-        complaintStatus: 'تم الرد',
-        callDetails: '',
-        cabinetNationalId: '',
-        cabinetCity: '',
-        cabinetAddress: '',
-        cabinetSubject: '',
-        responsibleEntity: '',
-        hospitalName: '',
-        emergencyGovernorate: '',
-        hospitalAddress: '',
-        diagnosis: '',
-        otherDiagnosis: ''
-      });
-      setIsCabinet(false);
-      setIsEmergency(false);
+      const id = await addComplaint(submissionData);
+      setLastComplaintId(id || '');
+      setSuccess(true);
+      // Form values are kept until reset manually or by starting new
     } catch (err: any) {
       alert('خطأ أثناء الحفظ: ' + err.message);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const resetForm = () => {
+    setFormData({
+      callerName: '',
+      phoneNumber: '',
+      governorate: '',
+      complaintEntity: '',
+      complaintSubject: '',
+      complaintStatus: 'تم الرد',
+      callDetails: '',
+      cabinetNationalId: '',
+      cabinetCity: '',
+      cabinetAddress: '',
+      cabinetSubject: '',
+      responsibleEntity: '',
+      hospitalName: '',
+      emergencyGovernorate: '',
+      hospitalAddress: '',
+      diagnosis: '',
+      otherDiagnosis: ''
+    });
+    setIsCabinet(false);
+    setIsEmergency(false);
+    setSuccess(false);
+  };
+
+  if (success) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="flex flex-col items-center justify-center py-20 text-center space-y-6"
+      >
+        <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center shadow-xl shadow-emerald-500/10">
+          <CheckCircle2 className="w-12 h-12" />
+        </div>
+        <div>
+          <h2 className="text-2xl font-black text-slate-800 dark:text-white">تم تسجيل المكالمة بنجاح!</h2>
+          <p className="text-slate-500 dark:text-slate-400 font-bold mt-2">تم حفظ كافة البيانات في قاعدة بيانات المركز بنجاح.</p>
+        </div>
+        <div className="flex flex-wrap gap-4 justify-center pt-6">
+          <button 
+            onClick={resetForm}
+            className="btn-primary px-8 py-3 rounded-2xl flex items-center gap-2"
+          >
+            <PenTool className="w-4 h-4" />
+            تسجيل مكالمة جديدة
+          </button>
+          <button 
+            onClick={() => {
+              // Trigger a navigation or state change to Search tab
+              // Since tabs are managed in App.tsx, we can use a custom event or a shared state if we had one.
+              // For now, let's just suggest the user to use the sidebar.
+              // Better yet, maybe navigate them?
+              window.dispatchEvent(new CustomEvent('switchTab', { detail: 'search' }));
+            }}
+            className="px-8 py-3 rounded-2xl bg-white dark:bg-slate-800 text-blue-600 font-black border border-blue-100 dark:border-white/5 flex items-center gap-2 shadow-sm"
+          >
+            <Search className="w-4 h-4" />
+            عرض مكالمات اليوم
+          </button>
+        </div>
+      </motion.div>
+    );
+  }
 
   const handleInputChange = (e: React.ChangeEvent<any>) => {
     const { name, value } = e.target;
