@@ -23,17 +23,17 @@ export default function RankingModal({ isOpen, onClose }: { isOpen: boolean, onC
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="modal-container !max-w-md flex flex-col overflow-hidden"
+        className="bg-white dark:bg-slate-900 shadow-2xl shadow-slate-300/50 dark:shadow-none rounded-[32px] border border-slate-100 dark:border-white/5 !max-w-md flex flex-col overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
-        <div className="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-yellow-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-yellow-500/20">
-              <Trophy className="w-5 h-5" />
+        <div className="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-yellow-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-yellow-500/20">
+              <Trophy className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-800 dark:text-white">ترتيب الموظفين</h2>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">إحصائيات الأداء في الشيفت الحالي</p>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white">ترتيب الموظفين</h2>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">إحصائيات الأداء في الشيفت الحالي</p>
             </div>
           </div>
           <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-all" onClick={onClose}>
@@ -51,16 +51,16 @@ export default function RankingModal({ isOpen, onClose }: { isOpen: boolean, onC
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.1 }}
-              className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${idx === 0 ? 'bg-yellow-50/50 border-yellow-200 dark:bg-yellow-500/5 dark:border-yellow-500/30' : 'bg-slate-50/50 border-slate-100 dark:bg-slate-800/30 dark:border-white/5'}`}
+              className={`flex items-center justify-between p-4 rounded-2xl border transition-all ${idx === 0 ? 'bg-yellow-50 dark:bg-yellow-500/5 border-yellow-200 dark:border-yellow-500/30' : 'bg-slate-50 dark:bg-slate-800/30 border-slate-100 dark:border-white/5'}`}
             >
               <div className="flex items-center gap-4">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm ${idx === 0 ? 'bg-yellow-500 text-white' : idx === 1 ? 'bg-slate-300 text-slate-700' : idx === 2 ? 'bg-orange-400 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}`}>
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm shadow-sm ${idx === 0 ? 'bg-yellow-500 text-white' : idx === 1 ? 'bg-slate-400 text-white' : idx === 2 ? 'bg-orange-400 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}`}>
                   {user.rank}
                 </div>
                 <div>
-                   <span className="text-sm font-black text-slate-800 dark:text-white block">{user.name}</span>
+                   <span className="text-sm font-black text-slate-900 dark:text-white block">{user.name}</span>
                    <div className="flex items-center gap-2">
-                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter shrink-0">{user.calls} مكالمة</span>
+                     <span className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter shrink-0">{user.calls} مكالمة</span>
                    </div>
                 </div>
               </div>

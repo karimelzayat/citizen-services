@@ -5,29 +5,37 @@ export default function InquiryModal({ isOpen, onClose }: { isOpen: boolean, onC
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container p-0 flex flex-col !h-[80vh] overflow-hidden" onClick={e => e.stopPropagation()}>
-        <div className="p-6 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
-          <h2 className="font-black text-2xl text-slate-800 dark:text-white">قاعدة الاستفسارات</h2>
-          <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition-all" onClick={onClose}>
+      <div className="bg-white dark:bg-slate-900 shadow-2xl shadow-slate-300/50 dark:shadow-none rounded-[32px] border border-slate-100 dark:border-white/5 p-0 flex flex-col !h-[80vh] overflow-hidden !max-w-4xl w-full" onClick={e => e.stopPropagation()}>
+        <div className="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+             <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/20">
+               <i className="fas fa-database text-xl"></i>
+             </div>
+             <div>
+               <h2 className="font-black text-2xl text-slate-900 dark:text-white">قاعدة الاستفسارات المختصرة</h2>
+               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">المعلومات النموذجية لخدمة المواطنين</p>
+             </div>
+          </div>
+          <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-all" onClick={onClose}>
             <i className="fas fa-times text-xl"></i>
           </button>
         </div>
         
-        <div className="p-6 bg-white dark:bg-slate-900">
-          <div className="glass-card p-2 flex gap-4 bg-slate-50/50 dark:bg-slate-800/30">
+        <div className="p-6 bg-white dark:bg-slate-900 border-b border-slate-50 dark:border-white/5">
+          <div className="bg-slate-50 dark:bg-slate-800/40 p-2 flex gap-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
              <div className="relative flex-1">
-               <i className="fas fa-search absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
-               <input type="text" placeholder="1. اختر الفئة المطلوبة (مثلاً: تطعيمات)..." className="form-input pr-12 border-none bg-transparent" />
+               <i className="fas fa-search absolute right-5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+               <input type="text" placeholder="ابحث في قاعدة البيانات (مثلاً: تطعيمات، تكليف، كورونا)..." className="form-input pr-12 border-none bg-transparent h-14" />
              </div>
-             <button className="btn-primary px-8">بحث</button>
+             <button className="btn-primary px-10 rounded-xl">بحث الآن</button>
           </div>
         </div>
 
-        <div className="flex-grow overflow-y-auto p-12 flex flex-col items-center justify-center">
-           <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-300 dark:text-slate-700 mb-4">
-             <i className="fas fa-database text-3xl"></i>
+        <div className="flex-grow overflow-y-auto p-12 flex flex-col items-center justify-center opacity-40">
+           <div className="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-[32px] flex items-center justify-center text-slate-300 dark:text-slate-700 mb-6">
+             <i className="fas fa-database text-4xl"></i>
            </div>
-           <p className="text-slate-500 dark:text-slate-400 font-bold">الرجاء اختيار فئة لبدء البحث.</p>
+           <p className="text-slate-500 dark:text-slate-400 font-bold text-lg">الرجاء اختيار فئة أو كتابة كلمة بحث لبدء التصفح</p>
         </div>
       </div>
     </div>

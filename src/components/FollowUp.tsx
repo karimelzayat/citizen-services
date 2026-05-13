@@ -35,17 +35,17 @@ export default function FollowUp() {
            <p className="text-slate-500 dark:text-slate-400 font-medium">متابعة دقيقة للحالات التي تتطلب إجراءات إضافية</p>
         </div>
         
-        <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-100 dark:border-white/5 transition-all duration-700">
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-100 dark:border-white/5 transition-all duration-700">
            <button 
              onClick={() => setActiveSubTab('ongoing')} 
-             className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-500 ${activeSubTab === 'ongoing' ? 'bg-blue-50 dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+             className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-500 ${activeSubTab === 'ongoing' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
            >
              <Clock className="w-4 h-4" />
              الجاري
            </button>
            <button 
              onClick={() => setActiveSubTab('completed')} 
-             className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-500 ${activeSubTab === 'completed' ? 'bg-blue-50 dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+             className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-500 ${activeSubTab === 'completed' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
            >
              <CheckCircle2 className="w-4 h-4" />
              تم المتابعة
@@ -64,11 +64,11 @@ export default function FollowUp() {
                <p className="text-slate-500 dark:text-slate-400 font-bold tracking-tight">جاري استرجاع المكالمات الجارية...</p>
             </div>
           ) : ongoingComplaints.length > 0 ? (
-            <div className="glass-card overflow-hidden">
+            <div className="bg-white dark:bg-slate-900 rounded-[28px] border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/40 dark:shadow-none overflow-hidden transition-all duration-700">
                <div className="overflow-x-auto">
                  <table className="w-full text-right border-collapse">
                    <thead>
-                     <tr className="bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-white/5">
+                     <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-white/5">
                         <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">التوقيت</th>
                         <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">المتصل</th>
                         <th className="px-6 py-5 text-xs font-black text-slate-400 uppercase tracking-widest">رقم التليفون</th>
@@ -83,7 +83,7 @@ export default function FollowUp() {
                          initial={{ opacity: 0, scale: 0.98 }}
                          animate={{ opacity: 1, scale: 1 }}
                          transition={{ delay: idx * 0.05 }}
-                         className="group hover:bg-emerald-50/30 dark:hover:bg-emerald-900/10 transition-colors"
+                         className="group hover:bg-emerald-50 dark:hover:bg-emerald-900/10 transition-colors"
                        >
                          <td className="px-6 py-5">
                             <div className="flex flex-col">
@@ -126,10 +126,10 @@ export default function FollowUp() {
             <motion.div 
                initial={{ opacity: 0, y: 20 }}
                animate={{ opacity: 1, y: 0 }}
-               className="flex flex-col items-center justify-center py-32 glass-card border-dashed space-y-6 transition-all duration-700"
+               className="flex flex-col items-center justify-center py-32 bg-white dark:bg-slate-900 rounded-[32px] border-2 border-dashed border-slate-100 dark:border-white/5 shadow-sm space-y-6 transition-all duration-700"
              >
-                <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-950/20 rounded-[32px] flex items-center justify-center transition-colors duration-500">
-                  <CheckCircle2 className="w-10 h-10 text-emerald-300 dark:text-emerald-800" />
+                <div className="w-20 h-20 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-[32px] flex items-center justify-center transition-colors duration-500">
+                  <CheckCircle2 className="w-10 h-10 text-emerald-400 dark:text-emerald-800" />
                </div>
                <div className="text-center">
                   <p className="text-2xl font-black text-slate-400 dark:text-slate-600">لا توجد مكالمات جارية</p>

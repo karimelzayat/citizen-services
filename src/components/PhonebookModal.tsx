@@ -20,19 +20,27 @@ export default function PhonebookModal({ isOpen, onClose }: { isOpen: boolean, o
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-container p-0 flex flex-col !h-[80vh] overflow-hidden" onClick={e => e.stopPropagation()}>
-        <div className="p-6 border-b border-slate-200 dark:border-white/5 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
-          <h2 className="font-black text-2xl text-slate-800 dark:text-white">دليل أرقام الهواتف</h2>
-          <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-red-50 dark:hover:bg-red-500/10 text-slate-400 hover:text-red-500 transition-all" onClick={onClose}>
-            <i className="fas fa-times text-xl"></i>
+      <div className="bg-white dark:bg-slate-900 shadow-2xl shadow-slate-300/50 dark:shadow-none rounded-[32px] border border-slate-100 dark:border-white/5 p-0 flex flex-col !h-[80vh] overflow-hidden !max-w-4xl w-full" onClick={e => e.stopPropagation()}>
+        <div className="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+             <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+               <Phone className="w-6 h-6" />
+             </div>
+             <div>
+               <h2 className="font-black text-2xl text-slate-900 dark:text-white">دليل أرقام الهواتف</h2>
+               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">قاعدة بيانات التواصل مع المديريات والجهات</p>
+             </div>
+          </div>
+          <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-all" onClick={onClose}>
+             <i className="fas fa-times text-xl"></i>
           </button>
         </div>
         
         <div className="p-6 bg-white dark:bg-slate-900">
-          <div className="glass-card p-6 flex flex-wrap gap-6 bg-slate-50/50 dark:bg-slate-800/30">
+          <div className="bg-slate-50 dark:bg-slate-800/40 p-6 flex flex-wrap gap-6 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm">
              <div className="flex-1 min-w-[200px]">
-               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">1. اختر الجهة:</label>
-               <select className="form-input" value={entity} onChange={e => setEntity(e.target.value)}>
+               <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">1. اختر الجهة:</label>
+               <select className="form-input bg-white dark:bg-slate-900 border-transparent focus:bg-white h-12" value={entity} onChange={e => setEntity(e.target.value)}>
                  <option value="">-- اختر جهة --</option>
                  <option value="المديريات">المديريات</option>
                  <option value="التأمين الصحي">التأمين الصحي</option>
@@ -40,8 +48,8 @@ export default function PhonebookModal({ isOpen, onClose }: { isOpen: boolean, o
                </select>
              </div>
              <div className="flex-1 min-w-[200px]">
-               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">2. اختر المحافظة:</label>
-               <select className="form-input" value={governorate} onChange={e => setGovernorate(e.target.value)}>
+               <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">2. اختر المحافظة:</label>
+               <select className="form-input bg-white dark:bg-slate-900 border-transparent focus:bg-white h-12" value={governorate} onChange={e => setGovernorate(e.target.value)}>
                  <option value="">-- اختر --</option>
                  <option value="القاهرة">القاهرة</option>
                  <option value="الجيزة">الجيزة</option>
@@ -55,28 +63,29 @@ export default function PhonebookModal({ isOpen, onClose }: { isOpen: boolean, o
                <button 
                 onClick={handleSearch}
                 disabled={loading}
-                className="btn-primary w-full px-12"
+                className="btn-primary w-full px-12 h-12 rounded-2xl flex items-center justify-center gap-2"
                >
-                 {loading ? 'جاري البحث...' : 'بحث'}
+                 <Search className="w-4 h-4" />
+                 {loading ? 'جاري البحث...' : 'بحث الآن'}
                </button>
              </div>
           </div>
         </div>
 
-        <div className="flex-grow overflow-y-auto p-6 space-y-4">
+        <div className="flex-grow overflow-y-auto p-6 space-y-4 custom-scrollbar">
            {results.length > 0 ? (
              results.map((res, i) => (
-               <div key={i} className="p-4 bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-white/5 flex items-center justify-between shadow-sm">
+               <div key={i} className="p-4 bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-100 dark:border-white/5 flex items-center justify-between shadow-sm group hover:border-blue-500/20 transition-all">
                  <div className="flex items-center gap-4">
-                   <div className="w-10 h-10 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center text-blue-600">
-                     <Building2 className="w-5 h-5" />
+                   <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center text-blue-600 transition-transform group-hover:scale-110">
+                     <Building2 className="w-6 h-6" />
                    </div>
                    <div>
-                     <h4 className="font-bold text-slate-800 dark:text-white">{res.name}</h4>
-                     <p className="text-xs text-slate-400">{res.entity} - {res.governorate}</p>
+                     <h4 className="font-black text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors uppercase tracking-tight">{res.name}</h4>
+                     <p className="text-xs text-slate-400 font-bold">{res.entity} - {res.governorate}</p>
                    </div>
                  </div>
-                 <a href={`tel:${res.phone}`} className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-xl text-sm font-bold border border-emerald-100">
+                 <a href={`tel:${res.phone}`} className="flex items-center gap-2 px-5 py-2.5 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-xl text-sm font-black border border-emerald-100 dark:border-emerald-900/30 hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
                     <Phone className="w-4 h-4" />
                     {res.phone}
                  </a>

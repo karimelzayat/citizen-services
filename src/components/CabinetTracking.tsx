@@ -22,44 +22,55 @@ export default function CabinetTracking() {
   );
 
   return (
-    <div className="glass-card flex flex-col mt-6 overflow-hidden relative transition-all duration-700">
-      <div className="p-4 bg-slate-50/20 dark:bg-slate-800/50 border-b border-slate-100 dark:border-white/5 flex items-center justify-between transition-colors duration-500">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600">
-            <i className="fas fa-gavel text-sm"></i>
+    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-2xl shadow-slate-200/40 dark:shadow-none rounded-[32px] flex flex-col mt-6 overflow-hidden relative transition-all duration-700">
+      <div className="p-5 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-white/5 flex items-center justify-between transition-colors duration-500">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 shadow-sm">
+            <i className="fas fa-landmark text-base"></i>
           </div>
-          <h3 className="m-0 text-sm font-black text-slate-800 dark:text-white uppercase tracking-tight">شكاوى الوزراء</h3>
+          <h3 className="m-0 text-base font-black text-slate-900 dark:text-white uppercase tracking-tight">شكاوى مجلس الوزراء</h3>
         </div>
-        <span className="text-[10px] font-black bg-red-100 text-red-700 px-2 py-0.5 rounded-full">نشط</span>
+        <div className="flex items-center gap-2">
+           <span className="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></span>
+           <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">مباشر</span>
+        </div>
       </div>
 
-      <div className="relative p-3 bg-white/50 dark:bg-transparent">
-        <i className="fas fa-search absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+      <div className="relative px-5 py-4 bg-white dark:bg-transparent">
+        <i className="fas fa-search absolute right-8 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
         <input 
           type="text" 
-          placeholder="بحث سريع..." 
-          className="form-input pr-10 py-2.5 text-xs rounded-full border border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900/50" 
+          placeholder="بحث سريع في بيانات المجلس..." 
+          className="w-full pr-10 py-3 text-[11px] rounded-2xl border border-slate-100 dark:border-white/10 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:bg-white focus:ring-4 focus:ring-blue-500/5 transition-all outline-none" 
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
-      <div className="max-h-[300px] overflow-y-auto p-3 space-y-2 custom-scrollbar">
+      <div className="max-h-[350px] overflow-y-auto px-5 pb-5 space-y-3 custom-scrollbar">
         {loading ? (
-          <p className="text-center text-[10px] font-black text-slate-400 dark:text-slate-600 py-10 uppercase tracking-widest italic">جاري جلب البيانات من المركز...</p>
+          <div className="flex flex-col items-center justify-center py-12 space-y-3">
+             <div className="w-8 h-8 border-2 border-blue-100 border-t-blue-500 rounded-full animate-spin"></div>
+             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">جاري المزامنة مع المركز...</p>
+          </div>
         ) : filtered.length > 0 ? (
           filtered.map((c) => (
-            <div key={c.id} className="p-3 bg-white dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-white/5 hover:border-red-500/20 transition-all group">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-black text-red-600">رقم المجلس: {c.cabinetNumber || 'N/A'}</span>
-                <span className="text-[9px] text-slate-400">{c.timestamp ? new Date((c.timestamp as any).toDate()).toLocaleDateString('ar-EG') : ''}</span>
+            <div key={c.id} className="p-4 bg-slate-50 dark:bg-white/5 rounded-2xl border border-slate-100 dark:border-white/5 hover:border-orange-500/30 hover:bg-white dark:hover:bg-slate-800 transition-all group cursor-pointer shadow-sm hover:shadow-lg">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[10px] font-black text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/20 px-2 py-0.5 rounded-lg border border-orange-100 dark:border-orange-900/40">#{c.cabinetNumber || 'N/A'}</span>
+                <span className="text-[9px] font-black text-slate-400 dark:text-slate-600">{c.timestamp ? new Date((c.timestamp as any).toDate()).toLocaleDateString('ar-EG') : ''}</span>
               </div>
-              <h4 className="text-xs font-bold text-slate-800 dark:text-white truncate">{c.callerName}</h4>
-              <p className="text-[10px] text-slate-500 line-clamp-1">{c.subject}</p>
+              <h4 className="text-xs font-black text-slate-900 dark:text-white truncate group-hover:text-orange-600 transition-colors uppercase">{c.callerName}</h4>
+              <p className="text-[10px] font-bold text-slate-500 dark:text-slate-500 line-clamp-1 mt-1">{c.subject}</p>
             </div>
           ))
         ) : (
-          <p className="text-center text-[10px] font-black text-slate-400 py-10 uppercase tracking-widest italic">لا توجد شكاوى مجلس وزراء مسجلة</p>
+          <div className="text-center py-12 flex flex-col items-center">
+             <div className="w-12 h-12 bg-slate-50 dark:bg-slate-900/50 rounded-full flex items-center justify-center text-slate-200 dark:text-slate-800 mb-2">
+                <i className="fas fa-folder-open text-xl"></i>
+             </div>
+             <p className="text-[10px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest italic">لا توجد شكاوى مسجلة</p>
+          </div>
         )}
       </div>
     </div>

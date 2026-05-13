@@ -30,8 +30,8 @@ export default function InquiryDatabase() {
   );
 
   return (
-    <div className="glass-card flex flex-col h-[500px] hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-700">
-      <div className="p-5 border-b border-slate-100 dark:border-white/5 bg-slate-50/10 dark:bg-slate-800/30 flex items-center justify-between transition-colors duration-500">
+    <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 flex flex-col h-[500px] shadow-xl shadow-slate-200/40 dark:shadow-none rounded-[24px] hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-700 overflow-hidden">
+      <div className="p-5 border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-800/30 flex items-center justify-between transition-colors duration-500">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center">
             <MessageSquare className="w-5 h-5" />
@@ -55,14 +55,14 @@ export default function InquiryDatabase() {
           <input 
             type="text" 
             placeholder="اسأل الزملاء..." 
-            className="form-input pr-12 h-12 text-sm" 
+            className="form-input pr-12 h-12 text-sm bg-slate-50 dark:bg-slate-800/50 border-transparent transition-all" 
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handlePost()}
           />
           <button 
             onClick={handlePost} 
-            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center hover:bg-blue-700 transition-all active:scale-90"
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center hover:bg-blue-700 shadow-md shadow-blue-500/20 transition-all active:scale-90"
           >
             <Send className="w-4 h-4" />
           </button>
@@ -89,7 +89,7 @@ export default function InquiryDatabase() {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: idx * 0.05 }}
-              className="group p-4 bg-white dark:bg-slate-900/60 border border-slate-100 dark:border-white/5 rounded-2xl hover:border-blue-500/30 transition-all shadow-sm"
+              className="group p-4 bg-slate-50/50 dark:bg-slate-900/60 border border-slate-100 dark:border-white/5 rounded-2xl hover:border-blue-500/30 transition-all shadow-sm"
             >
               <div className="flex justify-between items-start mb-2">
                  <span className="font-black text-xs text-slate-800 dark:text-slate-200 leading-relaxed block flex-1">{inquiry.question}</span>

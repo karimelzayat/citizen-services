@@ -59,16 +59,16 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="glass-card p-8">
-              <div className="space-y-8">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/40 dark:shadow-none p-10 rounded-[40px] transition-all duration-700">
+              <div className="space-y-10">
                 {/* Work Type Selection */}
-                <div className="space-y-4">
-                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300 uppercase tracking-widest flex items-center gap-2">
+                <div className="space-y-6">
+                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
                      <Info className="w-4 h-4 text-blue-600" />
-                     نوع العمل المطلوب تسجيله
+                     تصنيف العمل المطلوب تسجيله
                   </label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {workTypes.map(type => {
                       const Icon = type.icon;
                       const isActive = workType === type.id;
@@ -77,35 +77,35 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
                           key={type.id}
                           type="button"
                           onClick={() => setWorkType(type.id)}
-                          className={`flex items-center gap-4 p-5 rounded-3xl border-2 transition-all duration-700 text-right ${
+                          className={`flex items-center gap-5 p-6 rounded-[24px] border-2 transition-all duration-700 text-right ${
                             isActive 
-                              ? `bg-${type.color}-500 border-${type.color}-500 text-white shadow-xl shadow-${type.color}-500/20`
-                              : 'bg-transparent border-slate-200 dark:border-white/5 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-white/10'
+                              ? `bg-${type.color}-500 border-${type.color}-500 text-white shadow-2xl shadow-${type.color}-500/30 font-black`
+                              : 'bg-slate-50 dark:bg-slate-800/40 border-transparent dark:border-white/5 text-slate-500 hover:border-slate-300 dark:hover:border-white/10 font-bold'
                           }`}
                         >
-                          <div className={`p-3 rounded-2xl transition-all duration-500 ${isActive ? 'bg-white/20' : `bg-${type.color}-500/10 text-${type.color}-500 dark:text-${type.color}-400`}`}>
-                            <Icon className="w-6 h-6" />
+                          <div className={`p-4 rounded-2xl transition-all duration-500 shadow-sm ${isActive ? 'bg-white/20' : `bg-white dark:bg-slate-900 text-${type.color}-600 dark:text-${type.color}-400`}`}>
+                            <Icon className="w-7 h-7" />
                           </div>
-                          <span className="font-black text-lg">{type.label}</span>
+                          <span className="text-xl">{type.label}</span>
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                       <Hash className="w-4 h-4 text-blue-600" />
-                       رقم الشكوى
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                  <div className="space-y-3">
+                    <label className="text-xs font-black text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                       <Hash className="w-5 h-5 text-blue-600" />
+                       رقم الشكوى بالنظام
                     </label>
                     <input 
                       type="text" 
                       value={formData.complaintNo} 
                       onChange={(e) => setFormData({...formData, complaintNo: e.target.value})} 
                       required 
-                      className="form-input font-mono text-xl tracking-widest uppercase" 
-                      placeholder="XXXX-XXXX"
+                      className="form-input font-mono text-2xl h-16 tracking-widest bg-slate-50 dark:bg-slate-800 border-transparent transition-all" 
+                      placeholder="0000-0000"
                     />
                   </div>
 
@@ -119,7 +119,7 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
                         value={formData.governorate} 
                         onChange={(e) => setFormData({...formData, governorate: e.target.value})} 
                         required 
-                        className="form-input appearance-none"
+                        className="form-input appearance-none bg-slate-50 dark:bg-slate-800 border-transparent transition-all"
                       >
                         <option value="">اختر المحافظة...</option>
                         {GOVERNORATES_LIST.map(g => <option key={g} value={g}>{g}</option>)}
@@ -138,7 +138,7 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
                         value={formData.registrant} 
                         onChange={(e) => setFormData({...formData, registrant: e.target.value})} 
                         required 
-                        className="form-input"
+                        className="form-input bg-slate-50 dark:bg-slate-800 border-transparent transition-all"
                         placeholder="اسم الموظف"
                       />
                     </div>
@@ -157,19 +157,19 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
                       <div className="space-y-4">
                         <label className="text-sm font-bold text-slate-700 dark:text-slate-300">موقف الشكوى الحالي</label>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           <button 
-                             type="button" 
-                             onClick={() => setFormData({...formData, status: 'تم الرد'})}
-                             className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all duration-500 ${formData.status === 'تم الرد' ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20 font-black' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 text-slate-500 font-bold'}`}
-                           >
-                             <CheckCircle2 className="w-5 h-5" />
-                             <span>تم الرد</span>
-                           </button>
-                           <button 
-                             type="button" 
-                             onClick={() => setFormData({...formData, status: 'جاري المتابعة'})}
-                             className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all duration-500 ${formData.status === 'جاري المتابعة' ? 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-500/20 font-black' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 text-slate-500 font-bold'}`}
-                           >
+                            <button 
+                              type="button" 
+                              onClick={() => setFormData({...formData, status: 'تم الرد'})}
+                              className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all duration-500 shadow-sm ${formData.status === 'تم الرد' ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20 font-black' : 'bg-slate-50 dark:bg-slate-900 border-transparent dark:border-white/5 text-slate-500 font-bold'}`}
+                            >
+                              <CheckCircle2 className="w-5 h-5" />
+                              <span>تم الرد</span>
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => setFormData({...formData, status: 'جاري المتابعة'})}
+                              className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all duration-500 shadow-sm ${formData.status === 'جاري المتابعة' ? 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-500/20 font-black' : 'bg-slate-50 dark:bg-slate-900 border-transparent dark:border-white/5 text-slate-500 font-bold'}`}
+                            >
                              <Clock className="w-5 h-5" />
                              <span>جاري المتابعة / استعجال</span>
                            </button>
@@ -182,7 +182,7 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
                           rows={4} 
                           value={formData.notes} 
                           onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                          className="form-input min-h-[120px] resize-none"
+                          className="form-input min-h-[120px] resize-none bg-slate-50 dark:bg-slate-800 border-transparent transition-all"
                           placeholder="اكتب أي ملاحظات أو تفاصيل إضافية هنا..."
                         ></textarea>
                       </div>
@@ -211,14 +211,14 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
             </div>
           </div>
 
-           <div className="glass-card p-8">
+           <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/40 dark:shadow-none p-8 rounded-[32px] transition-all duration-700">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                  <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
                        <Calendar className="w-4 h-4 text-blue-600" />
                        الفترة الزمنية
                     </label>
-                    <select className="form-input appearance-none">
+                    <select className="form-input appearance-none bg-slate-50 dark:bg-slate-800 border-transparent transition-all">
                       <option value="today">اليوم</option>
                       <option value="month" selected>هذا الشهر</option>
                       <option value="custom">فترة مخصصة...</option>
@@ -226,11 +226,11 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
                  </div>
                  <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700 dark:text-slate-300">من تاريخ</label>
-                    <input type="date" className="form-input" />
+                    <input type="date" className="form-input bg-slate-50 dark:bg-slate-800 border-transparent transition-all" />
                  </div>
                  <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700 dark:text-slate-300">إلى تاريخ</label>
-                    <input type="date" className="form-input" />
+                    <input type="date" className="form-input bg-slate-50 dark:bg-slate-800 border-transparent transition-all" />
                  </div>
               </div>
               <div className="mt-8">

@@ -20,6 +20,7 @@ import InquiryModal from './components/InquiryModal';
 import HotlineTreeModal from './components/HotlineTreeModal';
 import RankingModal from './components/RankingModal';
 import { Home, PlusCircle, Search, Settings, FileText, Bell, GitBranch, Trophy, Menu, X, ChevronRight, Hash, Sun, Moon } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 enum ViewMode {
   Landing = 'landing',
@@ -33,7 +34,10 @@ export default function App() {
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.Landing);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    return saved ? saved === 'dark' : false;
+  });
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
   const [isPhonebookModalOpen, setIsPhonebookModalOpen] = useState(false);
   const [isHotlineTreeOpen, setIsHotlineTreeOpen] = useState(false);
@@ -99,12 +103,17 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    const root = document.documentElement;
     if (isDarkMode) {
-      document.documentElement.classList.add('dark');
+      root.classList.add('dark');
+      localStorage.setItem('theme', 'dark');
     } else {
-      document.documentElement.classList.remove('dark');
+      root.classList.remove('dark');
+      localStorage.setItem('theme', 'light');
     }
   }, [isDarkMode]);
+
+  // Sync isDarkMode with system preference if needed, but here we use manual toggle
 
   if (loading) {
     return (
@@ -142,8 +151,18 @@ export default function App() {
 
   if (viewMode === ViewMode.Landing) {
     return (
-      <div className="min-h-screen bg-white dark:bg-slate-950 transition-colors duration-300 flex items-center justify-center p-6">
-        <div className="w-full max-w-5xl">
+      <div className="min-h-screen bg-white dark:bg-slate-950 transition-colors duration-700 flex items-center justify-center p-6 relative overflow-hidden">
+        {/* Theme Toggle for Landing */}
+        <div className="absolute top-8 left-8 z-50">
+          <button 
+            onClick={() => setIsDarkMode(!isDarkMode)} 
+            className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-100 dark:border-white/10 flex items-center justify-center text-slate-800 dark:text-white hover:scale-110 transition-all active:scale-95"
+          >
+            {isDarkMode ? <Sun className="w-6 h-6 text-amber-500" /> : <Moon className="w-6 h-6 text-blue-600" />}
+          </button>
+        </div>
+
+        <div className="w-full max-w-5xl relative z-10">
           <div className="text-center mb-16 space-y-4 animate-slide-in-down">
              <div className="inline-block px-4 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold tracking-widest uppercase mb-2">منظومة خدمة المواطنين الذكية</div>
              <h1 className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter leading-tight">الخط الساخن لخدمة المواطنين</h1>
@@ -230,75 +249,96 @@ export default function App() {
         </div>
       )}
 
-      <main className="flex-1 flex flex-col min-w-0 transition-colors duration-700">
+      <main className="flex-1 flex flex-col min-w-0 transition-all duration-700 bg-slate-50 dark:bg-slate-950">
         {/* Top Header / Welcome Bar */}
-        <header className="h-16 flex items-center justify-between px-4 md:px-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border-b border-slate-100 dark:border-white/5 sticky top-0 z-40 transition-all duration-700">
-           <div className="flex items-center gap-3">
+        <header className="h-20 flex items-center justify-between px-6 md:px-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border-b border-slate-200/60 dark:border-white/5 sticky top-0 z-40 transition-all duration-700">
+           <div className="flex items-center gap-4">
              <button 
                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-               className="lg:hidden w-9 h-9 rounded-xl bg-slate-50 dark:bg-slate-800/50 flex items-center justify-center text-slate-500 dark:text-slate-400"
+               className="lg:hidden w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-200 transition-all shadow-sm"
              >
-               {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+               {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
              </button>
 
              <div className="flex flex-col">
-               <div className="flex items-center gap-2 text-slate-900 dark:text-white font-black text-sm md:text-base">
-                  <span className="truncate max-w-[120px] md:max-w-[200px]">{user?.email?.split('@')[0]}</span>
-                  <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-[9px] tracking-tight">{permissions?.role}</span>
+               <div className="flex items-center gap-3 text-slate-950 dark:text-white font-black text-base md:text-lg tracking-tight">
+                  <span className="truncate max-w-[150px] md:max-w-none">{user?.email?.split('@')[0]}</span>
+                  <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-wider border border-blue-100 dark:border-blue-800/30">{permissions?.role}</span>
                </div>
              </div>
            </div>
 
-           <div className="flex items-center gap-2 md:gap-4">
+           <div className="flex items-center gap-3 md:gap-6">
               {/* Stats & Icons */}
-              <div className="hidden sm:flex items-center gap-3">
+              <div className="hidden sm:flex items-center gap-4 bg-slate-50 dark:bg-slate-800/40 px-5 py-2.5 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
                 <div className="flex flex-col items-end">
-                   <span className="text-[8px] font-black text-slate-400 uppercase tracking-tighter">مكالماتك اليوم</span>
-                   <span className="text-sm font-black text-blue-600">42</span>
+                   <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-1">مكالماتك اليوم</span>
+                   <span className="text-base font-black text-blue-600 leading-none">42</span>
                 </div>
-                <div className="w-8 h-8 bg-blue-50 dark:bg-blue-900/20 rounded-xl flex items-center justify-center">
-                   <Hash className="w-3.5 h-3.5 text-blue-600" />
+                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                   <Hash className="w-5 h-5 text-white" />
                 </div>
               </div>
 
-              <div className="w-px h-5 bg-slate-100 dark:bg-white/10 hidden sm:block"></div>
+              <div className="w-px h-8 bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2">
                  <button 
                    onClick={() => setIsHotlineTreeOpen(true)}
                    className="nav-tool-btn group" 
                    title="شجرة الخط الساخن"
                  >
-                   <GitBranch className="w-3.5 h-3.5 text-slate-400 group-hover:text-amber-500" />
+                   <GitBranch className="w-4 h-4 text-slate-500 group-hover:text-blue-600 transition-colors" />
                  </button>
                  <button 
                    onClick={() => setIsRankingModalOpen(true)}
                    className="nav-tool-btn group" 
                    title="ترتيب الموظفين"
                  >
-                   <Trophy className="w-3.5 h-3.5 text-slate-400 group-hover:text-yellow-500" />
+                   <Trophy className="w-4 h-4 text-slate-500 group-hover:text-amber-500 transition-colors" />
                  </button>
-                 <button className="nav-tool-btn group relative" title="الإشعارات">
-                   <Bell className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-500" />
-                   <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+                 <button className="nav-tool-btn group" title="الإشعارات">
+                   <Bell className="w-4 h-4 text-slate-500 group-hover:text-blue-600 transition-colors" />
+                   <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white dark:border-slate-800 animate-pulse"></span>
                  </button>
                  
-                 <div className="w-px h-5 bg-slate-100 dark:bg-white/10 hidden xs:block"></div>
+                 <div className="w-px h-8 bg-slate-200 dark:bg-white/10 mx-1 hidden xs:block"></div>
 
                  <button 
                    onClick={() => setIsDarkMode(!isDarkMode)} 
-                   className="w-8 h-8 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-500 dark:text-slate-400 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-700 hover:scale-105 transition-all shadow-sm"
+                   className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/80 text-slate-950 dark:text-white flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all shadow-md border border-slate-200 dark:border-white/10 group overflow-hidden"
                  >
-                   <i className={`fas ${isDarkMode ? 'fa-sun text-amber-500' : 'fa-moon text-blue-600'} text-xs`}></i>
+                    <div className="relative w-6 h-6 flex items-center justify-center">
+                       <motion.div
+                         initial={false}
+                         animate={{ 
+                           y: isDarkMode ? -30 : 0,
+                           opacity: isDarkMode ? 0 : 1
+                         }}
+                         className="absolute"
+                       >
+                         <Moon className="w-6 h-6 text-blue-600" />
+                       </motion.div>
+                       <motion.div
+                         initial={false}
+                         animate={{ 
+                           y: isDarkMode ? 0 : 30,
+                           opacity: isDarkMode ? 1 : 0
+                         }}
+                         className="absolute"
+                       >
+                         <Sun className="w-6 h-6 text-amber-500" />
+                       </motion.div>
+                    </div>
                  </button>
               </div>
            </div>
         </header>
 
         {/* Content Area */}
-        <div className="p-3 md:p-6 flex-1">
-          <div className="max-w-7xl mx-auto flex flex-col xl:flex-row gap-8">
-            <div className="flex-1 min-w-0 md:bg-white/40 dark:md:bg-transparent rounded-[32px] md:p-6 transition-colors duration-700">
+        <div className="p-4 md:p-10 flex-1 bg-slate-50/50 dark:bg-transparent transition-colors duration-700">
+          <div className="max-w-[1600px] mx-auto flex flex-col xl:flex-row gap-10">
+            <div className="flex-1 min-w-0 bg-white dark:bg-slate-900/30 backdrop-blur-md rounded-[48px] p-8 md:p-12 transition-all duration-700 border border-slate-200/60 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none">
                {viewMode === ViewMode.Hotline ? renderContent() : <AdminView activeSubTab={adminSubTab} />}
             </div>
 
@@ -347,40 +387,40 @@ export default function App() {
 function AdminSidebar({ activeSubTab, onSubTabChange, onReturnHome }: { activeSubTab: string, onSubTabChange: (t: string) => void, onReturnHome: () => void }) {
   return (
     <div className="bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 h-screen sticky top-0 w-full lg:w-[300px] flex flex-col shadow-2xl z-50 overflow-hidden border-l border-slate-200 dark:border-white/5 font-bold transition-all duration-700">
-      <div className="h-16 flex items-center px-4 border-b border-slate-200 dark:border-white/5 bg-white dark:bg-slate-900/50 backdrop-blur-md transition-all duration-700">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-red-600 rounded-lg flex items-center justify-center shadow-lg shadow-red-500/20">
+      <div className="h-16 flex items-center px-4 border-b border-slate-100 dark:border-white/5 bg-white dark:bg-slate-900 transition-all duration-700">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-red-600 rounded-xl flex items-center justify-center shadow-lg shadow-red-500/20">
             <Settings className="w-5 h-5 text-white" />
           </div>
-          <span className="font-black text-slate-900 dark:text-white tracking-wide text-lg">لوحة الإدارة</span>
+          <span className="font-black text-slate-900 dark:text-white tracking-tight text-lg">لوحة الإدارة</span>
         </div>
       </div>
       
-      <div className="p-4 space-y-2">
+      <div className="p-4 space-y-2 bg-white dark:bg-slate-900/50 border-b border-slate-100 dark:border-white/5">
         <button 
           onClick={onReturnHome}
-          className="w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-300 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-white/5 hover:border-red-500/30 overflow-hidden relative"
+          className="w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-300 bg-slate-50 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 border border-slate-100 dark:border-white/5 hover:border-red-500/30 overflow-hidden relative shadow-sm"
         >
           <Home className="w-5 h-5 text-slate-400 group-hover:text-red-500" />
-          <span className="font-semibold text-sm text-slate-700 dark:text-slate-300">العودة للرئيسية</span>
+          <span className="font-bold text-sm text-slate-600 dark:text-slate-300">العودة للرئيسية</span>
           <div className="absolute right-0 top-0 h-full w-1 bg-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
         </button>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-2 space-y-6">
-        <div className="space-y-1">
-          <div className="px-2 mb-2 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500">العمليات الإدارية</div>
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-8">
+        <div className="space-y-2">
+          <div className="px-2 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">العمليات الإدارية</div>
           <ul className="space-y-1">
             <li>
               <button
                 onClick={() => onSubTabChange('register')}
                 className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 
                   ${activeSubTab === 'register' 
-                    ? 'bg-red-600/10 text-red-600 dark:text-red-400 border border-red-500/10 dark:border-red-500/20' 
-                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200 border border-transparent'}`}
+                    ? 'bg-red-600 text-white shadow-lg shadow-red-500/20' 
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'}`}
               >
-                <PlusCircle className={`w-5 h-5 transition-transform group-hover:scale-110 ${activeSubTab === 'register' ? 'text-red-600 dark:text-red-400' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`} />
-                <span className="font-medium text-sm">تسجيل شكوى</span>
+                <PlusCircle className={`w-5 h-5 transition-transform group-hover:scale-110 ${activeSubTab === 'register' ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
+                <span className="font-bold text-sm">تسجيل شكوى</span>
               </button>
             </li>
             <li>
@@ -388,11 +428,11 @@ function AdminSidebar({ activeSubTab, onSubTabChange, onReturnHome }: { activeSu
                 onClick={() => onSubTabChange('search')}
                 className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 
                   ${activeSubTab === 'search' 
-                    ? 'bg-red-600/10 text-red-600 dark:text-red-400 border border-red-500/10 dark:border-red-500/20' 
-                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200 border border-transparent'}`}
+                    ? 'bg-red-600 text-white shadow-lg shadow-red-500/20' 
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'}`}
               >
-                <Search className={`w-5 h-5 transition-transform group-hover:scale-110 ${activeSubTab === 'search' ? 'text-red-600 dark:text-red-400' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`} />
-                <span className="font-medium text-sm">البحث</span>
+                <Search className={`w-5 h-5 transition-transform group-hover:scale-110 ${activeSubTab === 'search' ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
+                <span className="font-bold text-sm">البحث</span>
               </button>
             </li>
             <li>
@@ -400,11 +440,11 @@ function AdminSidebar({ activeSubTab, onSubTabChange, onReturnHome }: { activeSu
                 onClick={() => onSubTabChange('reports')}
                 className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 
                   ${activeSubTab === 'reports' 
-                    ? 'bg-red-600/10 text-red-600 dark:text-red-400 border border-red-500/10 dark:border-red-500/20' 
-                    : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200 border border-transparent'}`}
+                    ? 'bg-red-600 text-white shadow-lg shadow-red-500/20' 
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'}`}
               >
-                <FileText className={`w-5 h-5 transition-transform group-hover:scale-110 ${activeSubTab === 'reports' ? 'text-red-600 dark:text-red-400' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-300'}`} />
-                <span className="font-medium text-sm">التقارير</span>
+                <FileText className={`w-5 h-5 transition-transform group-hover:scale-110 ${activeSubTab === 'reports' ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
+                <span className="font-bold text-sm">التقارير</span>
               </button>
             </li>
           </ul>

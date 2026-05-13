@@ -78,18 +78,18 @@ export default function HotlineTreeModal({ isOpen, onClose }: { isOpen: boolean,
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="modal-container !max-w-3xl !h-[80vh] flex flex-col"
+        className="bg-white dark:bg-slate-900 shadow-2xl shadow-slate-300/50 dark:shadow-none rounded-[32px] border border-slate-100 dark:border-white/5 !max-w-3xl !h-[80vh] flex flex-col overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-slate-900/50 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-amber-500/20">
-              <Building2 className="w-5 h-5" />
+        <div className="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-amber-500/20">
+              <Building2 className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-800 dark:text-white">شجرة الخط الساخن</h2>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">توجيه المكالمات وتوزيع الاختصاصات</p>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white">شجرة الخط الساخن</h2>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">توجيه المكالمات وتوزيع الاختصاصات</p>
             </div>
           </div>
           <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-all" onClick={onClose}>
@@ -97,14 +97,13 @@ export default function HotlineTreeModal({ isOpen, onClose }: { isOpen: boolean,
           </button>
         </div>
 
-        {/* Search & Breadcrumbs */}
-        <div className="p-6 space-y-4 shadow-sm relative z-10 bg-white dark:bg-slate-900">
+        <div className="p-6 space-y-4 shadow-sm relative z-10 bg-white dark:bg-slate-900 border-b border-slate-50 dark:border-white/5">
           <div className="relative group">
             <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-amber-500 transition-colors" />
             <input 
               type="text" 
               placeholder="ابحث في الشجرة (مثال: معامل، تطعيمات)..." 
-              className="form-input pr-12 h-12 bg-slate-50 dark:bg-slate-800/40 border-slate-100 dark:border-white/5" 
+              className="form-input pr-12 h-14 bg-slate-50 dark:bg-slate-800/40 border-transparent focus:bg-white transition-all rounded-2xl" 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -149,15 +148,15 @@ export default function HotlineTreeModal({ isOpen, onClose }: { isOpen: boolean,
                   exit={{ opacity: 0, scale: 0.98, x: -10 }}
                   transition={{ delay: idx * 0.03 }}
                   onClick={() => node.children ? setPath([...path, node]) : null}
-                  className={`group glass-card p-4 flex items-center justify-between cursor-pointer border hover:border-amber-500/30 transition-all ${node.children ? 'hover:bg-amber-50/30 dark:hover:bg-amber-500/5' : ''}`}
+                  className={`group bg-slate-50/50 dark:bg-slate-900/60 p-4 rounded-2xl flex items-center justify-between cursor-pointer border border-slate-100 dark:border-white/5 hover:border-amber-500/30 transition-all ${node.children ? 'hover:bg-amber-50/30 dark:hover:bg-amber-500/5' : ''}`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${node.children ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 group-hover:scale-110' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'}`}>
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${node.children ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 group-hover:scale-110' : 'bg-white dark:bg-slate-800 text-slate-400 border border-slate-100 dark:border-white/5'}`}>
                       {node.children ? <Building2 className="w-5 h-5" /> : <MapPin className="w-5 h-5" />}
                     </div>
                     <div>
-                      <h4 className="text-sm font-black text-slate-800 dark:text-white group-hover:text-amber-600 transition-colors">{node.label}</h4>
-                      {node.info && <p className="text-[10px] text-slate-400 font-medium mt-0.5">{node.info}</p>}
+                      <h4 className="text-sm font-black text-slate-900 dark:text-white group-hover:text-amber-600 transition-colors">{node.label}</h4>
+                      {node.info && <p className="text-[10px] text-slate-500 font-medium mt-0.5">{node.info}</p>}
                     </div>
                   </div>
                   

@@ -39,23 +39,22 @@ export default function Reports() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Search Config */}
-        <div className="lg:col-span-1 glass-card p-8 h-fit space-y-8">
+        <div className="lg:col-span-1 bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/40 dark:shadow-none p-8 h-fit space-y-8 rounded-[32px] border border-slate-100 dark:border-white/5 transition-all duration-700">
            <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center">
                  <Calendar className="w-5 h-5" />
               </div>
               <h3 className="text-lg font-black text-slate-900 dark:text-white">إعدادات النطاق</h3>
            </div>
-
+ 
            <form className="space-y-6">
               <div className="space-y-2">
                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">تاريخ البدء</label>
-                 <input type="date" required className="form-input" />
+                 <input type="date" required className="form-input bg-slate-50 dark:bg-slate-800 border-transparent transition-all" />
               </div>
               <div className="space-y-2">
                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">تاريخ الانتهاء</label>
-                 <input type="date" required className="form-input" />
+                 <input type="date" required className="form-input bg-slate-50 dark:bg-slate-800 border-transparent transition-all" />
               </div>
               
               <button 
@@ -74,7 +73,7 @@ export default function Reports() {
         </div>
 
         {/* Live Preview / Info Area */}
-        <div className="lg:col-span-2 glass-card p-12 flex flex-col items-center justify-center space-y-8 min-h-[400px] transition-all duration-700">
+        <div className="lg:col-span-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-[32px] shadow-xl shadow-slate-200/40 dark:shadow-none p-12 flex flex-col items-center justify-center space-y-8 min-h-[400px] transition-all duration-700">
            <motion.div 
              key={activeSubTab}
              initial={{ opacity: 0, scale: 0.9 }}
@@ -108,7 +107,7 @@ export default function Reports() {
          </div>
          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {[1, 2, 3].map(i => (
-              <div key={i} className="glass-card p-6 flex items-center justify-between group cursor-pointer hover:border-blue-500/30 transition-all">
+              <div key={i} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-sm rounded-[24px] p-6 flex items-center justify-between group cursor-pointer hover:border-blue-500/30 transition-all">
                  <div className="flex items-center gap-4">
                     <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
                        <FileText className="w-5 h-5 text-slate-400 group-hover:text-blue-500 transition-colors" />
