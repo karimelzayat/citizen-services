@@ -71,13 +71,19 @@ export async function getUserPermissions(email: string): Promise<UserPermissions
   if (!normalizedEmail) return { role: "Guest", ...ROLE_CAPABILITIES["Guest"] };
   
   try {
+    // Try to get dynamic role capabilities first
+    const snapshotRoles = await getDocs(collection(db, 'role_capabilities'));
+    const dynamicRoles: any = {};
+    snapshotRoles.docs.forEach(d => { dynamicRoles[d.id] = d.data(); });
+    const effectiveRoles = Object.keys(dynamicRoles).length > 0 ? dynamicRoles : ROLE_CAPABILITIES;
+
     const q = query(collection(db, 'user_permissions'), where('email', '==', normalizedEmail));
     const snapshot = await getDocs(q);
     
     if (!snapshot.empty) {
       const data = snapshot.docs[0].data();
       const role = data.role as any;
-      return { role, ...(ROLE_CAPABILITIES[role as keyof typeof ROLE_CAPABILITIES] || ROLE_CAPABILITIES["Guest"]) };
+      return { role, ...(effectiveRoles[role as keyof typeof effectiveRoles] || effectiveRoles["Guest"]) };
     }
   } catch (e) {
     console.error("Firebase error checking permissions", e);
@@ -378,6 +384,67 @@ export async function getUserRanking() {
 }
 
 // Dashboard Stats
+// User Management
+export async function getAllUsers() {
+  try {
+    const snapshot = await getDocs(collection(db, 'user_permissions'));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (e) {
+    handleFirestoreError(e, OperationType.LIST, 'user_permissions');
+    return [];
+  }
+}
+
+export async function updateUserPermissions(userId: string, data: any) {
+  try {
+    await updateDoc(doc(db, 'user_permissions', userId), sanitize(data));
+  } catch (e) {
+    handleFirestoreError(e, OperationType.UPDATE, `user_permissions/${userId}`);
+  }
+}
+
+export async function addUserPermission(email: string, role: string) {
+  const normalizedEmail = email.toLowerCase();
+  try {
+    await addDoc(collection(db, 'user_permissions'), sanitize({
+      email: normalizedEmail,
+      role: role,
+      addedAt: serverTimestamp()
+    }));
+  } catch (e) {
+    handleFirestoreError(e, OperationType.CREATE, 'user_permissions');
+  }
+}
+
+export async function deleteUserPermission(userId: string) {
+  try {
+    await deleteDoc(doc(db, 'user_permissions', userId));
+  } catch (e) {
+    handleFirestoreError(e, OperationType.DELETE, `user_permissions/${userId}`);
+  }
+}
+
+export async function getRoleCapabilities() {
+  try {
+    const snapshot = await getDocs(collection(db, 'role_capabilities'));
+    const data: any = {};
+    snapshot.docs.forEach(doc => {
+      data[doc.id] = doc.data();
+    });
+    return data;
+  } catch (e) {
+    return ROLE_CAPABILITIES;
+  }
+}
+
+export async function updateRoleCapabilities(role: string, capabilities: any) {
+  try {
+    await setDoc(doc(db, 'role_capabilities', role), sanitize(capabilities));
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, `role_capabilities/${role}`);
+  }
+}
+
 export async function getDashboardStats() {
   try {
     const colRef = collection(db, 'complaints');

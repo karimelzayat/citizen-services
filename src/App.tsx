@@ -15,6 +15,7 @@ import FollowUp from './components/FollowUp';
 import Reports from './components/Reports';
 import CabinetTracking from './components/CabinetTracking';
 import AdminView from './components/AdminView';
+import SettingsView from './components/SettingsView';
 import PhonebookModal from './components/PhonebookModal';
 import InquiryModal from './components/InquiryModal';
 import HotlineTreeModal from './components/HotlineTreeModal';
@@ -142,6 +143,7 @@ export default function App() {
             case 'schedulesTab': return <Schedules />;
             case 'reportsTab': return <Reports />;
             case 'faqTab': return <FAQ />;
+            case 'settingsTab': return <SettingsView />;
             default: return <Dashboard />;
           }
         })()}

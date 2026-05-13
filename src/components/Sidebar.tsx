@@ -14,7 +14,8 @@ import {
   Menu,
   ChevronDown,
   Briefcase,
-  Layers
+  Layers,
+  Settings
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -68,6 +69,12 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
         { id: 'inquiryButton', label: 'الاستفسار عن', icon: HelpCircle, show: true },
         { id: 'phonebookButton', label: 'دليل الهاتف', icon: Contact, show: true },
         { id: 'faqTab', label: 'دليل الأسئلة (FAQ)', icon: BookOpen, show: true },
+      ]
+    },
+    {
+      title: 'النظام',
+      items: [
+        { id: 'settingsTab', label: 'إعدادات المنظومة', icon: Settings, show: permissions?.role === 'Admin' },
       ]
     }
   ];
