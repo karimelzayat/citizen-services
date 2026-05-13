@@ -12,15 +12,15 @@ export default function Reports() {
   ];
 
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-           <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">مركز التقارير</h2>
-           <p className="text-slate-500 dark:text-slate-400 font-medium">توليد تقارير إحصائية وتحليلية شاملة</p>
+           <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">مركز التقارير</h2>
+           <p className="text-slate-500 dark:text-slate-400 text-[10px] font-medium">توليد تقارير إحصائية وتحليلية شاملة</p>
         </div>
         
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-white/5 transition-all duration-700">
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-200 dark:border-white/5 transition-all duration-700">
            {tabs.map(tab => {
              const Icon = tab.icon;
              const isActive = activeSubTab === tab.id;
@@ -28,9 +28,9 @@ export default function Reports() {
                <button 
                  key={tab.id}
                  onClick={() => setActiveSubTab(tab.id)} 
-                 className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all duration-500 ${isActive ? `bg-white dark:bg-slate-700 text-slate-900 dark:text-${tab.color}-400 shadow-sm` : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                 className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-500 ${isActive ? `bg-white dark:bg-slate-700 text-slate-900 dark:text-${tab.color}-400 shadow-sm` : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                >
-                 <Icon className="w-4 h-4" />
+                 <Icon className="w-3.5 h-3.5" />
                  <span className="hidden sm:inline">{tab.label}</span>
                </button>
              );
@@ -38,22 +38,22 @@ export default function Reports() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/40 dark:shadow-none p-8 h-fit space-y-8 rounded-[32px] border border-slate-100 dark:border-white/5 transition-all duration-700">
-           <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center">
-                 <Calendar className="w-5 h-5" />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1 bg-white dark:bg-slate-900 shadow-xl shadow-slate-200/40 dark:shadow-none p-6 h-fit space-y-6 rounded-[24px] border border-slate-100 dark:border-white/5 transition-all duration-700">
+           <div className="flex items-center gap-2">
+              <div className="w-9 h-9 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl flex items-center justify-center">
+                 <Calendar className="w-4 h-4" />
               </div>
-              <h3 className="text-lg font-black text-slate-900 dark:text-white">إعدادات النطاق</h3>
+              <h3 className="text-base font-black text-slate-900 dark:text-white">إعدادات النطاق</h3>
            </div>
  
-           <form className="space-y-6">
-              <div className="space-y-2">
-                 <label className="text-sm font-bold text-slate-700 dark:text-slate-300">تاريخ البدء</label>
+           <form className="space-y-4">
+              <div className="space-y-1">
+                 <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300">تاريخ البدء</label>
                  <input type="date" required className="form-input bg-slate-50 dark:bg-slate-800 border-transparent transition-all" />
               </div>
-              <div className="space-y-2">
-                 <label className="text-sm font-bold text-slate-700 dark:text-slate-300">تاريخ الانتهاء</label>
+              <div className="space-y-1">
+                 <label className="text-[10px] font-bold text-slate-700 dark:text-slate-300">تاريخ الانتهاء</label>
                  <input type="date" required className="form-input bg-slate-50 dark:bg-slate-800 border-transparent transition-all" />
               </div>
               

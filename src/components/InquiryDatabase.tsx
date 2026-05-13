@@ -37,8 +37,8 @@ export default function InquiryDatabase() {
             <MessageSquare className="w-5 h-5" />
           </div>
           <div>
-             <h3 className="text-base font-black text-slate-900 dark:text-white leading-none">استفسارات الزملاء</h3>
-             <span className="text-[11px] text-slate-400 font-bold uppercase tracking-widest mt-1.5 block">قاعدة المعرفة الحية</span>
+             <h3 className="text-xs font-black text-slate-900 dark:text-white leading-none">استفسارات الزملاء</h3>
+             <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1.5 block">قاعدة المعرفة الحية</span>
           </div>
         </div>
         <div className="flex -space-x-2 rtl:space-x-reverse">

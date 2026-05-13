@@ -44,22 +44,22 @@ export default function Dashboard() {
   );
 
   return (
-    <div className="space-y-6 animate-fade-in">
+    <div className="space-y-4 animate-fade-in">
       {/* Header Section */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-           <h2 className="text-xl font-black text-slate-900 dark:text-white">نظرة عامة على البيانات</h2>
-           <p className="text-[10px] text-slate-500 font-medium tracking-tight">متابعة فورية لإحصائيات الخط الساخن والعمليات الجارية</p>
+           <h2 className="text-lg font-black text-slate-900 dark:text-white leading-tight">نظرة عامة على البيانات</h2>
+           <p className="text-[9px] text-slate-500 font-medium tracking-tight">متابعة فورية لإحصائيات الخط الساخن والعمليات الجارية</p>
         </div>
-        <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 p-1.5 rounded-xl shadow-sm transition-all duration-700">
-           <button className="px-3.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold shadow-md shadow-blue-500/20 transition-all active:scale-95">الكل</button>
-           <button className="px-3.5 py-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all duration-500">الشهر الحالي</button>
-           <button className="px-3.5 py-1.5 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-xs font-bold transition-all duration-500">اليوم</button>
+        <div className="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 p-1 rounded-xl shadow-sm transition-all duration-700">
+           <button className="px-3 py-1 bg-blue-600 text-white rounded-lg text-[10px] font-bold shadow-md shadow-blue-500/20 transition-all active:scale-95">الكل</button>
+           <button className="px-3 py-1 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-[10px] font-bold transition-all duration-500">الشهر الحالي</button>
+           <button className="px-3 py-1 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-[10px] font-bold transition-all duration-500">اليوم</button>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'مكالمات اليوم', value: stats.todayCount, icon: Phone, color: 'blue', bgColor: 'bg-blue-50 dark:bg-blue-900/20', iconColor: 'text-blue-600 dark:text-blue-400', trend: '+12%' },
           { label: 'مكالمات الشهر', value: stats.monthCount, icon: Calendar, color: 'emerald', bgColor: 'bg-emerald-50 dark:bg-emerald-900/20', iconColor: 'text-emerald-600 dark:text-emerald-400', trend: '+5.4%' },
@@ -71,20 +71,20 @@ export default function Dashboard() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: idx * 0.1, duration: 0.5 }}
-            className="stat-card group cursor-pointer p-7 flex flex-col justify-between shadow-2xl shadow-slate-200/40 dark:shadow-none bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 h-full"
+            className="stat-card group cursor-pointer p-5 flex flex-col justify-between shadow-2xl shadow-slate-200/40 dark:shadow-none bg-white dark:bg-slate-900 border-slate-100 dark:border-white/5 h-full"
           >
-            <div className="flex items-center justify-between mb-6">
-              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 shadow-lg ${item.bgColor} ${item.iconColor}`}>
-                 <item.icon className="w-7 h-7" />
+            <div className="flex items-center justify-between mb-4">
+              <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 shadow-lg ${item.bgColor} ${item.iconColor}`}>
+                 <item.icon className="w-6 h-6" />
               </div>
-              <div className={`text-[10px] font-black px-4 py-1.5 rounded-full uppercase tracking-widest ${item.trend.startsWith('+') ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : item.trend.startsWith('-') ? 'bg-rose-50 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400' : 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
+              <div className={`text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${item.trend.startsWith('+') ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400' : item.trend.startsWith('-') ? 'bg-rose-50 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400' : 'bg-slate-50 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
                 {item.trend}
               </div>
             </div>
             <div className="space-y-1">
-              <h3 className="text-slate-400 dark:text-slate-500 text-xs font-black uppercase tracking-[0.2em]">{item.label}</h3>
+              <h3 className="text-slate-400 dark:text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">{item.label}</h3>
               <div className="flex items-end justify-between">
-                 <span className="text-4xl font-black text-slate-900 dark:text-white leading-none tracking-tighter">{item.value}</span>
+                 <span className="text-3xl font-black text-slate-900 dark:text-white leading-none tracking-tighter">{item.value}</span>
                  <div className="w-8 h-8 rounded-full border border-slate-100 dark:border-white/10 flex items-center justify-center group-hover:border-blue-500 transition-colors">
                     <ChevronRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-transform" />
                  </div>
@@ -95,17 +95,17 @@ export default function Dashboard() {
       </div>
 
       {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Top Governorates Bar Chart */}
-        <div className="lg:col-span-1 glass-card p-10 flex flex-col items-center min-h-[480px] transition-all duration-700 bg-white dark:bg-slate-900 shadow-2xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-white/5">
-          <div className="w-full flex items-center justify-between mb-10">
-            <h4 className="font-black text-lg text-slate-900 dark:text-white flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
-                 <MapPin className="w-6 h-6 text-blue-600" />
+        <div className="lg:col-span-1 glass-card p-6 flex flex-col items-center min-h-[400px] transition-all duration-700 bg-white dark:bg-slate-900 shadow-2xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-white/5">
+          <div className="w-full flex items-center justify-between mb-6">
+            <h4 className="font-black text-base text-slate-900 dark:text-white flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center">
+                 <MapPin className="w-5 h-5 text-blue-600" />
               </div>
               أعلى المحافظات
             </h4>
-            <span className="text-[10px] font-black text-slate-400 bg-slate-50 dark:bg-white/5 px-4 py-2 rounded-full uppercase tracking-widest">تحديث مباشر</span>
+            <span className="text-[9px] font-black text-slate-400 bg-slate-50 dark:bg-white/5 px-3 py-1.5 rounded-full uppercase tracking-widest">تحديث مباشر</span>
           </div>
           <div className="w-full flex-1">
             {Object.keys(stats.topGovs).length > 0 ? (
@@ -145,11 +145,11 @@ export default function Dashboard() {
         </div>
 
         {/* Top Entities Doughnut Chart */}
-        <div className="lg:col-span-1 glass-card p-10 flex flex-col items-center min-h-[480px] transition-all duration-700 bg-white dark:bg-slate-900 shadow-2xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-white/5">
-          <div className="w-full flex items-center justify-between mb-10">
-            <h4 className="font-black text-lg text-slate-900 dark:text-white flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
-                 <Building2 className="w-6 h-6 text-emerald-600" />
+        <div className="lg:col-span-1 glass-card p-6 flex flex-col items-center min-h-[400px] transition-all duration-700 bg-white dark:bg-slate-900 shadow-2xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-white/5">
+          <div className="w-full flex items-center justify-between mb-6">
+            <h4 className="font-black text-base text-slate-900 dark:text-white flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                 <Building2 className="w-5 h-5 text-emerald-600" />
               </div>
               أعلى الجهات
             </h4>
@@ -188,11 +188,11 @@ export default function Dashboard() {
         </div>
 
         {/* Top Subjects Pie Chart */}
-        <div className="lg:col-span-1 glass-card p-8 flex flex-col items-center min-h-[450px] transition-all duration-700 bg-white dark:bg-slate-900 shadow-2xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-white/5">
-          <div className="w-full flex items-center justify-between mb-10">
-            <h4 className="font-black text-base text-slate-900 dark:text-white flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center">
-                 <Stethoscope className="w-5 h-5 text-orange-600" />
+        <div className="lg:col-span-1 glass-card p-6 flex flex-col items-center min-h-[400px] transition-all duration-700 bg-white dark:bg-slate-900 shadow-2xl shadow-slate-200/40 dark:shadow-none border border-slate-100 dark:border-white/5">
+          <div className="w-full flex items-center justify-between mb-6">
+            <h4 className="font-black text-sm text-slate-900 dark:text-white flex items-center gap-3">
+              <div className="w-9 h-9 rounded-xl bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center">
+                 <Stethoscope className="w-4 h-4 text-orange-600" />
               </div>
               أعلى الموضوعات
             </h4>

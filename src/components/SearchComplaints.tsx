@@ -45,15 +45,15 @@ export default function SearchComplaints() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-4">
         <div>
-           <h2 className="text-2xl font-black text-slate-950 dark:text-white tracking-tight">البحث والمراجعة المتقدمة</h2>
-           <p className="text-[12px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mt-1">استرجع البيانات المسجلة بالدقة اللازمة</p>
+           <h2 className="text-xl font-black text-slate-950 dark:text-white tracking-tight">البحث والمراجعة المتقدمة</h2>
+           <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mt-0.5">استرجع البيانات المسجلة بالدقة اللازمة</p>
         </div>
-        <div className="hidden md:flex items-center gap-6">
-           <div className="bg-blue-600 text-white px-5 py-2.5 rounded-2xl flex items-center gap-3 shadow-lg shadow-blue-500/20 transition-transform hover:scale-105">
-              <Database className="w-5 h-5" />
-              <span className="text-xs font-black leading-none uppercase tracking-widest">{results.length} نتيجة بحث</span>
+        <div className="hidden md:flex items-center gap-4">
+           <div className="bg-blue-600 text-white px-4 py-1.5 rounded-xl flex items-center gap-2 shadow-lg shadow-blue-500/20 transition-transform hover:scale-105">
+              <Database className="w-4 h-4" />
+              <span className="text-[9px] font-black leading-none uppercase tracking-widest">{results.length} نتيجة بحث</span>
            </div>
         </div>
       </div>
@@ -120,17 +120,17 @@ export default function SearchComplaints() {
              <p className="text-slate-400 text-lg font-black uppercase tracking-[0.3em] italic">مزامنة البيانات الحية...</p>
           </div>
         ) : filteredResults.length > 0 ? (
-          <div className="bg-white dark:bg-slate-900 rounded-[40px] border border-slate-100 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden transition-all duration-700">
+          <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden transition-all duration-700">
             <div className="overflow-x-auto">
               <table className="w-full text-right border-collapse">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-white/5">
-                    <th className="px-10 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">التوقيت</th>
-                    <th className="px-10 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">المتصل</th>
-                    <th className="px-10 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">التليفون</th>
-                    <th className="px-10 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">المحافظة</th>
-                    <th className="px-10 py-6 text-xs font-black text-slate-400 uppercase tracking-widest">الحالة</th>
-                    <th className="px-10 py-6 text-xs font-black text-slate-400 uppercase tracking-widest text-center">الإجراء</th>
+                    <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">التوقيت</th>
+                    <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">المتصل</th>
+                    <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">التليفون</th>
+                    <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">المحافظة</th>
+                    <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">الحالة</th>
+                    <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest text-center">الإجراء</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-white/5">
@@ -143,40 +143,40 @@ export default function SearchComplaints() {
                       className="group hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-all cursor-pointer"
                       onClick={() => setSelectedComplaint(c)}
                     >
-                      <td className="px-10 py-7">
+                      <td className="px-6 py-4">
                          <div className="flex flex-col">
-                            <span className="text-sm font-black text-slate-900 dark:text-white mb-1">
+                            <span className="text-xs font-black text-slate-900 dark:text-white mb-1">
                               {c.timestamp && typeof (c.timestamp as any).toDate === 'function' 
                                 ? (c.timestamp as any).toDate().toLocaleDateString('ar-EG') 
                                 : new Date().toLocaleDateString('ar-EG')}
                             </span>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
                               {c.timestamp && typeof (c.timestamp as any).toDate === 'function' 
                                 ? (c.timestamp as any).toDate().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) 
                                 : new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
                             </span>
                          </div>
                       </td>
-                      <td className="px-10 py-7">
-                         <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-slate-800 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-sm shadow-sm border border-blue-100 dark:border-white/5">
+                      <td className="px-6 py-4">
+                         <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-slate-800 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-xs shadow-sm border border-blue-100 dark:border-white/5">
                                {c.callerName.charAt(0)}
                             </div>
-                            <span className="font-black text-base text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition-colors">{c.callerName}</span>
+                            <span className="font-black text-sm text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition-colors">{c.callerName}</span>
                          </div>
                       </td>
-                      <td className="px-10 py-7 text-sm font-mono tracking-widest text-slate-500 dark:text-slate-400">{c.phoneNumber}</td>
-                      <td className="px-10 py-7">
-                         <span className="px-4 py-1.5 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-xl text-xs font-black border border-slate-100 dark:border-white/5 uppercase tracking-widest">{c.governorate}</span>
+                      <td className="px-6 py-4 text-xs font-mono tracking-widest text-slate-500 dark:text-slate-400">{c.phoneNumber}</td>
+                      <td className="px-6 py-4">
+                         <span className="px-3 py-1 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-[10px] font-black border border-slate-100 dark:border-white/5 uppercase tracking-widest">{c.governorate}</span>
                       </td>
-                      <td className="px-10 py-7">
-                         <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all duration-500 shadow-sm ${c.complaintStatus === 'تم الرد' ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30' : 'bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30'}`}>
+                      <td className="px-6 py-4">
+                         <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all duration-500 shadow-sm ${c.complaintStatus === 'تم الرد' ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30' : 'bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30'}`}>
                            {c.complaintStatus}
                          </span>
                       </td>
-                      <td className="px-10 py-7 text-center">
-                         <div className="w-12 h-12 rounded-2xl flex items-center justify-center text-slate-300 dark:text-slate-700 bg-slate-50 dark:bg-slate-800 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 shadow-sm transition-all mx-auto">
-                            <ChevronRight className="w-6 h-6" />
+                      <td className="px-6 py-4 text-center">
+                         <div className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-300 dark:text-slate-700 bg-slate-50 dark:bg-slate-800 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 shadow-sm transition-all mx-auto">
+                            <ChevronRight className="w-5 h-5" />
                          </div>
                       </td>
                     </motion.tr>

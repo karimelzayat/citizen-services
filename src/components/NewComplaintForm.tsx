@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { GOVERNORATES_LIST, GOVERNORATES_ENTITIES, COMPLAINT_SUBJECTS, CABINET_CITIES_MAP } from '../constants';
 import { addComplaint } from '../services/dataService';
-import { User, MapPin, Phone, Building2, AlertCircle, PenTool, CheckCircle2, Timer, Save, Loader2, Info, Search } from 'lucide-react';
+import { User, MapPin, Phone, Building2, AlertCircle, PenTool, CheckCircle2, Timer, Save, Loader2, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function NewComplaintForm() {
@@ -31,8 +31,6 @@ export default function NewComplaintForm() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [lastComplaintId, setLastComplaintId] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,10 +48,11 @@ export default function NewComplaintForm() {
         submissionData.hospitalType = hospitalType;
       }
       
-      const id = await addComplaint(submissionData);
-      setLastComplaintId(id || '');
-      setSuccess(true);
-      // Form values are kept until reset manually or by starting new
+      await addComplaint(submissionData);
+      
+      // Auto-reset and scroll to top as requested
+      resetForm();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {
       alert('خطأ أثناء الحفظ: ' + err.message);
     } finally {
@@ -83,44 +82,7 @@ export default function NewComplaintForm() {
     });
     setIsCabinet(false);
     setIsEmergency(false);
-    setSuccess(false);
   };
-
-  if (success) {
-    return (
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center justify-center py-20 text-center space-y-6"
-      >
-        <div className="w-24 h-24 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center shadow-xl shadow-emerald-500/10">
-          <CheckCircle2 className="w-12 h-12" />
-        </div>
-        <div>
-          <h2 className="text-2xl font-black text-slate-800 dark:text-white">تم تسجيل المكالمة بنجاح!</h2>
-          <p className="text-slate-500 dark:text-slate-400 font-bold mt-2">تم حفظ كافة البيانات في قاعدة بيانات المركز بنجاح.</p>
-        </div>
-        <div className="flex flex-wrap gap-4 justify-center pt-6">
-          <button 
-            onClick={resetForm}
-            className="btn-primary px-8 py-3 rounded-2xl flex items-center gap-2"
-          >
-            <PenTool className="w-4 h-4" />
-            تسجيل مكالمة جديدة
-          </button>
-          <button 
-            onClick={() => {
-              window.dispatchEvent(new CustomEvent('switchTab', { detail: 'search' }));
-            }}
-            className="px-8 py-3 rounded-2xl bg-white dark:bg-slate-800 text-blue-600 font-black border border-blue-100 dark:border-white/5 flex items-center gap-2 shadow-sm"
-          >
-            <Search className="w-4 h-4" />
-            عرض مكالمات اليوم
-          </button>
-        </div>
-      </motion.div>
-    );
-  }
 
   const handleInputChange = (e: React.ChangeEvent<any>) => {
     const { name, value } = e.target;
@@ -141,36 +103,36 @@ export default function NewComplaintForm() {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="glass-card p-14 space-y-12 transition-all duration-700 border-slate-100 dark:border-white/5 bg-white dark:bg-slate-900 w-full max-w-6xl shadow-2xl shadow-slate-200/40 dark:shadow-none">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="glass-card p-10 space-y-8 transition-all duration-700 border-slate-100 dark:border-white/5 bg-white dark:bg-slate-900 w-full max-w-none shadow-2xl shadow-slate-200/40 dark:shadow-none">
           {/* Section: Basic Identity */}
-          <div className="space-y-8">
-            <div className="flex items-center gap-5 text-blue-600 dark:text-blue-400 font-black text-xl border-b border-slate-100 dark:border-white/5 pb-6">
-               <User className="w-8 h-8" />
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 text-blue-600 dark:text-blue-400 font-black text-lg border-b border-slate-100 dark:border-white/5 pb-4">
+               <User className="w-6 h-6" />
                <span>بيانات المتصل الأساسية</span>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="space-y-3">
-                <label className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest leading-none block mb-1">الاسم بالكامل</label>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest leading-none block mb-1">الاسم بالكامل</label>
                 <div className="relative">
-                   <User className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                   <User className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                    <input type="text" name="callerName" required value={formData.callerName} onChange={handleInputChange} className="form-input pr-10" placeholder="أدخل اسم المتصل" />
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <label className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest leading-none block mb-1">رقم الهاتف المميز</label>
+              <div className="space-y-2">
+                <label className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest leading-none block mb-1">رقم الهاتف المميز</label>
                 <div className="relative">
-                   <Phone className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                   <Phone className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                    <input type="tel" name="phoneNumber" required pattern="[0-9]{11}" placeholder="01xxxxxxxxx" value={formData.phoneNumber} onChange={handleInputChange} className="form-input pr-10 font-mono" />
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <label className="text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest leading-none block mb-1">المحافظة</label>
+              <div className="space-y-2">
+                <label className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest leading-none block mb-1">المحافظة</label>
                 <div className="relative">
-                   <MapPin className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                   <MapPin className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
                    <select name="governorate" required value={formData.governorate} onChange={handleInputChange} className="form-input pr-10 appearance-none">
                     <option value="">اختر المحافظة...</option>
                     {GOVERNORATES_LIST.map(g => <option key={g} value={g}>{g}</option>)}
@@ -193,7 +155,7 @@ export default function NewComplaintForm() {
                       <AlertCircle className="w-4 h-4" />
                    </div>
                    <div className="text-right">
-                      <div className={`font-black text-xs ${isEmergency ? 'text-white' : 'text-slate-700 dark:text-slate-300'}`}>طوارئ 48 ساعة</div>
+                      <div className={`font-black text-sm ${isEmergency ? 'text-white' : 'text-slate-700 dark:text-slate-300'}`}>طوارئ 48 ساعة</div>
                    </div>
                 </div>
                 <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all duration-500 ${isEmergency ? 'bg-white border-white' : 'border-slate-300 dark:border-slate-700'}`}>
@@ -211,7 +173,7 @@ export default function NewComplaintForm() {
                       <PenTool className="w-4 h-4" />
                    </div>
                    <div className="text-right">
-                      <div className={`font-black text-xs ${isCabinet ? 'text-white' : 'text-slate-700 dark:text-slate-300'}`}>مجلس الوزراء</div>
+                      <div className={`font-black text-sm ${isCabinet ? 'text-white' : 'text-slate-700 dark:text-slate-300'}`}>مجلس الوزراء</div>
                    </div>
                 </div>
                 <div className={`w-4 h-4 rounded-full border flex items-center justify-center transition-all duration-500 ${isCabinet ? 'bg-white border-white' : 'border-slate-300 dark:border-slate-700'}`}>
@@ -327,16 +289,16 @@ export default function NewComplaintForm() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300">جهة الشكوى</label>
-                   <select name="complaintEntity" required={!isEmergency} value={formData.complaintEntity} onChange={handleInputChange} className="form-input h-14 text-sm">
+                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">جهة الشكوى</label>
+                   <select name="complaintEntity" required={!isEmergency} value={formData.complaintEntity} onChange={handleInputChange} className="form-input">
                     <option value="">اختر جهة الشكوى...</option>
                     {GOVERNORATES_ENTITIES.map(e => <option key={e} value={e}>{e}</option>)}
                   </select>
                 </div>
 
                 <div className="space-y-2">
-                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300">موضوع المكالمة</label>
-                   <select name="complaintSubject" required={!isEmergency} value={formData.complaintSubject} onChange={handleInputChange} className="form-input h-14 text-sm">
+                   <label className="text-sm font-bold text-slate-700 dark:text-slate-300">موضوع المكالمة</label>
+                   <select name="complaintSubject" required={!isEmergency} value={formData.complaintSubject} onChange={handleInputChange} className="form-input">
                     <option value="">اختر الموضوع...</option>
                     {COMPLAINT_SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
@@ -349,37 +311,37 @@ export default function NewComplaintForm() {
           <div className="space-y-6">
              {!isEmergency && (
                 <div className="space-y-4 bg-slate-50 dark:bg-slate-800 p-6 rounded-2xl border border-slate-100 dark:border-white/5 transition-colors duration-700">
-                 <span className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">حالة المكالمة الحالية</span>
+                 <span className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">حالة المكالمة الحالية</span>
                  <div className="flex flex-wrap gap-4">
                     <button 
                       type="button" 
                       onClick={() => setFormData({...formData, complaintStatus: 'تم الرد'})}
-                      className={`flex-1 flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all duration-500 shadow-sm ${formData.complaintStatus === 'تم الرد' ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'bg-white dark:bg-slate-900 border-transparent dark:border-white/5 text-slate-500'}`}
+                      className={`flex-1 flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all duration-500 shadow-sm ${formData.complaintStatus === 'تم الرد' ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20 font-black' : 'bg-white dark:bg-slate-900 border-transparent dark:border-white/5 text-slate-500'}`}
                     >
                       <CheckCircle2 className="w-5 h-5" />
-                      <span className="font-black">تم الرد</span>
+                      <span className="font-black text-sm">تم الرد</span>
                     </button>
                     <button 
                       type="button" 
                       onClick={() => setFormData({...formData, complaintStatus: 'جاري المتابعة'})}
-                      className={`flex-1 flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all duration-500 shadow-sm ${formData.complaintStatus === 'جاري المتابعة' ? 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-500/20' : 'bg-white dark:bg-slate-900 border-transparent dark:border-white/5 text-slate-500'}`}
+                      className={`flex-1 flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all duration-500 shadow-sm ${formData.complaintStatus === 'جاري المتابعة' ? 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-500/20 font-black' : 'bg-white dark:bg-slate-900 border-transparent dark:border-white/5 text-slate-500'}`}
                     >
                       <Timer className="w-5 h-5" />
-                      <span className="font-black">جاري المتابعة</span>
+                      <span className="font-black text-sm">جاري المتابعة</span>
                     </button>
                  </div>
                </div>
              )}
 
              <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-700 dark:text-slate-300">تفاصيل المكالمة</label>
+                <label className="text-sm font-bold text-slate-700 dark:text-slate-300">تفاصيل المكالمة</label>
                 <textarea 
                   name="callDetails" 
                   rows={5} 
                   required={!isEmergency} 
                   value={formData.callDetails} 
                   onChange={handleInputChange} 
-                  className="form-input min-h-[160px] resize-none pt-4 text-sm" 
+                  className="form-input min-h-[160px] resize-none pt-4" 
                   placeholder="اكتب هنا تفاصيل المكالمة بشكل واضح ومفصل لسهولة المراجعة لاحقاً..."
                 ></textarea>
              </div>
@@ -387,11 +349,11 @@ export default function NewComplaintForm() {
         </div>
 
         {/* Action Button */}
-        <div className="flex items-center gap-4 py-4">
+        <div className="flex justify-center py-6">
            <button 
               type="submit" 
               disabled={isSubmitting}
-              className="btn-primary min-w-[200px]"
+              className="btn-primary min-w-[280px] h-14 flex items-center justify-center gap-3 shadow-blue-500/30"
            >
               {isSubmitting ? (
                 <>
@@ -405,7 +367,6 @@ export default function NewComplaintForm() {
                 </>
               )}
            </button>
-           <button type="button" onClick={resetForm} className="px-6 h-12 rounded-xl font-bold text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">إلغاء</button>
         </div>
       </form>
     </div>

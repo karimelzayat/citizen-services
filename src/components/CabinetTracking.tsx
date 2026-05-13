@@ -29,7 +29,7 @@ export default function CabinetTracking() {
           <div className="w-12 h-12 rounded-2xl bg-orange-50 dark:bg-orange-900/30 flex items-center justify-center text-orange-600 shadow-sm">
             <i className="fas fa-landmark text-lg"></i>
           </div>
-          <h3 className="m-0 text-lg font-black text-slate-900 dark:text-white uppercase tracking-tight">شكاوى مجلس الوزراء</h3>
+          <h3 className="m-0 text-sm font-black text-slate-900 dark:text-white uppercase tracking-tight">شكاوى مجلس الوزراء</h3>
         </div>
         <div className="flex items-center gap-3">
            <span className="w-2.5 h-2.5 bg-rose-500 rounded-full animate-pulse shadow-sm shadow-rose-500/50"></span>

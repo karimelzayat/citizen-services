@@ -26,7 +26,8 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
     setIsSubmitting(true);
     try {
       await addAdminComplaint({ ...formData, workType: workType as any });
-      alert('تم الحفظ بنجاح!');
+      
+      // Auto-reset and scroll to top as requested
       setFormData({
         complaintNo: '',
         governorate: '',
@@ -34,6 +35,8 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
         notes: '',
         registrant: ''
       });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      
     } catch (err: any) {
       alert('خطأ: ' + err.message);
     } finally {
@@ -50,25 +53,25 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
   return (
     <div className="space-y-6 animate-fade-in">
       {activeSubTab === 'register' ? (
-        <div className="space-y-8">
+        <div className="space-y-6">
            {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">تسجيل عمل الإدارة</h2>
-              <p className="text-slate-500 dark:text-slate-400 font-medium">توثيق العمل اليومي ومتابعة الشكاوى الجارية</p>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">تسجيل عمل الإدارة</h2>
+              <p className="text-slate-500 dark:text-slate-400 text-[10px] font-medium">توثيق العمل اليومي ومتابعة الشكاوى الجارية</p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/40 dark:shadow-none p-10 rounded-[40px] transition-all duration-700">
-              <div className="space-y-10">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/40 dark:shadow-none p-6 rounded-[24px] transition-all duration-700">
+              <div className="space-y-6">
                 {/* Work Type Selection */}
-                <div className="space-y-6">
-                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em] flex items-center gap-2">
-                     <Info className="w-4 h-4 text-blue-600" />
-                     تصنيف العمل المطلوب تسجيله
+                <div className="space-y-4">
+                  <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                     <Info className="w-3.5 h-3.5 text-blue-600" />
+                     تصنيف العمل
                   </label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {workTypes.map(type => {
                       const Icon = type.icon;
                       const isActive = workType === type.id;
@@ -77,25 +80,25 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
                           key={type.id}
                           type="button"
                           onClick={() => setWorkType(type.id)}
-                          className={`flex items-center gap-5 p-6 rounded-[24px] border-2 transition-all duration-700 text-right ${
+                          className={`flex items-center gap-4 p-4 rounded-[16px] border-2 transition-all duration-700 text-right ${
                             isActive 
-                              ? `bg-${type.color}-500 border-${type.color}-500 text-white shadow-2xl shadow-${type.color}-500/30 font-black`
+                              ? `bg-${type.color}-500 border-${type.color}-500 text-white shadow-xl shadow-${type.color}-500/20 font-black`
                               : 'bg-slate-50 dark:bg-slate-800/40 border-transparent dark:border-white/5 text-slate-500 hover:border-slate-300 dark:hover:border-white/10 font-bold'
                           }`}
                         >
-                          <div className={`p-4 rounded-2xl transition-all duration-500 shadow-sm ${isActive ? 'bg-white/20' : `bg-white dark:bg-slate-900 text-${type.color}-600 dark:text-${type.color}-400`}`}>
-                            <Icon className="w-7 h-7" />
+                          <div className={`p-3 rounded-xl transition-all duration-500 shadow-sm ${isActive ? 'bg-white/20' : `bg-white dark:bg-slate-900 text-${type.color}-600 dark:text-${type.color}-400`}`}>
+                            <Icon className="w-5 h-5" />
                           </div>
-                          <span className="text-xl">{type.label}</span>
+                          <span className="text-base">{type.label}</span>
                         </button>
                       );
                     })}
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-3">
-                    <label className="text-xs font-black text-slate-700 dark:text-slate-300 flex items-center gap-2 uppercase tracking-widest leading-none">
+                    <label className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2 uppercase tracking-widest leading-none">
                        <Hash className="w-4 h-4 text-blue-600" />
                        رقم الشكوى بالنظام
                     </label>
@@ -111,7 +114,7 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
 
                   {workType === 'الجاري' && (
                     <div className="space-y-3">
-                      <label className="text-xs font-black text-slate-700 dark:text-slate-300 flex items-center gap-2 uppercase tracking-widest leading-none">
+                      <label className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2 uppercase tracking-widest leading-none">
                          <MapPin className="w-4 h-4 text-blue-600" />
                          المحافظة
                       </label>
@@ -129,7 +132,7 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
 
                   {workType === 'توجية خطأ' && (
                     <div className="space-y-3">
-                      <label className="text-xs font-black text-slate-700 dark:text-slate-300 flex items-center gap-2 uppercase tracking-widest leading-none">
+                      <label className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2 uppercase tracking-widest leading-none">
                          <FileText className="w-4 h-4 text-amber-600" />
                          مسجل الشكوى الحالي
                       </label>
@@ -182,7 +185,7 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
                           rows={4} 
                           value={formData.notes} 
                           onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                          className="form-input min-h-[120px] resize-none bg-slate-50 dark:bg-slate-800 border-transparent transition-all"
+                          className="form-input min-h-[120px] resize-none bg-slate-50 dark:bg-slate-800 border-transparent transition-all text-sm"
                           placeholder="اكتب أي ملاحظات أو تفاصيل إضافية هنا..."
                         ></textarea>
                       </div>
@@ -192,14 +195,25 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
               </div>
             </div>
 
-            <button 
-              type="submit" 
-              disabled={isSubmitting}
-              className="btn-primary w-full md:w-auto md:min-w-[200px]"
-            >
-              {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-              <span>حفظ البيانات</span>
-            </button>
+            <div className="flex justify-center py-6">
+               <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="btn-primary min-w-[280px] h-14 flex items-center justify-center gap-3 shadow-blue-500/30"
+               >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>جاري الحفظ...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5" />
+                      <span>حفظ البيانات</span>
+                    </>
+                  )}
+               </button>
+            </div>
           </form>
         </div>
       ) : (

@@ -126,7 +126,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
       </div>
 
       {/* Navigation Sections */}
-      <div className="flex-1 overflow-y-auto px-4 py-8 custom-scrollbar space-y-10">
+      <div className="flex-1 overflow-y-auto px-4 py-6 custom-scrollbar space-y-6">
         {sections.map((section, idx) => {
           const visibleItems = section.items.filter(i => i.show);
           if (visibleItems.length === 0) return null;
@@ -134,7 +134,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
           const isExpanded = expandedSections.includes(section.title);
 
           return (
-            <div key={idx} className="space-y-4">
+            <div key={idx} className="space-y-2">
               {!collapsed && (
                 <button 
                   onClick={() => toggleSection(section.title)}
@@ -156,20 +156,20 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
                     initial={collapsed ? false : { height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    className="space-y-1.5 overflow-hidden"
+                    className="space-y-1 overflow-hidden"
                   >
                     {visibleItems.map(item => (
                       <li key={item.id}>
                         <button
                           onClick={() => onTabChange(item.id)}
-                          className={`w-full group flex items-center gap-4 p-4.5 rounded-[24px] transition-all duration-300 
+                          className={`w-full group flex items-center gap-4 p-2.5 rounded-[24px] transition-all duration-300 
                             ${activeTab === item.id 
                               ? 'bg-blue-600 text-white shadow-2xl shadow-blue-500/40 font-black scale-[1.02]' 
                               : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'} 
                             ${collapsed ? 'justify-center px-0' : ''}`}
                         >
-                          <item.icon className={`w-6 h-6 flex-shrink-0 transition-all group-hover:scale-110 ${activeTab === item.id ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
-                          {!collapsed && <span className="text-base font-bold truncate tracking-tight">{item.label}</span>}
+                          <item.icon className={`w-4.5 h-4.5 flex-shrink-0 transition-all group-hover:scale-110 ${activeTab === item.id ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
+                          {!collapsed && <span className="text-sm font-black truncate tracking-tight">{item.label}</span>}
                         </button>
                       </li>
                     ))}
@@ -192,7 +192,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
               <span className="text-sm font-black text-slate-900 dark:text-white truncate tracking-tight">{permissions?.role || 'مستخدم'}</span>
               <div className="flex items-center gap-1.5 mt-0.5">
                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-                 <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">متصل الآن</span>
+                 <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">متصل الآن</span>
               </div>
             </div>
           )}

@@ -336,27 +336,27 @@ export default function App() {
         </header>
 
         {/* Content Area */}
-        <div className="p-4 md:p-10 flex-1 bg-slate-50/50 dark:bg-transparent transition-colors duration-700">
-          <div className="max-w-[1800px] mx-auto flex flex-col xl:flex-row gap-12">
-            <div className="flex-1 min-w-0 bg-white dark:bg-slate-900/30 backdrop-blur-md rounded-[48px] p-8 md:p-14 transition-all duration-700 border border-slate-200/60 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none">
+        <div className="p-4 md:p-6 flex-1 bg-slate-50/50 dark:bg-transparent transition-colors duration-700">
+          <div className="w-full max-w-[2200px] mx-auto flex flex-col xl:flex-row gap-6 px-4">
+            <div className="flex-1 min-w-0 bg-white dark:bg-slate-900/30 backdrop-blur-md rounded-[32px] p-6 md:p-8 transition-all duration-700 border border-slate-200/60 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none">
                {viewMode === ViewMode.Hotline ? renderContent() : <AdminView activeSubTab={adminSubTab} />}
             </div>
 
             {viewMode === ViewMode.Hotline && (
-              <div className="w-full xl:w-[320px] flex flex-col gap-10 flex-shrink-0">
+              <div className="w-full xl:w-[300px] flex flex-col gap-6 flex-shrink-0">
                  <InquiryDatabase />
                  <CabinetTracking />
                  
                  <div className="glass-card p-6 bg-linear-to-br from-indigo-600 to-blue-700 text-white shadow-blue-500/20 hover:scale-[1.02] transition-all">
-                    <div className="flex items-center justify-between mb-6">
-                       <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md">
-                          <i className="fas fa-life-ring text-xl"></i>
+                    <div className="flex items-center justify-between mb-4">
+                       <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-md">
+                          <i className="fas fa-life-ring text-base"></i>
                        </div>
-                       <span className="px-3 py-1 bg-white/20 rounded-full text-[10px] font-bold uppercase">مساعدة متميزة</span>
+                       <span className="px-2 py-0.5 bg-white/20 rounded-full text-[9px] font-bold uppercase">مساعدة</span>
                     </div>
-                    <h4 className="text-xl font-bold mb-2">هل تحتاج مساعدة؟</h4>
-                    <p className="text-white/70 text-sm mb-6 leading-relaxed">فريقنا متاح دائماً لمساعدتك في حل أي مشكلات تقنية أو استفسارات حول النظام.</p>
-                    <button className="w-full py-4 bg-white text-blue-700 rounded-2xl font-bold hover:bg-blue-50 transition-colors shadow-xl">اتصل بالدعم الفني</button>
+                    <h4 className="text-lg font-bold mb-1">هل تحتاج مساعدة؟</h4>
+                    <p className="text-white/70 text-[10px] mb-4 leading-relaxed">فريقنا متاح دائماً لمساعدتك في حل أي مشكلات تقنية أو استفسارات حول النظام.</p>
+                    <button className="w-full py-3 bg-white text-blue-700 rounded-xl font-bold text-xs hover:bg-blue-50 transition-colors shadow-xl">اتصل بالدعم الفني</button>
                  </div>
               </div>
             )}
