@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged, User, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { onAuthStateChanged, User, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { auth, isConfigured } from './lib/firebase';
 import { getUserPermissions } from './services/dataService';
 import { UserPermissions } from './types';
