@@ -67,34 +67,32 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 
 // Role management
 export async function getUserPermissions(email: string | null | undefined): Promise<UserPermissions> {
-  if (!email) return { role: "Guest", ...ROLE_CAPABILITIES["Guest"] };
+  const normalizedEmail = (email || "").trim().toLowerCase();
   
-  const normalizedEmail = email.trim().toLowerCase();
-  
-  // High priority hardcoded admins
-  if (normalizedEmail === 'karimelzayat3@gmail.com' || normalizedEmail === 'karimelzayat.1997@gmail.com') {
+  // 1. High Priority Hardcoded Admins
+  const hardcodedAdmins = ['karimelzayat3@gmail.com', 'karimelzayat.1997@gmail.com'];
+  if (hardcodedAdmins.includes(normalizedEmail)) {
     return { role: "Admin", ...ROLE_CAPABILITIES["Admin"] };
   }
 
+  // 2. Try to get permissions from Firestore
   try {
-    // Try to get dynamic role capabilities first
-    const snapshotRoles = await getDocs(collection(db, 'role_capabilities'));
-    const dynamicRoles: any = {};
-    snapshotRoles.docs.forEach(d => { dynamicRoles[d.id] = d.data(); });
-    const effectiveRoles = Object.keys(dynamicRoles).length > 0 ? dynamicRoles : ROLE_CAPABILITIES;
-
     const q = query(collection(db, 'user_permissions'), where('email', '==', normalizedEmail));
     const snapshot = await getDocs(q);
     
     if (!snapshot.empty) {
       const data = snapshot.docs[0].data();
-      const role = data.role as any;
-      return { role, ...(effectiveRoles[role as keyof typeof effectiveRoles] || effectiveRoles["Guest"]) };
+      const role = data.role as keyof typeof ROLE_CAPABILITIES;
+      return { 
+        role, 
+        ...(ROLE_CAPABILITIES[role] || ROLE_CAPABILITIES["Guest"]) 
+      };
     }
   } catch (e) {
-    console.error("Firebase error checking permissions", e);
+    console.error("Firebase error checking permissions:", e);
   }
   
+  // 3. Fallback to Employee Map or Guest
   if (EMPLOYEE_MAP[normalizedEmail]) {
     return { role: "Employee", ...ROLE_CAPABILITIES["Employee"] };
   }
