@@ -1,14 +1,23 @@
 export type UserRole = "Admin" | "Supervisor" | "Employee" | "Guest" | "FollowUpSpecialist" | "AdminOnly" | "HotlineAndLimitedAdmin";
 
 export interface UserCapabilities {
-  canRegister: boolean;
-  canSearch: boolean;
+  // Hotline Section
+  canViewHotline: boolean;
+  canRegisterComplaint: boolean;
+  canSearchComplaints: boolean;
+  canFollowUpComplaints: boolean;
+  canViewStats: boolean;
+  
+  // Admin Section
+  canViewAdmin: boolean;
+  canViewDirectorAssignments: boolean;
+  canViewSchedules: boolean;
+  canViewReports: boolean;
+  canViewSettings: boolean;
+
+  // Global Actions
   canEditAny: boolean;
   showMonthlyCount: boolean;
-  canFollowUp: boolean;
-  canGenerateReports: boolean;
-  canViewHotline: boolean;
-  canViewAdminOngoing: boolean;
   canApproveSwaps?: boolean;
 }
 
