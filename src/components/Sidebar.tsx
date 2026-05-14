@@ -56,19 +56,20 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
       ]
     },
     {
+      title: 'العمليات المساندة',
+      showSection: true,
+      items: [
+        { id: 'directorTab', label: 'تكليفات المدير', icon: Briefcase, show: permissions?.canViewDirectorAssignments },
+        { id: 'schedulesTab', label: 'الجداول والتبديلات', icon: Calendar, show: permissions?.canViewSchedules },
+      ]
+    },
+    {
       title: 'مركز المساعدة',
       showSection: permissions?.showHelpCenterSection,
       items: [
         { id: 'inquiryButton', label: 'الاستفسار عن', icon: HelpCircle, show: permissions?.canViewInquiry },
         { id: 'phonebookButton', label: 'دليل الهاتف', icon: Contact, show: permissions?.canViewPhonebook },
         { id: 'faqTab', label: 'دليل الأسئلة (FAQ)', icon: BookOpen, show: permissions?.canViewFAQ },
-      ]
-    },
-    {
-      title: 'النظام',
-      showSection: permissions?.showSettingsSection,
-      items: [
-        { id: 'settingsTab', label: 'إعدادات المنظومة', icon: Settings, show: permissions?.canManageUsers },
       ]
     }
   ];

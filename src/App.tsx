@@ -26,7 +26,8 @@ import { motion, AnimatePresence } from 'motion/react';
 enum ViewMode {
   Landing = 'landing',
   Hotline = 'hotline',
-  Admin = 'admin'
+  Admin = 'admin',
+  Settings = 'settings'
 }
 
 export default function App() {
@@ -221,6 +222,27 @@ export default function App() {
                 <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 rounded-full">توجيه ذكي</span>
               </div>
             </div>
+
+            {permissions?.canManageUsers && (
+              <div
+                onClick={() => { setViewMode(ViewMode.Settings); }}
+                className="group relative bg-white dark:bg-slate-900/50 p-10 rounded-[40px] border border-slate-200 dark:border-white/5 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-amber-500/10 hover:-translate-y-2 overflow-hidden md:col-span-2 lg:col-span-1"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-600 opacity-[0.03] group-hover:opacity-10 transition-opacity rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                <div className="w-20 h-20 bg-amber-50 dark:bg-amber-900/20 rounded-3xl flex items-center justify-center mb-8 group-hover:bg-amber-600 group-hover:scale-110 transition-all duration-500">
+                  <ShieldCheck className="w-10 h-10 text-amber-600 group-hover:text-white transition-colors duration-500" />
+                </div>
+                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                  الصلاحيات
+                  <i className="fas fa-arrow-left text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all"></i>
+                </h2>
+                <p className="text-slate-500 dark:text-slate-400 leading-relaxed font-medium">إدارة أدوار المستخدمين وتعديل صلاحيات الوصول للمنظومة</p>
+                <div className="mt-8 flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
+                  <span className="px-3 py-1 bg-amber-50 dark:bg-amber-900/30 rounded-full">أدوار المستخدمين</span>
+                  <span className="px-3 py-1 bg-amber-50 dark:bg-amber-900/30 rounded-full">تحكم كامل</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -254,11 +276,21 @@ export default function App() {
             onLogout={handleLogout}
           />
         </div>
-      ) : (
+      ) : viewMode === ViewMode.Admin ? (
         <div className={`fixed inset-y-0 right-0 z-[70] lg:relative lg:block transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}>
           <AdminSidebar
             activeSubTab={adminSubTab}
             onSubTabChange={(t) => { setAdminSubTab(t); setIsMobileMenuOpen(false); }}
+            onReturnHome={() => setViewMode(ViewMode.Landing)}
+            onLogout={handleLogout}
+            permissions={permissions}
+          />
+        </div>
+      ) : (
+        <div className={`fixed inset-y-0 right-0 z-[70] lg:relative lg:block transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}>
+          <AdminSidebar
+            activeSubTab="userManagement"
+            onSubTabChange={() => {}}
             onReturnHome={() => setViewMode(ViewMode.Landing)}
             onLogout={handleLogout}
             permissions={permissions}
@@ -366,7 +398,7 @@ export default function App() {
         <div className="p-4 md:p-6 flex-1 bg-slate-50/50 dark:bg-transparent transition-colors duration-700">
           <div className="w-full max-w-[2200px] mx-auto flex flex-col xl:flex-row gap-6 px-4">
             <div className="flex-1 min-w-0 bg-white dark:bg-slate-900/30 backdrop-blur-md rounded-[32px] p-6 md:p-8 transition-all duration-700 border border-slate-200/60 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none">
-              {viewMode === ViewMode.Hotline ? renderContent() : <AdminView activeSubTab={adminSubTab} permissions={permissions} />}
+              {viewMode === ViewMode.Hotline ? renderContent() : viewMode === ViewMode.Admin ? <AdminView activeSubTab={adminSubTab} permissions={permissions} /> : <SettingsView />}
             </div>
 
             {viewMode === ViewMode.Hotline && (
@@ -469,30 +501,6 @@ function AdminSidebar({ activeSubTab, onSubTabChange, onReturnHome, onLogout, pe
                 </button>
               </li>
             )}
-            {permissions?.canViewDirectorAssignments && (
-              <li>
-                <button
-                  onClick={() => onSubTabChange('directorTab')}
-                  className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 
-                    ${activeSubTab === 'directorTab' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-                >
-                  <Briefcase className="w-5 h-5" />
-                  <span className="font-bold text-sm">تكليفات المدير</span>
-                </button>
-              </li>
-            )}
-            {permissions?.canViewSchedules && (
-              <li>
-                <button
-                  onClick={() => onSubTabChange('schedulesTab')}
-                  className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 
-                    ${activeSubTab === 'schedulesTab' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-                >
-                  <Calendar className="w-5 h-5" />
-                  <span className="font-bold text-sm">الجداول والتبديلات</span>
-                </button>
-              </li>
-            )}
             {permissions?.canViewReports && (
               <li>
                 <button
@@ -502,18 +510,6 @@ function AdminSidebar({ activeSubTab, onSubTabChange, onReturnHome, onLogout, pe
                 >
                   <FileText className="w-5 h-5" />
                   <span className="font-bold text-sm">التقارير</span>
-                </button>
-              </li>
-            )}
-            {permissions?.canManageUsers && (
-              <li>
-                <button
-                  onClick={() => onSubTabChange('userManagement')}
-                  className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 
-                    ${activeSubTab === 'userManagement' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-                >
-                  <ShieldCheck className="w-5 h-5" />
-                  <span className="font-bold text-sm">إدارة الصلاحيات</span>
                 </button>
               </li>
             )}
