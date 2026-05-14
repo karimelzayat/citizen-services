@@ -294,7 +294,7 @@ export default function App() {
       )}
 
       {viewMode === ViewMode.Landing ? null : viewMode === ViewMode.Hotline ? (
-        <div className={`fixed inset-y-0 right-0 z-[70] lg:relative lg:block transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}>
+        <div className={`fixed inset-y-0 right-0 z-[70] lg:relative lg:block self-start transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}>
           <Sidebar
             activeTab={activeTab}
             onTabChange={(tab) => {
@@ -311,7 +311,7 @@ export default function App() {
           />
         </div>
       ) : viewMode === ViewMode.Admin ? (
-        <div className={`fixed inset-y-0 right-0 z-[70] lg:relative lg:block transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}>
+        <div className={`fixed inset-y-0 right-0 z-[70] lg:relative lg:block self-start transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}>
           <AdminSidebar
             activeSubTab={adminSubTab}
             onSubTabChange={(t) => { setAdminSubTab(t); setIsMobileMenuOpen(false); }}
@@ -321,7 +321,7 @@ export default function App() {
           />
         </div>
       ) : (
-        <div className={`fixed inset-y-0 right-0 z-[70] lg:relative lg:block transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}>
+        <div className={`fixed inset-y-0 right-0 z-[70] lg:relative lg:block self-start transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}>
           <AdminSidebar
             activeSubTab="userManagement"
             onSubTabChange={() => {}}
@@ -436,7 +436,7 @@ export default function App() {
             </div>
 
             {viewMode === ViewMode.Hotline && (
-              <div className="w-full xl:w-[300px] flex flex-col gap-6 flex-shrink-0">
+              <div className="w-full xl:w-[300px] flex flex-col gap-6 flex-shrink-0 sticky top-24 self-start">
                 <InquiryDatabase />
                 <CabinetTracking />
 

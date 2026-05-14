@@ -113,6 +113,13 @@ export default function SearchableSelect({
         setIsOpen(false);
       }
       // We don't preventDefault here so it moves focus to next element
+    } else if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      // User requested: "When I tab to a select and start typing, it should search immediately"
+      if (!isOpen) {
+        setIsOpen(true);
+        setSearch(e.key);
+        e.preventDefault();
+      }
     }
   };
 
