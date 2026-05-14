@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { addDirectorCase, listenToDirectorCases } from '../services/dataService';
 import { DirectorCase } from '../types';
+import SearchableSelect from './ui/SearchableSelect';
 
 export default function DirectorAssignments() {
   const [cases, setCases] = useState<DirectorCase[]>([]);
@@ -43,11 +44,13 @@ export default function DirectorAssignments() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div>
               <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2 transition-colors">مصدر التكليف:</label>
-              <select className="form-input bg-slate-50 dark:bg-slate-800 border-transparent focus:bg-white transition-all" value={formData.source} onChange={(e) => setFormData({...formData, source: e.target.value})} required>
-                <option value="واتساب المدير">واتساب المدير</option>
-                <option value="اتصال هاتفي">اتصال هاتفي</option>
-                <option value="أخرى">أخرى</option>
-              </select>
+              <SearchableSelect
+                options={['واتساب المدير', 'اتصال هاتفي', 'أخرى']}
+                value={formData.source}
+                onChange={(val) => setFormData({...formData, source: val})}
+                placeholder="اختر المصدر..."
+                className="bg-slate-50 dark:bg-slate-800 rounded-xl"
+              />
             </div>
             <div>
               <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2 transition-colors">اسم الحالة:</label>

@@ -4,6 +4,7 @@ import { db } from '../lib/firebase';
 import { Complaint } from '../types';
 import { Clock, CheckCircle2, Calendar, Phone, Info, Search } from 'lucide-react';
 import { motion } from 'motion/react';
+import SearchableSelect from './ui/SearchableSelect';
 
 export default function FollowUp() {
   const [activeSubTab, setActiveSubTab] = useState('ongoing');
@@ -113,7 +114,7 @@ export default function FollowUp() {
                          </td>
                          <td className="px-6 py-4 text-center">
                             <button className="px-4 py-1.5 bg-emerald-600 text-white rounded-lg font-black text-[9px] shadow-lg shadow-emerald-600/25 hover:bg-emerald-500 hover:-translate-y-0.5 active:scale-95 transition-all uppercase tracking-widest">
-                                متابعة الآن
+                                 متابعة الآن
                             </button>
                          </td>
                        </motion.tr>
@@ -149,12 +150,13 @@ export default function FollowUp() {
                </div>
                
                <div className="flex flex-col md:flex-row items-center gap-3 w-full max-w-md">
-                  <select className="form-input text-center font-bold h-11 text-xs">
-                    <option>مايو 2024</option>
-                    <option>أبريل 2024</option>
-                    <option>مارس 2024</option>
-                  </select>
-                  <button className="btn-primary w-full md:w-auto px-10 h-11 flex items-center justify-center gap-2 text-xs">
+                  <SearchableSelect
+                    options={['مايو 2024', 'أبريل 2024', 'مارس 2024']}
+                    value="مايو 2024"
+                    onChange={() => {}}
+                    className="flex-1"
+                  />
+                  <button className="btn-primary w-full md:w-auto px-10 h-14 flex items-center justify-center gap-2 text-xs">
                      <Search className="w-4 h-4" />
                      <span>عرض الأرشيف</span>
                   </button>

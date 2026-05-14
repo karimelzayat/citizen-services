@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { searchPhonebook } from '../services/dataService';
 import { Phone, Search, Building2, MapPin } from 'lucide-react';
+import SearchableSelect from './ui/SearchableSelect';
+import { GOVERNORATES_LIST } from '../constants';
 
 export default function PhonebookModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   const [entity, setEntity] = useState('');
@@ -40,30 +42,27 @@ export default function PhonebookModal({ isOpen, onClose }: { isOpen: boolean, o
           <div className="bg-slate-50 dark:bg-slate-800/40 p-6 flex flex-wrap gap-6 rounded-3xl border border-slate-100 dark:border-white/5 shadow-sm">
              <div className="flex-1 min-w-[200px]">
                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">1. اختر الجهة:</label>
-               <select className="form-input bg-white dark:bg-slate-900 border-transparent focus:bg-white h-12" value={entity} onChange={e => setEntity(e.target.value)}>
-                 <option value="">-- اختر جهة --</option>
-                 <option value="المديريات">المديريات</option>
-                 <option value="التأمين الصحي">التأمين الصحي</option>
-                 <option value="الإدارة المركزية">الإدارة المركزية</option>
-               </select>
+               <SearchableSelect
+                 options={['المديريات', 'التأمين الصحي', 'الإدارة المركزية']}
+                 value={entity}
+                 onChange={setEntity}
+                 placeholder="اختر جهة..."
+               />
              </div>
              <div className="flex-1 min-w-[200px]">
                <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">2. اختر المحافظة:</label>
-               <select className="form-input bg-white dark:bg-slate-900 border-transparent focus:bg-white h-12" value={governorate} onChange={e => setGovernorate(e.target.value)}>
-                 <option value="">-- اختر --</option>
-                 <option value="القاهرة">القاهرة</option>
-                 <option value="الجيزة">الجيزة</option>
-                 <option value="الإسكندرية">الإسكندرية</option>
-                 <option value="أسوان">أسوان</option>
-                 <option value="أسيوط">أسيوط</option>
-                 <option value="الأقصر">الأقصر</option>
-               </select>
+               <SearchableSelect
+                 options={GOVERNORATES_LIST}
+                 value={governorate}
+                 onChange={setGovernorate}
+                 placeholder="اختر محافظة..."
+               />
              </div>
-             <div className="w-full sm:w-auto self-end">
+             <div className="w-full sm:w-auto self-end pb-1">
                <button 
-                onClick={handleSearch}
-                disabled={loading}
-                className="btn-primary w-full px-12 h-12 rounded-2xl flex items-center justify-center gap-2"
+                 onClick={handleSearch}
+                 disabled={loading}
+                 className="btn-primary w-full px-12 h-12 rounded-2xl flex items-center justify-center gap-2"
                >
                  <Search className="w-4 h-4" />
                  {loading ? 'جاري البحث...' : 'بحث الآن'}

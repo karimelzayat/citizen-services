@@ -3,6 +3,7 @@ import { addAdminComplaint } from '../services/dataService';
 import { GOVERNORATES_LIST } from '../constants';
 import { LayoutGrid, AlertTriangle, FileX, FileText, MapPin, Hash, CheckCircle2, Clock, Save, Search, Calendar, Info, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import SearchableSelect from './ui/SearchableSelect';
 
 import SearchComplaints from './SearchComplaints';
 import Reports from './Reports';
@@ -131,15 +132,13 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
                          <MapPin className="w-4 h-4 text-blue-600" />
                          المحافظة
                       </label>
-                      <select 
-                        value={formData.governorate} 
-                        onChange={(e) => setFormData({...formData, governorate: e.target.value})} 
-                        required 
-                        className="form-input appearance-none"
-                      >
-                        <option value="">اختر المحافظة...</option>
-                        {GOVERNORATES_LIST.map(g => <option key={g} value={g}>{g}</option>)}
-                      </select>
+                      <SearchableSelect
+                        options={GOVERNORATES_LIST}
+                        value={formData.governorate}
+                        onChange={(val) => setFormData({...formData, governorate: val})}
+                        placeholder="اختر المحافظة..."
+                        required
+                      />
                     </div>
                   )}
 
@@ -193,7 +192,7 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
                       </div>
 
                       <div className="space-y-2">
-                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">ملاحظات إضافية</label>
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">ملاحظات إدراية</label>
                         <textarea 
                           rows={4} 
                           value={formData.notes} 
@@ -245,11 +244,15 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
                        <Calendar className="w-4 h-4 text-blue-600" />
                        الفترة الزمنية
                     </label>
-                    <select className="form-input appearance-none bg-slate-50 dark:bg-slate-800 border-transparent transition-all">
-                      <option value="today">اليوم</option>
-                      <option value="month">هذا الشهر</option>
-                      <option value="custom">فترة مخصصة...</option>
-                    </select>
+                    <SearchableSelect
+                      options={[
+                        { value: 'today', label: 'اليوم' },
+                        { value: 'month', label: 'هذا الشهر' },
+                        { value: 'custom', label: 'فترة مخصصة...' }
+                      ]}
+                      value="today"
+                      onChange={() => {}}
+                    />
                  </div>
                  <div className="space-y-2">
                     <label className="text-sm font-bold text-slate-700 dark:text-slate-300">من تاريخ</label>

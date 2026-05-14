@@ -3,6 +3,7 @@ import { GOVERNORATES_LIST, GOVERNORATES_ENTITIES, COMPLAINT_SUBJECTS, CABINET_C
 import { addComplaint } from '../services/dataService';
 import { User, MapPin, Phone, Building2, AlertCircle, PenTool, CheckCircle2, Timer, Save, Loader2, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import SearchableSelect from './ui/SearchableSelect';
 
 export default function NewComplaintForm() {
   const [isEmergency, setIsEmergency] = useState(false);
@@ -124,11 +125,13 @@ export default function NewComplaintForm() {
               <div className="space-y-2">
                 <label className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest leading-none block mb-1">المحافظة</label>
                 <div className="relative">
-                   <MapPin className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none" />
-                   <select name="governorate" required value={formData.governorate} onChange={handleInputChange} className="form-input pr-10 appearance-none h-14">
-                    <option value="">اختر المحافظة...</option>
-                    {GOVERNORATES_LIST.map(g => <option key={g} value={g}>{g}</option>)}
-                  </select>
+                   <MapPin className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none z-10" />
+                   <SearchableSelect
+                      options={GOVERNORATES_LIST}
+                      value={formData.governorate}
+                      onChange={(val) => setFormData(p => ({ ...p, governorate: val, cabinetCity: '' }))}
+                      placeholder="اختر المحافظة..."
+                   />
                 </div>
               </div>
 
@@ -145,18 +148,24 @@ export default function NewComplaintForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">جهة الشكوى</label>
-                 <select name="complaintEntity" required={!isEmergency} value={formData.complaintEntity} onChange={handleInputChange} className="form-input h-14">
-                  <option value="">اختر جهة الشكوى...</option>
-                  {GOVERNORATES_ENTITIES.map(e => <option key={e} value={e}>{e}</option>)}
-                </select>
+                 <SearchableSelect
+                    options={GOVERNORATES_ENTITIES}
+                    value={formData.complaintEntity}
+                    onChange={(val) => setFormData(p => ({ ...p, complaintEntity: val }))}
+                    placeholder="اختر جهة الشكوى..."
+                    required={!isEmergency}
+                 />
               </div>
 
               <div className="space-y-2">
                  <label className="text-sm font-bold text-slate-700 dark:text-slate-300">موضوع المكالمة</label>
-                 <select name="complaintSubject" required={!isEmergency} value={formData.complaintSubject} onChange={handleInputChange} className="form-input h-14">
-                  <option value="">اختر الموضوع...</option>
-                  {COMPLAINT_SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
+                 <SearchableSelect
+                    options={COMPLAINT_SUBJECTS}
+                    value={formData.complaintSubject}
+                    onChange={(val) => setFormData(p => ({ ...p, complaintSubject: val }))}
+                    placeholder="اختر الموضوع..."
+                    required={!isEmergency}
+                 />
               </div>
             </div>
           </div>
@@ -202,18 +211,22 @@ export default function NewComplaintForm() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                        <label className="text-sm font-bold text-red-900 dark:text-red-200">الرقم القومي</label>
-                       <input type="text" name="cabinetNationalId" maxLength={14} placeholder="14 رقم" value={formData.cabinetNationalId} onChange={handleInputChange} className="form-input border-red-100 dark:border-red-900/30 bg-white/80 dark:bg-slate-900/50 font-mono tracking-widest h-14" />
+                       <input type="text" name="cabinetNationalId" tabIndex={-1} maxLength={14} placeholder="14 رقم" value={formData.cabinetNationalId} onChange={handleInputChange} className="form-input border-red-100 dark:border-red-900/30 bg-white/80 dark:bg-slate-900/50 font-mono tracking-widest h-14" />
                     </div>
                     <div className="space-y-2">
                        <label className="text-sm font-bold text-red-900 dark:text-red-200">المركز / المدينة</label>
-                       <select name="cabinetCity" value={formData.cabinetCity} onChange={handleInputChange} className="form-input border-red-100 dark:border-red-900/30 bg-white/80 dark:bg-slate-900/50 h-14">
-                        <option value="">اختر المركز...</option>
-                        {(CABINET_CITIES_MAP[formData.governorate] || []).map(c => <option key={c} value={c}>{c}</option>)}
-                      </select>
+                       <SearchableSelect
+                          options={CABINET_CITIES_MAP[formData.governorate] || []}
+                          value={formData.cabinetCity}
+                          onChange={(val) => setFormData(p => ({ ...p, cabinetCity: val }))}
+                          placeholder="اختر المركز..."
+                          className="bg-white/80 dark:bg-slate-900/50 rounded-xl"
+                          tabIndex={-1}
+                       />
                     </div>
                     <div className="space-y-2 col-span-full">
                        <label className="text-sm font-bold text-red-900 dark:text-red-200">موضوع الشكوى (موجز)</label>
-                       <input type="text" name="cabinetSubject" value={formData.cabinetSubject} onChange={handleInputChange} className="form-input border-red-100 dark:border-red-900/30 bg-white/80 dark:bg-slate-900/50 h-14" placeholder="عنوان الشكوى في منظومة المجلس" />
+                       <input type="text" name="cabinetSubject" tabIndex={-1} value={formData.cabinetSubject} onChange={handleInputChange} className="form-input border-red-100 dark:border-red-900/30 bg-white/80 dark:bg-slate-900/50 h-14" placeholder="عنوان الشكوى في منظومة المجلس" />
                     </div>
                   </div>
                 </div>
