@@ -406,6 +406,25 @@ export async function deleteSchedulesByMonth(monthYear: string) {
   }
 }
 
+export async function getAvailableScheduleMonths(): Promise<string[]> {
+  try {
+    const q = query(collection(db, 'schedules'), limit(5000)); // Sample all since we need unique values
+    const snapshot = await getDocs(q);
+    const monthsSet = new Set<string>();
+    snapshot.docs.forEach(doc => {
+      const my = doc.data().monthYear;
+      if (my) monthsSet.add(my);
+    });
+    return Array.from(monthsSet).sort((a, b) => {
+      // Basic sorting might be tricky with Arabic names, but usually fine if they follow a pattern
+      // Or we can just return what we find
+      return b.localeCompare(a); 
+    });
+  } catch (e) {
+    return [];
+  }
+}
+
 // Hotline Tree
 export async function getHotlineTree() {
   try {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { listenToSchedules, bulkUploadSchedules, getUserPermissions, deleteSchedulesByMonth } from '../services/dataService';
+import { listenToSchedules, bulkUploadSchedules, getUserPermissions, deleteSchedulesByMonth, getAvailableScheduleMonths } from '../services/dataService';
 import { auth } from '../lib/firebase';
 import { 
   Upload, 
@@ -10,7 +10,9 @@ import {
   FileSpreadsheet,
   Info,
   XCircle,
-  Trash2
+  Trash2,
+  ChevronDown,
+  User
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -18,21 +20,42 @@ export default function Schedules() {
   const currentMonth = new Date().toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [dbSchedules, setDbSchedules] = useState<any[]>([]);
+  const [availableMonths, setAvailableMonths] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [currentUserName, setCurrentUserName] = useState<string | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [bulkData, setBulkData] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [showMonthDropdown, setShowMonthDropdown] = useState(false);
 
   useEffect(() => {
-    const checkAdmin = async () => {
+    const fetchInitialData = async () => {
       if (auth.currentUser?.email) {
         const perms = await getUserPermissions(auth.currentUser.email);
         setIsAdmin(perms.role === 'Admin');
+        // If employee profile exists, use that name for highlighting
+        if (perms.employeeData?.name) {
+          setCurrentUserName(perms.employeeData.name);
+        } else if (auth.currentUser.displayName) {
+          setCurrentUserName(auth.currentUser.displayName);
+        }
+      }
+      
+      const months = await getAvailableScheduleMonths();
+      if (months.length > 0) {
+        setAvailableMonths(months);
+        // If current month is not in data, but data exists, select the latest month
+        if (!months.includes(currentMonth)) {
+          setSelectedMonth(months[0]);
+        }
+      } else {
+        // Fallback for current range if empty
+        setAvailableMonths([currentMonth]);
       }
     };
-    checkAdmin();
+    fetchInitialData();
   }, []);
 
   useEffect(() => {
@@ -44,21 +67,6 @@ export default function Schedules() {
     return () => unsubscribe();
   }, [selectedMonth]);
 
-  const monthOptions = useMemo(() => {
-    const options = [];
-    const now = new Date();
-    // Generate months from 2024 to 2026 to cover user data
-    const start = new Date(2024, 0, 1);
-    const end = new Date(2026, 11, 1);
-    
-    let current = new Date(start);
-    while (current <= end) {
-      options.push(current.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' }));
-      current.setMonth(current.getMonth() + 1);
-    }
-    return options.reverse(); // Show newest first
-  }, []);
-
   const normalizeString = (str: string) => {
     if (!str) return '';
     return str
@@ -69,6 +77,13 @@ export default function Schedules() {
       .replace(/[0123456789]/g, (d) => '0123456789'[d as any]) // Ensure Latin digits
       .toLowerCase()
       .trim();
+  };
+
+  const isMe = (text: string) => {
+    if (!text || !currentUserName) return false;
+    const normalizedText = normalizeString(text);
+    const normalizedMe = normalizeString(currentUserName);
+    return normalizedText.includes(normalizedMe);
   };
 
   const handleBulkUpload = async () => {
@@ -85,8 +100,8 @@ export default function Schedules() {
         const rawMonth = is12Cols ? parts[2] : selectedMonth;
         const normalizedMonth = normalizeString(rawMonth);
         
-        // Find matching month from our UI options
-        const matchedMonth = monthOptions.find(opt => normalizeString(opt) === normalizedMonth) || rawMonth;
+        // Find matching month from our UI options OR if not found, it might be a new month we will add to the list
+        const matchedMonth = availableMonths.find(opt => normalizeString(opt) === normalizedMonth) || rawMonth;
 
         const offset = is12Cols ? 1 : 0;
 
@@ -108,6 +123,11 @@ export default function Schedules() {
 
       await bulkUploadSchedules(schedules as any[]);
       alert(`تم رفع ${schedules.length} سجل بنجاح لشهر ${selectedMonth}`);
+      
+      // Update available months after upload
+      const updatedMonths = await getAvailableScheduleMonths();
+      setAvailableMonths(updatedMonths);
+      
       setShowUploadModal(false);
       setBulkData('');
     } catch (e) {
@@ -124,6 +144,14 @@ export default function Schedules() {
     try {
       await deleteSchedulesByMonth(selectedMonth);
       alert('تم مسح بيانات الشهر بنجاح');
+      const updatedMonths = await getAvailableScheduleMonths();
+      setAvailableMonths(updatedMonths);
+      if (updatedMonths.length > 0) {
+        setSelectedMonth(updatedMonths[0]);
+      } else {
+        setSelectedMonth(currentMonth);
+        setAvailableMonths([currentMonth]);
+      }
     } catch (e) {
       alert('خطأ أثناء المسح');
     } finally {
@@ -182,15 +210,52 @@ export default function Schedules() {
         </div>
  
         <div className="relative z-10 mt-6 md:mt-0">
-          <select 
-            value={selectedMonth} 
-            onChange={(e) => setSelectedMonth(e.target.value)}
-            className="form-input min-w-[300px] text-center bg-slate-50 dark:bg-slate-800 border-transparent focus:bg-white dark:focus:bg-slate-700 transition-all font-black text-blue-600 rounded-2xl py-4"
-          >
-            {monthOptions.map(m => (
-              <option key={m} value={m}>{m}</option>
-            ))}
-          </select>
+          <div className="relative">
+            <button
+              onClick={() => setShowMonthDropdown(!showMonthDropdown)}
+              className="flex items-center justify-between min-w-[300px] px-6 py-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-white/5 font-black text-blue-600 hover:bg-slate-100 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <Calendar className="w-5 h-5 opacity-60" />
+                <span>{selectedMonth}</span>
+              </div>
+              <ChevronDown className={`w-5 h-5 transition-transform ${showMonthDropdown ? 'rotate-180' : ''}`} />
+            </button>
+
+            <AnimatePresence>
+              {showMonthDropdown && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowMonthDropdown(false)}></div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    className="absolute bottom-full mb-2 left-0 w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/10 rounded-3xl shadow-2xl z-50 overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar"
+                  >
+                    <div className="p-2 space-y-1">
+                      {availableMonths.map((month) => (
+                        <button
+                          key={month}
+                          onClick={() => {
+                            setSelectedMonth(month);
+                            setShowMonthDropdown(false);
+                          }}
+                          className={`w-full text-right px-5 py-3 rounded-xl font-bold transition-all flex items-center justify-between ${
+                            selectedMonth === month 
+                              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' 
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'
+                          }`}
+                        >
+                          <span>{month}</span>
+                          {selectedMonth === month && <CheckCircle2 className="w-4 h-4" />}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                </>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       </div>
 
@@ -219,21 +284,33 @@ export default function Schedules() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                {dbSchedules.map((row, i) => (
-                  <tr key={i} className="hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors group">
-                    <td className="p-6 text-xs font-mono text-slate-400 whitespace-nowrap">{row.date}</td>
-                    <td className="p-6 text-[13px] font-black text-blue-600 dark:text-blue-400 whitespace-nowrap">{row.day}</td>
-                    <td className="p-6 text-[11px] text-slate-700 dark:text-slate-300 font-bold group-hover:text-blue-600 transition-colors">{row.shift24 || '-'}</td>
-                    <td className="p-6 text-[11px] text-slate-700 dark:text-slate-300 font-bold">{row.shift36 || '-'}</td>
-                    <td className="p-6 text-[11px] text-slate-700 dark:text-slate-300 font-bold">{row.holidayMorning || '-'}</td>
-                    <td className="p-6 text-[11px] text-slate-700 dark:text-slate-300 font-bold">{row.holidayNoon || '-'}</td>
-                    <td className="p-6 text-[11px] text-emerald-600 dark:text-emerald-400 font-black bg-emerald-50/30 dark:bg-emerald-900/10">{row.cabinet1 || '-'}</td>
-                    <td className="p-6 text-[11px] text-emerald-600 dark:text-emerald-400 font-black bg-emerald-50/30 dark:bg-emerald-900/10">{row.cabinet2 || '-'}</td>
-                    <td className="p-6 text-[11px] text-emerald-600 dark:text-emerald-400 font-black bg-emerald-50/30 dark:bg-emerald-900/10">{row.cabinet3 || '-'}</td>
-                    <td className="p-6 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50/30 dark:bg-amber-900/10">{row.careMorning || '-'}</td>
-                    <td className="p-6 text-[11px] font-bold text-amber-600 dark:text-amber-400 bg-amber-50/30 dark:bg-amber-900/10">{row.careNight || '-'}</td>
-                  </tr>
-                ))}
+                {dbSchedules.map((row, i) => {
+                  const hasMe = isMe(row.shift24) || isMe(row.shift36) || isMe(row.holidayNoon) || isMe(row.holidayMorning) || isMe(row.cabinet1) || isMe(row.cabinet2) || isMe(row.cabinet3) || isMe(row.careMorning) || isMe(row.careNight);
+
+                  return (
+                    <tr 
+                      key={i} 
+                      className={`hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors group ${hasMe ? 'bg-blue-50/50 dark:bg-blue-500/10' : ''}`}
+                    >
+                      <td className="p-6 text-xs font-mono text-slate-400 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                           {hasMe && <User className="w-3 h-3 text-blue-600 animate-pulse" />}
+                           {row.date}
+                        </div>
+                      </td>
+                      <td className="p-6 text-[13px] font-black text-blue-600 dark:text-blue-400 whitespace-nowrap">{row.day}</td>
+                      <td className={`p-6 text-[11px] font-bold transition-colors ${isMe(row.shift24) ? 'bg-blue-600 text-white shadow-inner scale-105 rounded-lg' : 'text-slate-700 dark:text-slate-300 group-hover:text-blue-600'}`}>{row.shift24 || '-'}</td>
+                      <td className={`p-6 text-[11px] font-bold transition-colors ${isMe(row.shift36) ? 'bg-blue-600 text-white shadow-inner scale-105 rounded-lg' : 'text-slate-700 dark:text-slate-300'}`}>{row.shift36 || '-'}</td>
+                      <td className={`p-6 text-[11px] font-bold transition-colors ${isMe(row.holidayMorning) ? 'bg-blue-600 text-white shadow-inner scale-105 rounded-lg' : 'text-slate-700 dark:text-slate-300'}`}>{row.holidayMorning || '-'}</td>
+                      <td className={`p-6 text-[11px] font-bold transition-colors ${isMe(row.holidayNoon) ? 'bg-blue-600 text-white shadow-inner scale-105 rounded-lg' : 'text-slate-700 dark:text-slate-300'}`}>{row.holidayNoon || '-'}</td>
+                      <td className={`p-6 text-[11px] font-black transition-colors ${isMe(row.cabinet1) ? 'bg-white text-emerald-600 shadow-md scale-105 rounded-lg border-2 border-emerald-500' : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10'}`}>{row.cabinet1 || '-'}</td>
+                      <td className={`p-6 text-[11px] font-black transition-colors ${isMe(row.cabinet2) ? 'bg-white text-emerald-600 shadow-md scale-105 rounded-lg border-2 border-emerald-500' : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10'}`}>{row.cabinet2 || '-'}</td>
+                      <td className={`p-6 text-[11px] font-black transition-colors ${isMe(row.cabinet3) ? 'bg-white text-emerald-600 shadow-md scale-105 rounded-lg border-2 border-emerald-500' : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10'}`}>{row.cabinet3 || '-'}</td>
+                      <td className={`p-6 text-[11px] font-bold transition-colors ${isMe(row.careMorning) ? 'bg-white text-amber-600 shadow-md scale-105 rounded-lg border-2 border-amber-500' : 'text-amber-600 dark:text-amber-400 bg-amber-50/30 dark:bg-amber-900/10'}`}>{row.careMorning || '-'}</td>
+                      <td className={`p-6 text-[11px] font-bold transition-colors ${isMe(row.careNight) ? 'bg-white text-amber-600 shadow-md scale-105 rounded-lg border-2 border-amber-500' : 'text-amber-600 dark:text-amber-400 bg-amber-50/30 dark:bg-amber-900/10'}`}>{row.careNight || '-'}</td>
+                    </tr>
+                  );
+                })}
                 {dbSchedules.length === 0 && (
                   <tr>
                     <td colSpan={11} className="p-32 text-center">
