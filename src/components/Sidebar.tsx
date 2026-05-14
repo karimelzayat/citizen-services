@@ -38,6 +38,7 @@ interface NavItem {
 
 interface Section {
   title: string;
+  showSection: boolean;
   items: NavItem[];
 }
 
@@ -45,17 +46,19 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
   const sections: Section[] = [
     {
       title: 'الخط الساخن',
+      showSection: permissions?.canViewHotlineSection,
       items: [
-        { id: 'dashboard', label: 'لوحة المؤشرات', icon: LayoutDashboard, show: permissions?.canViewStats },
-        { id: 'newComplaint', label: 'تسجيل مكالمة', icon: PlusCircle, show: permissions?.canRegisterComplaint },
-        { id: 'searchComplaint', label: 'البحث', icon: Search, show: permissions?.canSearchComplaints },
-        { id: 'followUp', label: 'متابعة المكالمات', icon: CheckSquare, show: permissions?.canFollowUpComplaints },
+        { id: 'dashboard', label: 'لوحة المؤشرات', icon: LayoutDashboard, show: permissions?.canViewDashboard },
+        { id: 'newComplaint', label: 'تسجيل مكالمة', icon: PlusCircle, show: permissions?.canRegisterHotline },
+        { id: 'searchComplaint', label: 'البحث', icon: Search, show: permissions?.canSearchHotline },
+        { id: 'followUp', label: 'متابعة المكالمات', icon: CheckSquare, show: permissions?.canFollowUpHotline },
       ]
     },
     {
       title: 'الإدارة',
+      showSection: permissions?.canViewAdminSection,
       items: [
-        { id: 'adminWork', label: 'تسجيل عمل الإدارة', icon: PlusCircle, show: permissions?.canViewAdmin },
+        { id: 'adminWork', label: 'تسجيل عمل الإدارة', icon: PlusCircle, show: permissions?.canRegisterAdminWork },
         { id: 'directorTab', label: 'تكليفات المدير', icon: Briefcase, show: permissions?.canViewDirectorAssignments },
         { id: 'schedulesTab', label: 'الجداول والتبديلات', icon: Calendar, show: permissions?.canViewSchedules },
         { id: 'reportsTab', label: 'التقارير', icon: FileText, show: permissions?.canViewReports },
@@ -64,10 +67,11 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
     },
     {
       title: 'مركز المساعدة',
+      showSection: permissions?.canViewHelpCenterSection,
       items: [
-        { id: 'inquiryButton', label: 'الاستفسار عن', icon: HelpCircle, show: true },
-        { id: 'phonebookButton', label: 'دليل الهاتف', icon: Contact, show: true },
-        { id: 'faqTab', label: 'دليل الأسئلة (FAQ)', icon: BookOpen, show: true },
+        { id: 'inquiryButton', label: 'الاستفسار عن', icon: HelpCircle, show: permissions?.canViewInquiry },
+        { id: 'phonebookButton', label: 'دليل الهاتف', icon: Contact, show: permissions?.canViewPhonebook },
+        { id: 'faqTab', label: 'دليل الأسئلة (FAQ)', icon: BookOpen, show: permissions?.canViewFAQ },
       ]
     }
   ];
@@ -139,7 +143,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
       <div className="flex-1 overflow-y-auto px-4 py-6 custom-scrollbar space-y-6">
         {sections.map((section, idx) => {
           const visibleItems = section.items.filter(i => i.show);
-          if (visibleItems.length === 0) return null;
+          if (!section.showSection || visibleItems.length === 0) return null;
 
           const isExpanded = expandedSections.includes(section.title);
 
