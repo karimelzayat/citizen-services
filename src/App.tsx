@@ -84,10 +84,17 @@ export default function App() {
   };
 
   useEffect(() => {
-    // Handle redirect result to capture identity after returning from Google
-    getRedirectResult(auth).catch((error) => {
-      console.error("Redirect login error", error);
-    });
+    let isInitialCheck = true;
+    
+    // Process redirect result first
+    getRedirectResult(auth)
+      .then(() => {
+        isInitialCheck = false;
+      })
+      .catch((error) => {
+        console.error("Redirect login error", error);
+        isInitialCheck = false;
+      });
 
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       if (!u) {
@@ -104,14 +111,20 @@ export default function App() {
           canViewAdminOngoing: false 
         });
 
-        // Auto-trigger login for a seamless "recognition" experience
-        // We only do this if the user has already entered one of the system modes
-        if (viewMode !== ViewMode.Landing) {
-          const provider = new GoogleAuthProvider();
-          signInWithRedirect(auth, provider).catch(() => {});
+        // Only auto-redirect if we are sure we are not already in a redirect flow
+        // and if the user is attempting to access a specific module
+        if (!isInitialCheck && viewMode !== ViewMode.Landing) {
+          // Check session storage to prevent infinite loops if something fails
+          const hasAttempted = sessionStorage.getItem('auth_attempted');
+          if (!hasAttempted) {
+            sessionStorage.setItem('auth_attempted', 'true');
+            const provider = new GoogleAuthProvider();
+            signInWithRedirect(auth, provider).catch(() => {});
+          }
         }
       } else {
         setUser(u);
+        sessionStorage.removeItem('auth_attempted'); // Clear on success
         if (u.email) {
           const perms = await getUserPermissions(u.email);
           setPermissions(perms);
@@ -119,6 +132,7 @@ export default function App() {
       }
       setLoading(false);
     });
+    
     return () => unsubscribe();
   }, [viewMode]);
 
