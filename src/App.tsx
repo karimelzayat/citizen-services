@@ -66,7 +66,6 @@ export default function App() {
   const handleLogin = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      console.log("Attempting popup login...");
       await signInWithPopup(auth, provider);
     } catch (error: any) {
       console.error("Login failed", error);
@@ -86,8 +85,6 @@ export default function App() {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
-      console.log("Auth state changed, user:", u?.email || "null");
-      
       if (!u) {
         setUser(null);
         setPermissions({ 
@@ -102,11 +99,9 @@ export default function App() {
           canViewAdminOngoing: false 
         });
       } else {
-        console.log("Successfully identified user:", u.email);
         setUser(u);
         if (u.email) {
           const perms = await getUserPermissions(u.email);
-          console.log("Permissions assigned:", perms.role);
           setPermissions(perms);
         }
       }
