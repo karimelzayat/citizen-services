@@ -294,7 +294,7 @@ export default function App() {
       )}
 
       {viewMode === ViewMode.Landing ? null : viewMode === ViewMode.Hotline ? (
-        <div className={`fixed inset-y-0 right-0 z-[70] lg:relative lg:block self-start transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'} w-[360px] lg:w-auto`}>
+        <div className={`fixed inset-y-0 right-0 z-[70] lg:sticky lg:top-0 lg:h-screen lg:block self-start transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'} w-[360px] lg:w-auto`}>
           <Sidebar
             activeTab={activeTab}
             onTabChange={(tab) => {
@@ -311,7 +311,7 @@ export default function App() {
           />
         </div>
       ) : viewMode === ViewMode.Admin ? (
-        <div className={`fixed inset-y-0 right-0 z-[70] lg:relative lg:block self-start transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'} w-[360px] lg:w-auto`}>
+        <div className={`fixed inset-y-0 right-0 z-[70] lg:sticky lg:top-0 lg:h-screen lg:block self-start transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'} w-[360px] lg:w-auto`}>
           <AdminSidebar
             activeSubTab={adminSubTab}
             onSubTabChange={(t) => { setAdminSubTab(t); setIsMobileMenuOpen(false); }}
@@ -321,7 +321,7 @@ export default function App() {
           />
         </div>
       ) : (
-        <div className={`fixed inset-y-0 right-0 z-[70] lg:relative lg:block self-start transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'} w-[360px] lg:w-auto`}>
+        <div className={`fixed inset-y-0 right-0 z-[70] lg:sticky lg:top-0 lg:h-screen lg:block self-start transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'} w-[360px] lg:w-auto`}>
           <AdminSidebar
             activeSubTab="userManagement"
             onSubTabChange={() => {}}
