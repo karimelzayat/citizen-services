@@ -63,7 +63,11 @@ export default function Schedules() {
     if (!str) return '';
     return str
       .replace(/[أإآ]/g, 'ا')
-      .replace(/[١٢٣٤٥٦٧٨٩٠]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString())
+      .replace(/[ة]/g, 'ه')
+      .replace(/[ى]/g, 'ي')
+      .replace(/[١٢٣٤٥٦٧٨٩٠]/g, (d) => '0123456789'['٠١٢٣٤٥٦٧٨٩'.indexOf(d)]) // Arabic to Latin
+      .replace(/[0123456789]/g, (d) => '0123456789'[d as any]) // Ensure Latin digits
+      .toLowerCase()
       .trim();
   };
 
@@ -73,17 +77,23 @@ export default function Schedules() {
     try {
       const lines = bulkData.trim().split('\n');
       const schedules = lines.map(line => {
-        const parts = line.split('\t').map(p => p.trim());
+        // Handle both tab and multiple spaces as delimiters
+        const parts = line.split(/\t| {2,}/).map(p => p.trim());
         if (parts.length < 3) return null;
         
-        const is12Cols = parts.length >= 12;
-        const monthYear = is12Cols ? parts[2] : selectedMonth;
+        const is12Cols = parts.length >= 11; // Some lines might skip empty last columns
+        const rawMonth = is12Cols ? parts[2] : selectedMonth;
+        const normalizedMonth = normalizeString(rawMonth);
+        
+        // Find matching month from our UI options
+        const matchedMonth = monthOptions.find(opt => normalizeString(opt) === normalizedMonth) || rawMonth;
+
         const offset = is12Cols ? 1 : 0;
 
         return {
           date: parts[0],
           day: parts[1],
-          monthYear,
+          monthYear: matchedMonth,
           shift24: parts[2 + offset] || '',
           shift36: parts[3 + offset] || '',
           holidayMorning: parts[4 + offset] || '',
@@ -97,10 +107,11 @@ export default function Schedules() {
       }).filter(Boolean);
 
       await bulkUploadSchedules(schedules as any[]);
-      alert(`تم رفع ${schedules.length} سجل بنجاح`);
+      alert(`تم رفع ${schedules.length} سجل بنجاح لشهر ${selectedMonth}`);
       setShowUploadModal(false);
       setBulkData('');
     } catch (e) {
+      console.error(e);
       alert('خطأ أثناء الرفع');
     } finally {
       setIsUploading(false);
