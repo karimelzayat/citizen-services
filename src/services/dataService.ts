@@ -153,7 +153,17 @@ export async function deleteEmployee(id: string) {
 function sanitize(data: any): any {
   if (data === undefined) return null;
   if (data === null || typeof data !== 'object') return data;
+  
+  // Preserve special types that Firestore handles natively
   if (data instanceof Date || data instanceof Timestamp) return data;
+  
+  // Preserve Firestore sentinels (like FieldValue from serverTimestamp)
+  // These are objects but have custom constructors
+  if (data.constructor && 
+      data.constructor.name !== 'Object' && 
+      data.constructor.name !== 'Array') {
+    return data;
+  }
   
   const cleaned: any = Array.isArray(data) ? [] : {};
   Object.keys(data).forEach(key => {
@@ -256,13 +266,27 @@ export async function searchComplaints(params: { date?: string, phoneNumber?: st
     // In-memory multi-filter for secondary parameters
     if (results.length > 0) {
       results = results.filter(c => {
-        // Filter by Date if primary search was phone/name
+        // Filter by Date
         if (params.date) {
            if (!c.timestamp) return false;
            try {
              const ts = (c.timestamp as any).toDate ? (c.timestamp as any).toDate() : new Date(c.timestamp as any);
-             if (isNaN(ts.getTime())) return false;
-             if (ts.toISOString().split('T')[0] !== params.date) return false;
+             if (isNaN(ts.getTime())) {
+               // Handle corrupted data: if it's a map with _methodName it was corrupted by sanitize
+               // We can't know the exact time, but we know it's recent. 
+               // For now, if it's corrupted, we can't reliably filter by date, so we return false
+               // Unless we want to be generous? Local users might prefer seeing their data.
+               return false;
+             }
+             
+             // Compare in local date format (YYYY-MM-DD) to match params.date
+             // toISOString() is UTC, which can be off by a day for local users
+             const year = ts.getFullYear();
+             const month = String(ts.getMonth() + 1).padStart(2, '0');
+             const day = String(ts.getDate()).padStart(2, '0');
+             const localDate = `${year}-${month}-${day}`;
+             
+             if (localDate !== params.date) return false;
            } catch (e) { return false; }
         }
 
