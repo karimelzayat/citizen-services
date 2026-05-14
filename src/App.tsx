@@ -179,6 +179,42 @@ export default function App() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-fade-in items-stretch">
+            {!user ? (
+              <div
+                onClick={handleLogin}
+                className="group relative bg-blue-600 p-10 rounded-[40px] border border-blue-500 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/40 hover:-translate-y-2 overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-[0.1] rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center mb-8 group-hover:scale-110 transition-all duration-500">
+                  <i className="fab fa-google text-4xl text-white"></i>
+                </div>
+                <h2 className="text-3xl font-bold text-white mb-3">
+                  تسجيل الدخول
+                </h2>
+                <p className="text-blue-100 leading-relaxed font-medium">قم بتسجيل الدخول بحساب جوجل الخاص بك للوصول إلى المنظومة</p>
+                <div className="mt-8 flex items-center gap-2 text-xs font-bold text-white">
+                  <span className="px-3 py-1 bg-white/20 rounded-full">دخول آمن</span>
+                </div>
+              </div>
+            ) : (permissions?.role === 'Guest') ? (
+              <div
+                onClick={handleLogout}
+                className="group relative bg-red-600 p-10 rounded-[40px] border border-red-500 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-red-500/40 hover:-translate-y-2 overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-[0.1] rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center mb-8 group-hover:scale-110 transition-all duration-500">
+                  <LogOut className="w-10 h-10 text-white" />
+                </div>
+                <h2 className="text-3xl font-bold text-white mb-3">
+                  تغيير الحساب
+                </h2>
+                <p className="text-red-100 leading-relaxed font-medium">هذا الحساب ({user.email}) غير مصرح له بالدخول. اضغط لتسجيل الخروج والدخول بحساب آخر.</p>
+                <div className="mt-8 flex items-center gap-2 text-xs font-bold text-white">
+                  <span className="px-3 py-1 bg-white/20 rounded-full">حساب غير مسجل</span>
+                </div>
+              </div>
+            ) : null}
+
             {permissions?.showHotlineSection && (
               <div
                 onClick={() => { setViewMode(ViewMode.Hotline); setActiveTab('newComplaint'); }}
