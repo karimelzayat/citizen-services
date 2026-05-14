@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'motion/react';
 export default function SearchComplaints() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [phone, setPhone] = useState('');
+  const [callerName, setCallerName] = useState('');
   const [results, setResults] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'duplicates'>('all');
@@ -20,11 +21,16 @@ export default function SearchComplaints() {
     setLoading(true);
     try {
       const searchDate = overrideDate !== undefined ? overrideDate : date;
-      const data = await searchComplaints({ date: searchDate, phoneNumber: phone });
+      const data = await searchComplaints({ 
+        date: searchDate, 
+        phoneNumber: phone,
+        callerName: callerName 
+      });
       setResults(data);
       if (overrideDate !== undefined) {
         setDate(overrideDate);
         setPhone('');
+        setCallerName('');
       }
     } catch (err: any) {
       alert('حدث خطأ أثناء البحث: ' + err.message);
@@ -64,7 +70,7 @@ export default function SearchComplaints() {
           <div className="space-y-2">
             <label className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-2 uppercase tracking-widest leading-none block mb-1">
                <CalendarIcon className="w-3.5 h-3.5 text-blue-600" />
-               البحث بالتاريخ
+                البحث بالتاريخ
             </label>
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="form-input" />
           </div>
@@ -77,13 +83,21 @@ export default function SearchComplaints() {
             <input type="tel" placeholder="01xxxxxxxxx" value={phone} onChange={(e) => setPhone(e.target.value)} className="form-input font-mono" />
           </div>
 
+          <div className="space-y-2">
+            <label className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-2 uppercase tracking-widest leading-none block mb-1">
+               <User className="w-3.5 h-3.5 text-blue-600" />
+               اسم المتصل
+            </label>
+            <input type="text" placeholder="اسم المتصل..." value={callerName} onChange={(e) => setCallerName(e.target.value)} className="form-input" />
+          </div>
+
          <button 
             onClick={() => handleSearch()} 
             disabled={loading}
-            className="btn-primary flex items-center justify-center gap-2 col-span-1 md:col-span-2"
+            className="btn-primary flex items-center justify-center gap-2"
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-            <span className="font-black uppercase tracking-widest">{phone || date ? 'بدأ البحث المتقدم' : 'تحديث البيانات'}</span>
+            <span className="font-black uppercase tracking-widest">{phone || date || callerName ? 'بدأ البحث المتقدم' : 'تحديث البيانات'}</span>
           </button>
         </div>
       </div>
@@ -296,12 +310,29 @@ export default function SearchComplaints() {
                 <div className="space-y-3 p-5 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-100 dark:border-white/5">
                   <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic flex items-center gap-2">
                     <FileText className="w-3.5 h-3.5" />
-                    تفاصيل الشكوى:
+                    تفاصيل المكالمة:
                   </h4>
                   <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
-                    {selectedComplaint.subject || 'لا توجد تفاصيل إضافية مسجلة'}
+                    {selectedComplaint.callDetails || selectedComplaint.cabinetSubject || 'لا توجد تفاصيل إضافية مسجلة'}
                   </p>
                 </div>
+
+                {/* Cabinet specific info if exists */}
+                {selectedComplaint.isCabinetComplaint && (
+                  <div className="p-4 bg-red-50 dark:bg-red-900/10 rounded-2xl border border-red-100 dark:border-red-900/20 space-y-3">
+                    <h4 className="text-[10px] font-black text-red-600 uppercase tracking-widest">بيانات مجلس الوزراء</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-[8px] text-slate-400 font-black">الرقم القومي</p>
+                        <p className="text-xs font-bold text-slate-700 dark:text-slate-200">{selectedComplaint.cabinetNationalId || 'غير مسجل'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[8px] text-slate-400 font-black">العنوان / المدينة</p>
+                        <p className="text-xs font-bold text-slate-700 dark:text-slate-200">{selectedComplaint.cabinetCity} - {selectedComplaint.cabinetAddress}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Employee Info */}
                 <div className="flex items-center justify-between p-4 bg-blue-50/30 dark:bg-blue-900/10 rounded-2xl border border-blue-50 dark:border-blue-900/20">

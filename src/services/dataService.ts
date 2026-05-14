@@ -199,36 +199,39 @@ export async function addComplaint(complaint: Partial<Complaint>, file?: File) {
   }
 }
 
-export async function searchComplaints(params: { date?: string, phoneNumber?: string }) {
+export async function searchComplaints(params: { date?: string, phoneNumber?: string, callerName?: string }) {
   try {
     const colRef = collection(db, 'complaints');
     let results: Complaint[] = [];
 
-    // If phone number is provided, search by phone number primarily
+    // Prioritize search by Phone or Name directly in Firestore
     if (params.phoneNumber) {
       const p = params.phoneNumber.trim();
       console.log(`[Search] Searching by phone: ${p}`);
       const q = query(colRef, where('phoneNumber', '==', p));
       const snapshot = await getDocs(q);
       results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
-      
-      // If none found as string, maybe they are stored differently? (Shouldn't be, but defensive)
-      if (results.length === 0) {
-        const q2 = query(colRef, where('phoneNumber', '==', Number(p)));
-        const snapshot2 = await getDocs(q2);
-        results = snapshot2.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
-      }
-      
-      // Filter by date in memory if provided
-      if (params.date) {
-        console.log(`[Search] Filtering ${results.length} results by date: ${params.date}`);
-        results = results.filter(c => {
-          if (!c.timestamp) return false;
-          const ts = (c.timestamp as any).toDate ? (c.timestamp as any).toDate() : new Date(c.timestamp as any);
-          return ts.toISOString().split('T')[0] === params.date;
-        });
-      }
     } 
+    else if (params.callerName) {
+      const name = params.callerName.trim();
+      console.log(`[Search] Searching by name: ${name}`);
+      // Try exact match first
+      const q = query(colRef, where('callerName', '==', name));
+      const snapshot = await getDocs(q);
+      results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
+      
+      // If no exact match and name is long enough, try prefix search? 
+      // Firestore query(where('name', '>=', name), where('name', '<=', name + '\uf8ff'))
+      if (results.length === 0 && name.length >= 3) {
+         const qPrefix = query(colRef, 
+           where('callerName', '>=', name), 
+           where('callerName', '<=', name + '\uf8ff'), 
+           limit(100)
+         );
+         const snapPrefix = await getDocs(qPrefix);
+         results = snapPrefix.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
+      }
+    }
     // If only date is provided, use a range query
     else if (params.date) {
       console.log(`[Search] Searching by date range: ${params.date}`);
@@ -242,19 +245,53 @@ export async function searchComplaints(params: { date?: string, phoneNumber?: st
       const snapshot = await getDocs(q);
       results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
     }
-    // Default: Get 50 most recent (useful for empty search)
+    // Default: Get 100 most recent
     else {
       console.log(`[Search] No params provided, fetching recent complaints`);
-      const q = query(colRef, orderBy('timestamp', 'desc'), limit(50));
+      const q = query(colRef, orderBy('timestamp', 'desc'), limit(100));
       const snapshot = await getDocs(q);
       results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
     }
 
-    console.log(`[Search] Found ${results.length} results`);
+    // In-memory multi-filter for secondary parameters
+    if (results.length > 0) {
+      results = results.filter(c => {
+        // Filter by Date if primary search was phone/name
+        if (params.date) {
+           if (!c.timestamp) return false;
+           try {
+             const ts = (c.timestamp as any).toDate ? (c.timestamp as any).toDate() : new Date(c.timestamp as any);
+             if (isNaN(ts.getTime())) return false;
+             if (ts.toISOString().split('T')[0] !== params.date) return false;
+           } catch (e) { return false; }
+        }
+
+        // Filter by Phone
+        if (params.phoneNumber) {
+          const p = params.phoneNumber.trim();
+          if (!c.phoneNumber || !c.phoneNumber.includes(p)) return false;
+        }
+
+        // Filter by Name
+        if (params.callerName) {
+          const n = params.callerName.trim();
+          if (!c.callerName || !c.callerName.includes(n)) return false;
+        }
+
+        return true;
+      });
+    }
+
+    // Sort result by timestamp
+    results.sort((a, b) => {
+      const tsA = (a.timestamp as any)?.toDate?.() || new Date(a.timestamp as any);
+      const tsB = (b.timestamp as any)?.toDate?.() || new Date(b.timestamp as any);
+      return tsB.getTime() - tsA.getTime();
+    });
+
+    console.log(`[Search] Final filtered count: ${results.length}`);
     return results;
   } catch (e) {
-    const err = e as any;
-    if (err.code === 'permission-denied') return [];
     console.error('[Search] Error in searchComplaints', e);
     return [];
   }
