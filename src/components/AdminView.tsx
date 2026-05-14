@@ -6,6 +6,9 @@ import { motion, AnimatePresence } from 'motion/react';
 
 import SearchComplaints from './SearchComplaints';
 import Reports from './Reports';
+import SettingsView from './SettingsView';
+import DirectorAssignments from './DirectorAssignments';
+import Schedules from './Schedules';
 import { UserPermissions } from '../types';
 
 export default function AdminView({ activeSubTab, permissions }: { activeSubTab: string, permissions: UserPermissions | null }) {
@@ -33,6 +36,7 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
   if (activeSubTab === 'reports' || activeSubTab === 'reportsTab') return <Reports />;
   if (activeSubTab === 'directorTab') return <DirectorAssignments />;
   if (activeSubTab === 'schedulesTab') return <Schedules />;
+  if (activeSubTab === 'userManagement') return <SettingsView />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

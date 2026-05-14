@@ -20,7 +20,7 @@ import PhonebookModal from './components/PhonebookModal';
 import InquiryModal from './components/InquiryModal';
 import HotlineTreeModal from './components/HotlineTreeModal';
 import RankingModal from './components/RankingModal';
-import { Home, PlusCircle, Search, Settings, FileText, Bell, GitBranch, Trophy, Menu, X, LogOut, ChevronRight, Hash, Sun, Moon } from 'lucide-react';
+import { Home, PlusCircle, Search, Settings, FileText, Bell, GitBranch, Trophy, Menu, X, LogOut, ChevronRight, Hash, Sun, Moon, Layers, Briefcase, Calendar, Users, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 enum ViewMode {
@@ -261,6 +261,7 @@ export default function App() {
             onSubTabChange={(t) => { setAdminSubTab(t); setIsMobileMenuOpen(false); }}
             onReturnHome={() => setViewMode(ViewMode.Landing)}
             onLogout={handleLogout}
+            permissions={permissions}
           />
         </div>
       )}
@@ -365,7 +366,7 @@ export default function App() {
         <div className="p-4 md:p-6 flex-1 bg-slate-50/50 dark:bg-transparent transition-colors duration-700">
           <div className="w-full max-w-[2200px] mx-auto flex flex-col xl:flex-row gap-6 px-4">
             <div className="flex-1 min-w-0 bg-white dark:bg-slate-900/30 backdrop-blur-md rounded-[32px] p-6 md:p-8 transition-all duration-700 border border-slate-200/60 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none">
-              {viewMode === ViewMode.Hotline ? renderContent() : <AdminView activeSubTab={adminSubTab} />}
+              {viewMode === ViewMode.Hotline ? renderContent() : <AdminView activeSubTab={adminSubTab} permissions={permissions} />}
             </div>
 
             {viewMode === ViewMode.Hotline && (
@@ -410,7 +411,7 @@ export default function App() {
   );
 }
 
-function AdminSidebar({ activeSubTab, onSubTabChange, onReturnHome, onLogout }: { activeSubTab: string, onSubTabChange: (t: string) => void, onReturnHome: () => void, onLogout: () => void }) {
+function AdminSidebar({ activeSubTab, onSubTabChange, onReturnHome, onLogout, permissions }: { activeSubTab: string, onSubTabChange: (t: string) => void, onReturnHome: () => void, onLogout: () => void, permissions: UserPermissions | null }) {
   return (
     <div className="bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 h-screen sticky top-0 w-full lg:w-[300px] flex flex-col shadow-2xl z-50 overflow-hidden border-l border-slate-200 dark:border-white/5 font-bold transition-all duration-700">
       <div className="h-16 flex items-center px-4 border-b border-slate-100 dark:border-white/5 bg-white dark:bg-slate-900 transition-all duration-700">
@@ -504,8 +505,21 @@ function AdminSidebar({ activeSubTab, onSubTabChange, onReturnHome, onLogout }: 
                 </button>
               </li>
             )}
+            {permissions?.canManageUsers && (
+              <li>
+                <button
+                  onClick={() => onSubTabChange('userManagement')}
+                  className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 
+                    ${activeSubTab === 'userManagement' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                >
+                  <ShieldCheck className="w-5 h-5" />
+                  <span className="font-bold text-sm">إدارة الصلاحيات</span>
+                </button>
+              </li>
+            )}
           </ul>
         </div>
+      </div>
     </div>
   );
 }
