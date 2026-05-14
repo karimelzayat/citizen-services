@@ -66,7 +66,8 @@ export default function App() {
   const handleLogin = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithRedirect(auth, provider);
+      console.log("Attempting popup login...");
+      await signInWithPopup(auth, provider);
     } catch (error: any) {
       console.error("Login failed", error);
       alert("فشل تسجيل الدخول: " + error.message);
@@ -84,18 +85,6 @@ export default function App() {
   };
 
   useEffect(() => {
-    let isInitialCheck = true;
-    
-    // Process redirect result first
-    getRedirectResult(auth)
-      .then(() => {
-        isInitialCheck = false;
-      })
-      .catch((error) => {
-        console.error("Redirect login error", error);
-        isInitialCheck = false;
-      });
-
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       console.log("Auth state changed, user:", u?.email || "null");
       
@@ -112,20 +101,9 @@ export default function App() {
           canViewHotline: true, 
           canViewAdminOngoing: false 
         });
-
-        if (!isInitialCheck && viewMode !== ViewMode.Landing) {
-          const hasAttempted = sessionStorage.getItem('auth_attempted');
-          if (!hasAttempted) {
-            console.log("Auto-redirecting to Google...");
-            sessionStorage.setItem('auth_attempted', 'true');
-            const provider = new GoogleAuthProvider();
-            signInWithRedirect(auth, provider).catch((err) => console.error("Redirect error", err));
-          }
-        }
       } else {
         console.log("Successfully identified user:", u.email);
         setUser(u);
-        sessionStorage.removeItem('auth_attempted');
         if (u.email) {
           const perms = await getUserPermissions(u.email);
           console.log("Permissions assigned:", perms.role);
@@ -136,7 +114,7 @@ export default function App() {
     });
     
     return () => unsubscribe();
-  }, [viewMode]);
+  }, []);
 
   useEffect(() => {
     const root = document.documentElement;
@@ -149,8 +127,6 @@ export default function App() {
     }
   }, [isDarkMode]);
 
-  // Sync isDarkMode with system preference if needed, but here we use manual toggle
-
   if (loading) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-white dark:bg-slate-950 text-blue-600 transition-colors duration-300">
@@ -161,6 +137,12 @@ export default function App() {
           </div>
         </div>
         <span className="mt-6 font-bold text-lg tracking-wider animate-pulse">جاري التحقق من الصلاحيات...</span>
+        <button 
+          onClick={handleLogin}
+          className="mt-8 px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-bold shadow-lg"
+        >
+          تسجيل الدخول يدوياً
+        </button>
       </div>
     );
   }
