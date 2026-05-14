@@ -16,7 +16,10 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
   ];
 
   const workTypes = allWorkTypes.filter(t => t.show);
-  const [workType, setWorkType] = useState(workTypes[0]?.id || 'الجاري');
+  
+  // Use the first available work type as initial state
+  const [workType, setWorkType] = useState(() => workTypes[0]?.id || 'الجاري');
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     complaintNo: '',
@@ -26,8 +29,10 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
     registrant: ''
   });
 
-  if (activeSubTab === 'search') return <SearchComplaints />;
-  if (activeSubTab === 'reports') return <Reports />;
+  if (activeSubTab === 'search' || activeSubTab === 'adminSearch') return <SearchComplaints />;
+  if (activeSubTab === 'reports' || activeSubTab === 'reportsTab') return <Reports />;
+  if (activeSubTab === 'directorTab') return <DirectorAssignments />;
+  if (activeSubTab === 'schedulesTab') return <Schedules />;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +59,7 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {activeSubTab === 'register' ? (
+      {activeSubTab === 'adminWork' || activeSubTab === 'register' ? (
         <div className="space-y-6">
            {/* Header */}
           <div className="flex items-center justify-between">
@@ -67,36 +72,38 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/40 dark:shadow-none p-6 rounded-[24px] transition-all duration-700">
               <div className="space-y-6">
-                {/* Work Type Selection */}
-                <div className="space-y-4">
-                  <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                     <Info className="w-3.5 h-3.5 text-blue-600" />
-                     تصنيف العمل
-                  </label>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {workTypes.map(type => {
-                      const Icon = type.icon;
-                      const isActive = workType === type.id;
-                      return (
-                        <button 
-                          key={type.id}
-                          type="button"
-                          onClick={() => setWorkType(type.id)}
-                          className={`flex items-center gap-4 p-4 rounded-[16px] border-2 transition-all duration-700 text-right ${
-                            isActive 
-                              ? `bg-${type.color}-500 border-${type.color}-500 text-white shadow-xl shadow-${type.color}-500/20 font-black`
-                              : 'bg-slate-50 dark:bg-slate-800/40 border-transparent dark:border-white/5 text-slate-500 hover:border-slate-300 dark:hover:border-white/10 font-bold'
-                          }`}
-                        >
-                          <div className={`p-3 rounded-xl transition-all duration-500 shadow-sm ${isActive ? 'bg-white/20' : `bg-white dark:bg-slate-900 text-${type.color}-600 dark:text-${type.color}-400`}`}>
-                            <Icon className="w-5 h-5" />
-                          </div>
-                          <span className="text-base">{type.label}</span>
-                        </button>
-                      );
-                    })}
+                {/* Work Type Selection - Only show if more than 1 type is available */}
+                {workTypes.length > 1 && (
+                  <div className="space-y-4">
+                    <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                       <Info className="w-3.5 h-3.5 text-blue-600" />
+                       تصنيف العمل
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {workTypes.map(type => {
+                        const Icon = type.icon;
+                        const isActive = workType === type.id;
+                        return (
+                          <button 
+                            key={type.id}
+                            type="button"
+                            onClick={() => setWorkType(type.id)}
+                            className={`flex items-center gap-4 p-4 rounded-[16px] border-2 transition-all duration-700 text-right ${
+                              isActive 
+                                ? `bg-${type.color}-500 border-${type.color}-500 text-white shadow-xl shadow-${type.color}-500/20 font-black`
+                                : 'bg-slate-50 dark:bg-slate-800/40 border-transparent dark:border-white/5 text-slate-500 hover:border-slate-300 dark:hover:border-white/10 font-bold'
+                            }`}
+                          >
+                            <div className={`p-3 rounded-xl transition-all duration-500 shadow-sm ${isActive ? 'bg-white/20' : `bg-white dark:bg-slate-900 text-${type.color}-600 dark:text-${type.color}-400`}`}>
+                              <Icon className="w-5 h-5" />
+                            </div>
+                            <span className="text-base">{type.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-3">

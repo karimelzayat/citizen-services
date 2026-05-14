@@ -56,17 +56,6 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
       ]
     },
     {
-      title: 'لوحة الإدارة',
-      showSection: permissions?.showAdminSection,
-      items: [
-        { id: 'adminWork', label: 'تسجيل عمل الإدارة', icon: Layers, show: permissions?.canRegisterAdminWork },
-        { id: 'adminSearch', label: 'بحث الإدارة', icon: Search, show: permissions?.showAdminSection },
-        { id: 'reportsTab', label: 'التقارير', icon: FileText, show: permissions?.canViewReports },
-        { id: 'directorTab', label: 'تكليفات المدير', icon: Briefcase, show: permissions?.canViewDirectorAssignments },
-        { id: 'schedulesTab', label: 'الجداول والتبديلات', icon: Calendar, show: permissions?.canViewSchedules },
-      ]
-    },
-    {
       title: 'مركز المساعدة',
       showSection: permissions?.showHelpCenterSection,
       items: [

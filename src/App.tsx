@@ -204,7 +204,7 @@ export default function App() {
             </div>
 
             <div
-              onClick={() => setViewMode(ViewMode.Admin)}
+              onClick={() => { setViewMode(ViewMode.Admin); setActiveTab('adminWork'); }}
               className="group relative bg-white dark:bg-slate-900/50 p-10 rounded-[40px] border border-slate-200 dark:border-white/5 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-2 overflow-hidden"
             >
               <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600 opacity-[0.03] group-hover:opacity-10 transition-opacity rounded-full -mr-16 -mt-16 blur-2xl"></div>
@@ -440,50 +440,72 @@ function AdminSidebar({ activeSubTab, onSubTabChange, onReturnHome, onLogout }: 
           <span className="font-bold text-sm">تسجيل الخروج</span>
         </button>
       </div>
-
       <div className="flex-1 overflow-y-auto px-4 py-6 space-y-8">
         <div className="space-y-2">
           <div className="px-2 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">العمليات الإدارية</div>
           <ul className="space-y-1">
-            <li>
-              <button
-                onClick={() => onSubTabChange('register')}
-                className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 
-                  ${activeSubTab === 'register'
-                    ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'}`}
-              >
-                <PlusCircle className={`w-5 h-5 transition-transform group-hover:scale-110 ${activeSubTab === 'register' ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
-                <span className="font-bold text-sm">تسجيل شكوى</span>
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={() => onSubTabChange('search')}
-                className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 
-                  ${activeSubTab === 'search'
-                    ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'}`}
-              >
-                <Search className={`w-5 h-5 transition-transform group-hover:scale-110 ${activeSubTab === 'search' ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
-                <span className="font-bold text-sm">البحث</span>
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={() => onSubTabChange('reports')}
-                className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 
-                  ${activeSubTab === 'reports'
-                    ? 'bg-red-600 text-white shadow-lg shadow-red-500/20'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'}`}
-              >
-                <FileText className={`w-5 h-5 transition-transform group-hover:scale-110 ${activeSubTab === 'reports' ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
-                <span className="font-bold text-sm">التقارير</span>
-              </button>
-            </li>
+            {permissions?.canRegisterAdminWork && (
+              <li>
+                <button
+                  onClick={() => onSubTabChange('adminWork')}
+                  className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 
+                    ${activeSubTab === 'adminWork' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                >
+                  <Layers className="w-5 h-5" />
+                  <span className="font-bold text-sm">تسجيل عمل الإدارة</span>
+                </button>
+              </li>
+            )}
+            {permissions?.showAdminSection && (
+              <li>
+                <button
+                  onClick={() => onSubTabChange('adminSearch')}
+                  className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 
+                    ${activeSubTab === 'adminSearch' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                >
+                  <Search className="w-5 h-5" />
+                  <span className="font-bold text-sm">بحث السجلات</span>
+                </button>
+              </li>
+            )}
+            {permissions?.canViewDirectorAssignments && (
+              <li>
+                <button
+                  onClick={() => onSubTabChange('directorTab')}
+                  className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 
+                    ${activeSubTab === 'directorTab' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                >
+                  <Briefcase className="w-5 h-5" />
+                  <span className="font-bold text-sm">تكليفات المدير</span>
+                </button>
+              </li>
+            )}
+            {permissions?.canViewSchedules && (
+              <li>
+                <button
+                  onClick={() => onSubTabChange('schedulesTab')}
+                  className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 
+                    ${activeSubTab === 'schedulesTab' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                >
+                  <Calendar className="w-5 h-5" />
+                  <span className="font-bold text-sm">الجداول والتبديلات</span>
+                </button>
+              </li>
+            )}
+            {permissions?.canViewReports && (
+              <li>
+                <button
+                  onClick={() => onSubTabChange('reportsTab')}
+                  className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 
+                    ${activeSubTab === 'reportsTab' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                >
+                  <FileText className="w-5 h-5" />
+                  <span className="font-bold text-sm">التقارير</span>
+                </button>
+              </li>
+            )}
           </ul>
         </div>
-      </div>
     </div>
   );
 }
