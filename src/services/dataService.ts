@@ -73,8 +73,9 @@ export async function getUserPermissions(email: string | null | undefined): Prom
   
   // 1. High Priority Hardcoded Admins
   const hardcodedAdmins = ['karimelzayat3@gmail.com', 'karimelzayat.1997@gmail.com'];
+  let hardcodedPerms: UserPermissions | null = null;
   if (hardcodedAdmins.includes(normalizedEmail)) {
-    return { role: "Admin", ...ROLE_CAPABILITIES["Admin"] };
+    hardcodedPerms = { role: "Admin", ...ROLE_CAPABILITIES["Admin"] };
   }
 
   // 2. Try to get permissions from Employees collection
@@ -84,16 +85,17 @@ export async function getUserPermissions(email: string | null | undefined): Prom
     
     if (!snapshot.empty) {
       const data = snapshot.docs[0].data() as Employee;
+      const basePermissions = hardcodedPerms || { role: data.role, ...data.permissions };
       return { 
-        role: data.role, 
-        ...data.permissions,
+        ...basePermissions,
         employeeData: { id: snapshot.docs[0].id, ...data }
-      };
+      } as UserPermissions;
     }
   } catch (e) {
     console.error("Firebase error checking employee permissions:", e);
   }
   
+  if (hardcodedPerms) return hardcodedPerms;
   return { role: "Guest", ...DEFAULT_CAPABILITIES };
 }
 

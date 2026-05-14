@@ -35,11 +35,23 @@ export default function Schedules() {
       if (auth.currentUser?.email) {
         const perms = await getUserPermissions(auth.currentUser.email);
         setIsAdmin(perms.role === 'Admin');
-        // If employee profile exists, use that name for highlighting
+        
+        // Priority for finding the user's name:
+        // 1. Employee record from DB
+        // 2. Hardcoded EMPLOYEE_MAP in constants
+        // 3. Firebase Auth display name
         if (perms.employeeData?.name) {
           setCurrentUserName(perms.employeeData.name);
-        } else if (auth.currentUser.displayName) {
-          setCurrentUserName(auth.currentUser.displayName);
+        } else {
+          // Check constants
+          import('../constants').then(({ EMPLOYEE_MAP }) => {
+            const hardcodedName = EMPLOYEE_MAP[auth.currentUser?.email || ""];
+            if (hardcodedName) {
+              setCurrentUserName(hardcodedName);
+            } else if (auth.currentUser?.displayName) {
+              setCurrentUserName(auth.currentUser.displayName);
+            }
+          });
         }
       }
       
@@ -83,7 +95,20 @@ export default function Schedules() {
     if (!text || !currentUserName) return false;
     const normalizedText = normalizeString(text);
     const normalizedMe = normalizeString(currentUserName);
-    return normalizedText.includes(normalizedMe);
+    
+    // Direct inclusion
+    if (normalizedText.includes(normalizedMe) || normalizedMe.includes(normalizedText)) return true;
+    
+    // Split by spaces and check if at least 2 significant words match
+    const textWords = normalizedText.split(/\s+/).filter(w => w.length > 2);
+    const meWords = normalizedMe.split(/\s+/).filter(w => w.length > 2);
+    
+    let matches = 0;
+    for (const w of textWords) {
+      if (meWords.includes(w)) matches++;
+    }
+    
+    return matches >= 2;
   };
 
   const handleBulkUpload = async () => {
@@ -193,9 +218,9 @@ export default function Schedules() {
         )}
       </div>
 
-      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/20 dark:shadow-none p-8 mb-8 rounded-[40px] flex flex-col md:flex-row items-center justify-between relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-2 h-full bg-blue-600"></div>
-        <div className="absolute top-0 right-0 w-full h-full bg-blue-600 opacity-0 group-hover:opacity-[0.02] transform scale-x-0 group-hover:scale-x-100 origin-right transition-all duration-700"></div>
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/20 dark:shadow-none p-8 mb-8 rounded-[40px] flex flex-col md:flex-row items-center justify-between relative group">
+        <div className="absolute top-0 right-0 w-2 h-full bg-blue-600 rounded-r-[40px]"></div>
+        <div className="absolute top-0 right-0 w-full h-full bg-blue-600 opacity-0 group-hover:opacity-[0.02] transform scale-x-0 group-hover:scale-x-100 origin-right transition-all duration-700 rounded-[40px]"></div>
         
         <div className="relative z-10">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">الفترة الزمنية المختارة:</label>
@@ -227,10 +252,10 @@ export default function Schedules() {
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowMonthDropdown(false)}></div>
                   <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute bottom-full mb-2 left-0 w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/10 rounded-3xl shadow-2xl z-50 overflow-hidden max-h-[300px] overflow-y-auto custom-scrollbar"
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    className="absolute top-full mt-2 left-0 w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/10 rounded-3xl shadow-2xl z-50 overflow-hidden max-h-[350px] overflow-y-auto custom-scrollbar"
                   >
                     <div className="p-2 space-y-1">
                       {availableMonths.map((month) => (
