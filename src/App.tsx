@@ -259,6 +259,7 @@ export default function App() {
             collapsed={isSidebarCollapsed}
             onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             onReturnHome={() => setViewMode(ViewMode.Landing)}
+            onLogout={handleLogout}
           />
         </div>
       ) : (
