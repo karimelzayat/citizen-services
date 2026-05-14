@@ -78,20 +78,22 @@
     },
     "Schedule": {
       "title": "Schedule",
-      "description": "Monthly shift schedules",
+      "description": "Monthly shift schedules mapping staff to specific shifts and roles",
       "type": "object",
       "properties": {
         "date": { "type": "string" },
+        "day": { "type": "string" },
         "monthYear": { "type": "string" },
-        "shifts": {
-          "type": "object",
-          "properties": {
-            "morning": { "type": "string" },
-            "evening": { "type": "string" },
-            "night": { "type": "string" },
-            "overnight": { "type": "string" }
-          }
-        }
+        "shift24": { "type": "string" },
+        "shift36": { "type": "string" },
+        "holidayMorning": { "type": "string" },
+        "holidayNoon": { "type": "string" },
+        "cabinet1": { "type": "string" },
+        "cabinet2": { "type": "string" },
+        "cabinet3": { "type": "string" },
+        "careMorning": { "type": "string" },
+        "careNight": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
       }
     },
     "Inquiry": {

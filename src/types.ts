@@ -129,13 +129,18 @@ export interface AppNotification {
 export interface Schedule {
   id?: string;
   date: string;
+  day: string;
   monthYear: string;
-  shifts: {
-    morning?: string;
-    evening?: string;
-    night?: string;
-    overnight?: string;
-  };
+  shift24?: string;
+  shift36?: string;
+  holidayMorning?: string;
+  holidayNoon?: string;
+  cabinet1?: string;
+  cabinet2?: string;
+  cabinet3?: string;
+  careMorning?: string;
+  careNight?: string;
+  updatedAt?: Date;
 }
 
 export interface Inquiry {

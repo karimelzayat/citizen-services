@@ -353,20 +353,42 @@ export async function getFAQs() {
 
 // Schedules
 export function listenToSchedules(monthYear: string, callback: (schedules: any[]) => void) {
-  const q = query(collection(db, 'schedules'), where('monthYear', '==', monthYear));
+  const q = query(collection(db, 'schedules'), where('monthYear', '==', monthYear), orderBy('date', 'asc'));
   return onSnapshot(q, (snapshot) => {
     callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-  }, (e) => handleFirestoreError(e, OperationType.LIST, 'schedules'));
+  }, (e) => {
+    // If no index exists yet, fall back to non-ordered
+    const qBasic = query(collection(db, 'schedules'), where('monthYear', '==', monthYear));
+    onSnapshot(qBasic, (snap) => {
+      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      callback(data.sort((a: any, b: any) => a.date.localeCompare(b.date)));
+    });
+  });
 }
 
 export async function updateSchedule(date: string, monthYear: string, data: any) {
   try {
-    const docId = `${monthYear}_${date}`.replace(/\//g, '_');
+    const docId = `${monthYear}_${date}`.replace(/[\/\s]/g, '_');
     await setDoc(doc(db, 'schedules', docId), sanitize({
       ...data,
       date,
-      monthYear
+      monthYear,
+      updatedAt: serverTimestamp()
     }));
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, 'schedules');
+  }
+}
+
+export async function bulkUploadSchedules(schedules: any[]) {
+  try {
+    for (const s of schedules) {
+      const docId = `${s.monthYear}_${s.date}`.replace(/[\/\s]/g, '_');
+      await setDoc(doc(db, 'schedules', docId), sanitize({
+        ...s,
+        updatedAt: serverTimestamp()
+      }));
+    }
   } catch (e) {
     handleFirestoreError(e, OperationType.WRITE, 'schedules');
   }
