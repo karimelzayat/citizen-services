@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { listenToSchedules, bulkUploadSchedules, getUserPermissions } from '../services/dataService';
+import { listenToSchedules, bulkUploadSchedules, getUserPermissions, deleteSchedulesByMonth } from '../services/dataService';
 import { auth } from '../lib/firebase';
 import { 
   Upload, 
@@ -9,7 +9,8 @@ import {
   Loader2,
   FileSpreadsheet,
   Info,
-  XCircle
+  XCircle,
+  Trash2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -22,6 +23,7 @@ export default function Schedules() {
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [bulkData, setBulkData] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -90,6 +92,19 @@ export default function Schedules() {
     }
   };
 
+  const handleClearMonth = async () => {
+    if (!window.confirm(`هل أنت متأكد من مسح كافة بيانات شهر ${selectedMonth}؟`)) return;
+    setIsDeleting(true);
+    try {
+      await deleteSchedulesByMonth(selectedMonth);
+      alert('تم مسح بيانات الشهر بنجاح');
+    } catch (e) {
+      alert('خطأ أثناء المسح');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="tab-content block pb-10 RTL">
       <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-6">
@@ -102,13 +117,25 @@ export default function Schedules() {
         </div>
 
         {isAdmin && (
-          <button 
-            onClick={() => setShowUploadModal(true)}
-            className="px-8 py-4 bg-blue-600 text-white rounded-[24px] font-black shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-3 active:scale-95"
-          >
-            <Upload className="w-5 h-5" />
-            رفع جدول الموظفين
-          </button>
+          <div className="flex items-center gap-3">
+            {dbSchedules.length > 0 && (
+              <button 
+                onClick={handleClearMonth}
+                disabled={isDeleting}
+                className="px-6 py-4 bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400 rounded-[24px] font-black hover:bg-rose-100 transition-all flex items-center gap-2 border border-rose-100 dark:border-rose-500/20"
+              >
+                {isDeleting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Trash2 className="w-5 h-5" />}
+                مسح بيانات الشهر
+              </button>
+            )}
+            <button 
+              onClick={() => setShowUploadModal(true)}
+              className="px-8 py-4 bg-blue-600 text-white rounded-[24px] font-black shadow-xl shadow-blue-500/20 hover:bg-blue-700 transition-all flex items-center gap-3 active:scale-95"
+            >
+              <Upload className="w-5 h-5" />
+              رفع جدول الموظفين
+            </button>
+          </div>
         )}
       </div>
 

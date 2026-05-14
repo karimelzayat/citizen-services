@@ -394,6 +394,18 @@ export async function bulkUploadSchedules(schedules: any[]) {
   }
 }
 
+export async function deleteSchedulesByMonth(monthYear: string) {
+  try {
+    const q = query(collection(db, 'schedules'), where('monthYear', '==', monthYear));
+    const snapshot = await getDocs(q);
+    for (const docSnap of snapshot.docs) {
+      await deleteDoc(doc(db, 'schedules', docSnap.id));
+    }
+  } catch (e) {
+    handleFirestoreError(e, OperationType.DELETE, 'schedules');
+  }
+}
+
 // Hotline Tree
 export async function getHotlineTree() {
   try {
