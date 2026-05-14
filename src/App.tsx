@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged, User, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
+import { onAuthStateChanged, User, signInWithRedirect, getRedirectResult, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { auth, isConfigured } from './lib/firebase';
 import { getUserPermissions } from './services/dataService';
 import { UserPermissions } from './types';
@@ -66,10 +66,10 @@ export default function App() {
   const handleLogin = async () => {
     const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
+      await signInWithRedirect(auth, provider);
+    } catch (error: any) {
       console.error("Login failed", error);
-      alert("فشل تسجيل الدخول");
+      alert("فشل تسجيل الدخول: " + error.message);
     }
   };
 
@@ -84,9 +84,13 @@ export default function App() {
   };
 
   useEffect(() => {
+    // Handle redirect result to capture identity after returning from Google
+    getRedirectResult(auth).catch((error) => {
+      console.error("Redirect login error", error);
+    });
+
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       if (!u) {
-        // No user signed in, handle as guest
         setUser(null);
         setPermissions({ 
           role: 'Guest', 
@@ -99,29 +103,24 @@ export default function App() {
           canViewHotline: true, 
           canViewAdminOngoing: false 
         });
+
+        // Auto-trigger login for a seamless "recognition" experience
+        // We only do this if the user has already entered one of the system modes
+        if (viewMode !== ViewMode.Landing) {
+          const provider = new GoogleAuthProvider();
+          signInWithRedirect(auth, provider).catch(() => {});
+        }
       } else {
         setUser(u);
         if (u.email) {
           const perms = await getUserPermissions(u.email);
           setPermissions(perms);
-        } else {
-          setPermissions({ 
-            role: 'Guest', 
-            canRegister: true, 
-            canSearch: true, 
-            canEditAny: false, 
-            showMonthlyCount: false, 
-            canFollowUp: true, 
-            canGenerateReports: false, 
-            canViewHotline: true, 
-            canViewAdminOngoing: false 
-          });
         }
       }
       setLoading(false);
     });
     return () => unsubscribe();
-  }, []);
+  }, [viewMode]);
 
   useEffect(() => {
     const root = document.documentElement;
