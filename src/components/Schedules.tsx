@@ -55,34 +55,45 @@ export default function Schedules() {
     return options;
   }, []);
 
+  const normalizeString = (str: string) => {
+    if (!str) return '';
+    return str
+      .replace(/[أإآ]/g, 'ا')
+      .replace(/[١٢٣٤٥٦٧٨٩٠]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d).toString())
+      .trim();
+  };
+
   const handleBulkUpload = async () => {
     if (!bulkData.trim()) return;
     setIsUploading(true);
     try {
-      // Logic to parse CSV/TSV
-      // Format expected: date, day, shift24, shift36, holidayMorning, holidayNoon, cabinet1, cabinet2, cabinet3, careMorning, careNight
       const lines = bulkData.trim().split('\n');
       const schedules = lines.map(line => {
         const parts = line.split('\t').map(p => p.trim());
-        if (parts.length < 2) return null;
+        if (parts.length < 3) return null;
+        
+        const is12Cols = parts.length >= 12;
+        const monthYear = is12Cols ? parts[2] : selectedMonth;
+        const offset = is12Cols ? 1 : 0;
+
         return {
           date: parts[0],
           day: parts[1],
-          shift24: parts[2] || '',
-          shift36: parts[3] || '',
-          holidayMorning: parts[4] || '',
-          holidayNoon: parts[5] || '',
-          cabinet1: parts[6] || '',
-          cabinet2: parts[7] || '',
-          cabinet3: parts[8] || '',
-          careMorning: parts[9] || '',
-          careNight: parts[10] || '',
-          monthYear: selectedMonth
+          monthYear,
+          shift24: parts[2 + offset] || '',
+          shift36: parts[3 + offset] || '',
+          holidayMorning: parts[4 + offset] || '',
+          holidayNoon: parts[5 + offset] || '',
+          cabinet1: parts[6 + offset] || '',
+          cabinet2: parts[7 + offset] || '',
+          cabinet3: parts[8 + offset] || '',
+          careMorning: parts[9 + offset] || '',
+          careNight: parts[10 + offset] || ''
         };
       }).filter(Boolean);
 
       await bulkUploadSchedules(schedules as any[]);
-      alert('تم رفع الجداول بنجاح');
+      alert(`تم رفع ${schedules.length} سجل بنجاح`);
       setShowUploadModal(false);
       setBulkData('');
     } catch (e) {
@@ -255,9 +266,9 @@ export default function Schedules() {
               <div className="mb-6 p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/20 rounded-[32px] flex items-start gap-4">
                  <Info className="w-6 h-6 text-blue-600 shrink-0 mt-1" />
                  <div className="space-y-2">
-                    <p className="text-sm font-black text-blue-900 dark:text-blue-100">تعليمات التنسيق (11 عمود):</p>
+                    <p className="text-sm font-black text-blue-900 dark:text-blue-100">تعليمات التنسيق (12 عمود):</p>
                     <p className="text-xs text-blue-700/80 dark:text-blue-300 font-medium leading-relaxed italic">
-                      التاريخ | اليوم | شفت 24 | شفت 36 | عطلة م | عطلة ظ | مجلس1 | مجلس2 | مجلس3 | رعاية م | رعاية ل
+                      التاريخ | اليوم | الشهر والسنة | شفت 24 | شفت 36 | عطلة م | عطلة ظ | مجلس1 | مجلس2 | مجلس3 | رعاية م | رعاية ل
                     </p>
                  </div>
               </div>
