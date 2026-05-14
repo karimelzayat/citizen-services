@@ -15,7 +15,9 @@ import {
   ChevronDown,
   Briefcase,
   Layers,
-  Settings
+  Settings,
+  X,
+  LogOut
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -140,7 +142,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
             ${collapsed ? 'justify-center bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-500' : 'bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-500 hover:text-white'} 
             border border-rose-100 dark:border-rose-500/20 overflow-hidden relative shadow-sm`}
         >
-          <X className={`w-5 h-5 ${collapsed ? 'text-rose-500' : 'text-rose-400 group-hover:text-white'}`} />
+          <LogOut className={`w-5 h-5 ${collapsed ? 'text-rose-500' : 'text-rose-400 group-hover:text-white'}`} />
           {!collapsed && <span className="font-bold text-sm">تسجيل الخروج</span>}
         </button>
       </div>
