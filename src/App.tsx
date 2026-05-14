@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { onAuthStateChanged, User, signInAnonymously } from 'firebase/auth';
+import { onAuthStateChanged, User, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { auth, isConfigured } from './lib/firebase';
 import { getUserPermissions } from './services/dataService';
 import { UserPermissions } from './types';
@@ -62,6 +62,26 @@ export default function App() {
     window.addEventListener('switchTab', handleSwitchTab);
     return () => window.removeEventListener('switchTab', handleSwitchTab);
   }, []);
+
+  const handleLogin = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+    } catch (error) {
+      console.error("Login failed", error);
+      alert("فشل تسجيل الدخول");
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      setViewMode(ViewMode.Landing);
+      setActiveTab('dashboard');
+    } catch (error) {
+      console.error("Logout failed", error);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -247,6 +267,7 @@ export default function App() {
             activeSubTab={adminSubTab}
             onSubTabChange={(t) => { setAdminSubTab(t); setIsMobileMenuOpen(false); }}
             onReturnHome={() => setViewMode(ViewMode.Landing)}
+            onLogout={handleLogout}
           />
         </div>
       )}
@@ -263,10 +284,20 @@ export default function App() {
              </button>
 
              <div className="flex flex-col">
-               <div className="flex items-center gap-3 text-slate-950 dark:text-white font-black text-base md:text-lg tracking-tight">
-                  <span className="truncate max-w-[150px] md:max-w-none">{user?.email?.split('@')[0]}</span>
-                  <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-wider border border-blue-100 dark:border-blue-800/30">{permissions?.role}</span>
-               </div>
+               {user ? (
+                 <div className="flex items-center gap-3 text-slate-950 dark:text-white font-black text-base md:text-lg tracking-tight">
+                    <span className="truncate max-w-[150px] md:max-w-none">{user?.email?.split('@')[0]}</span>
+                    <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-wider border border-blue-100 dark:border-blue-800/30">{permissions?.role}</span>
+                 </div>
+               ) : (
+                 <button 
+                   onClick={handleLogin}
+                   className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
+                 >
+                   <i className="fab fa-google"></i>
+                   تسجيل الدخول
+                 </button>
+               )}
              </div>
            </div>
 
@@ -386,7 +417,7 @@ export default function App() {
   );
 }
 
-function AdminSidebar({ activeSubTab, onSubTabChange, onReturnHome }: { activeSubTab: string, onSubTabChange: (t: string) => void, onReturnHome: () => void }) {
+function AdminSidebar({ activeSubTab, onSubTabChange, onReturnHome, onLogout }: { activeSubTab: string, onSubTabChange: (t: string) => void, onReturnHome: () => void, onLogout: () => void }) {
   return (
     <div className="bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 h-screen sticky top-0 w-full lg:w-[300px] flex flex-col shadow-2xl z-50 overflow-hidden border-l border-slate-200 dark:border-white/5 font-bold transition-all duration-700">
       <div className="h-16 flex items-center px-4 border-b border-slate-100 dark:border-white/5 bg-white dark:bg-slate-900 transition-all duration-700">
@@ -406,6 +437,14 @@ function AdminSidebar({ activeSubTab, onSubTabChange, onReturnHome }: { activeSu
           <Home className="w-5 h-5 text-slate-400 group-hover:text-red-500" />
           <span className="font-bold text-sm text-slate-600 dark:text-slate-300">العودة للرئيسية</span>
           <div className="absolute right-0 top-0 h-full w-1 bg-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+        </button>
+
+        <button 
+          onClick={onLogout}
+          className="w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-300 bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-500 hover:text-white border border-rose-100 dark:border-rose-500/20 overflow-hidden relative shadow-sm"
+        >
+          <X className="w-5 h-5 text-rose-500 group-hover:text-white" />
+          <span className="font-bold text-sm">تسجيل الخروج</span>
         </button>
       </div>
 
