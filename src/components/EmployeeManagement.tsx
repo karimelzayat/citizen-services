@@ -4,7 +4,7 @@ import {
   Mail, Phone, CreditCard, MapPin, Briefcase, Calendar, 
   User, CheckCircle2, XCircle, ChevronLeft, LayoutDashboard,
   Layers, PlusCircle, Search as SearchIcon, CheckSquare, 
-  FileText, HelpCircle, Contact, BookOpen, Settings
+  FileText, HelpCircle, Contact, BookOpen, Settings, Hash
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getAllEmployees, saveEmployee, deleteEmployee } from '../services/dataService';
@@ -97,7 +97,9 @@ export default function EmployeeManagement() {
   const filteredEmployees = employees.filter(e => 
     e.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     e.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    e.code.includes(searchTerm)
+    e.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    e.nationalId.includes(searchTerm) ||
+    e.jobTitle.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const permissionGroups = [
@@ -107,7 +109,6 @@ export default function EmployeeManagement() {
         { key: 'showHotlineSection', label: 'قسم الخط الساخن', icon: LayoutDashboard },
         { key: 'showAdminSection', label: 'قسم لوحة الإدارة', icon: Layers },
         { key: 'showHelpCenterSection', label: 'قسم مركز المساعدة', icon: HelpCircle },
-        { key: 'showSettingsSection', label: 'قسم النظام/الإعدادات', icon: Settings },
       ]
     },
     {
@@ -122,7 +123,6 @@ export default function EmployeeManagement() {
     {
       title: 'تبويبات وأعمال الإدارة',
       items: [
-        { key: 'canRegisterAdminWork', label: 'تسجيل عمل الإدارة', icon: Layers },
         { key: 'canRegisterOngoing', label: 'زر "الجاري"', icon: CheckCircle2 },
         { key: 'canRegisterUnregistered', label: 'زر "شكاوى غير مسجلة"', icon: FileX },
         { key: 'canRegisterWrongDirection', label: 'زر "توجيه خطأ"', icon: AlertTriangle },
@@ -158,7 +158,7 @@ export default function EmployeeManagement() {
               <Search className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input 
                 type="text" 
-                placeholder="بحث بالاسم، الكود، أو البريد الإلكتروني..."
+                placeholder="بحث بالاسم، الكود، الرقم القومي، أو المسمى الوظيفي..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="form-input pr-12 bg-white dark:bg-slate-900 shadow-sm"
@@ -208,9 +208,13 @@ export default function EmployeeManagement() {
                   </div>
                   <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
                     <CreditCard className="w-3.5 h-3.5" />
-                    <span className="font-mono tracking-widest">{emp.code}</span>
+                    <span className="font-mono tracking-widest">{emp.nationalId}</span>
                   </div>
-                  <div className="flex items-center gap-2 mt-4">
+                  <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+                    <Hash className="w-3.5 h-3.5 text-slate-400" />
+                    <span className="font-mono">{emp.code}</span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-4 flex-wrap">
                     <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${emp.status === 'قوة أساسية' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600' : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600'}`}>
                       {emp.status}
                     </span>
@@ -356,6 +360,16 @@ export default function EmployeeManagement() {
                       <option value="قوة أساسية">قوة أساسية</option>
                       <option value="انتداب">انتداب</option>
                     </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-black text-slate-700 dark:text-slate-300">موقف التكليف</label>
+                    <input 
+                      type="text"
+                      value={editingEmployee?.assignmentStatus}
+                      onChange={e => setEditingEmployee({...editingEmployee!, assignmentStatus: e.target.value})}
+                      className="form-input" placeholder="مثال: تعديل تكليف، انتداب..."
+                    />
                   </div>
 
                   <div className="space-y-2">

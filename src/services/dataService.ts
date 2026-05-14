@@ -18,7 +18,7 @@ import {
 import { db, auth, storage } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { Complaint, AdminComplaint, DirectorCase, Inquiry, UserPermissions, Employee } from '../types';
-import { ROLE_CAPABILITIES, DEFAULT_CAPABILITIES, EMPLOYEE_MAP } from '../constants';
+import { ROLE_CAPABILITIES, DEFAULT_CAPABILITIES, EMPLOYEE_MAP, INITIAL_EMPLOYEES } from '../constants';
 
 export enum OperationType {
   CREATE = 'create',
@@ -100,6 +100,18 @@ export async function getUserPermissions(email: string | null | undefined): Prom
 export async function getAllEmployees(): Promise<Employee[]> {
   try {
     const snapshot = await getDocs(collection(db, 'employees'));
+    if (snapshot.empty && INITIAL_EMPLOYEES.length > 0) {
+      console.log("Seeding employees...");
+      for (const emp of INITIAL_EMPLOYEES) {
+        await saveEmployee({
+          ...emp,
+          role: 'Employee',
+          permissions: { ...ROLE_CAPABILITIES['Employee'] }
+        });
+      }
+      const newSnapshot = await getDocs(collection(db, 'employees'));
+      return newSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
+    }
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
   } catch (e) {
     handleFirestoreError(e, OperationType.LIST, 'employees');

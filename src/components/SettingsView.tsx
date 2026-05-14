@@ -60,7 +60,6 @@ export default function SettingsView() {
     canRegisterHotline: "تسجيل مكالمة",
     canSearchHotline: "البحث",
     canFollowUpHotline: "متابعة المكالمات",
-    canRegisterAdminWork: "تسجيل عمل الإدارة",
     canRegisterOngoing: "زر الجاري",
     canRegisterUnregistered: "زر شكاوى غير مسجلة",
     canRegisterWrongDirection: "زر توجيه خطأ",

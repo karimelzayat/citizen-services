@@ -36,7 +36,7 @@ export interface UserCapabilities {
 export interface Employee {
   id?: string;
   name: string;
-  status: 'انتداب' | 'قوة أساسية';
+  status: string;
   jobTitle: string;
   phone: string;
   nationalId: string;
@@ -47,7 +47,7 @@ export interface Employee {
   assignmentStatus: string;
   annualLeave: number;
   casualLeave: number;
-  gender: 'ذكر' | 'أنثى';
+  gender: string;
   role: UserRole;
   permissions: UserCapabilities;
   createdAt: Date;
