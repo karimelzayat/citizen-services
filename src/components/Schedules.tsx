@@ -47,12 +47,16 @@ export default function Schedules() {
   const monthOptions = useMemo(() => {
     const options = [];
     const now = new Date();
-    // Generate 6 months around now
-    for (let i = -2; i <= 3; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-      options.push(d.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' }));
+    // Generate months from 2024 to 2026 to cover user data
+    const start = new Date(2024, 0, 1);
+    const end = new Date(2026, 11, 1);
+    
+    let current = new Date(start);
+    while (current <= end) {
+      options.push(current.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' }));
+      current.setMonth(current.getMonth() + 1);
     }
-    return options;
+    return options.reverse(); // Show newest first
   }, []);
 
   const normalizeString = (str: string) => {
