@@ -66,10 +66,16 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
 }
 
 // Role management
-export async function getUserPermissions(email: string): Promise<UserPermissions> {
-  const normalizedEmail = email.toLowerCase();
-  if (!normalizedEmail) return { role: "Guest", ...ROLE_CAPABILITIES["Guest"] };
+export async function getUserPermissions(email: string | null | undefined): Promise<UserPermissions> {
+  if (!email) return { role: "Guest", ...ROLE_CAPABILITIES["Guest"] };
   
+  const normalizedEmail = email.trim().toLowerCase();
+  
+  // High priority hardcoded admins
+  if (normalizedEmail === 'karimelzayat3@gmail.com' || normalizedEmail === 'karimelzayat.1997@gmail.com') {
+    return { role: "Admin", ...ROLE_CAPABILITIES["Admin"] };
+  }
+
   try {
     // Try to get dynamic role capabilities first
     const snapshotRoles = await getDocs(collection(db, 'role_capabilities'));
@@ -89,10 +95,6 @@ export async function getUserPermissions(email: string): Promise<UserPermissions
     console.error("Firebase error checking permissions", e);
   }
   
-  if (normalizedEmail === 'karimelzayat3@gmail.com' || normalizedEmail === 'karimelzayat.1997@gmail.com') {
-    return { role: "Admin", ...ROLE_CAPABILITIES["Admin"] };
-  }
-
   if (EMPLOYEE_MAP[normalizedEmail]) {
     return { role: "Employee", ...ROLE_CAPABILITIES["Employee"] };
   }
