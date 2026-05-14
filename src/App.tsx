@@ -121,7 +121,7 @@ export default function App() {
       case 'reportsTab': return <Reports />;
       case 'faqTab': return <FAQ />;
       case 'settingsTab': return <SettingsView />;
-      case 'adminWork': return <AdminView activeSubTab="register" />;
+      case 'adminWork': return <AdminView activeSubTab="register" permissions={permissions} />;
       default: return <Dashboard />;
     }
   };

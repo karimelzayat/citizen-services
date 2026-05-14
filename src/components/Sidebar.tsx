@@ -58,7 +58,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
       title: 'الإدارة',
       showSection: permissions?.canViewAdminSection,
       items: [
-        { id: 'adminWork', label: 'تسجيل عمل الإدارة', icon: PlusCircle, show: permissions?.canRegisterAdminWork },
+        { id: 'adminWork', label: 'تسجيل عمل الإدارة', icon: Layers, show: permissions?.canRegisterAdminWork },
         { id: 'directorTab', label: 'تكليفات المدير', icon: Briefcase, show: permissions?.canViewDirectorAssignments },
         { id: 'schedulesTab', label: 'الجداول والتبديلات', icon: Calendar, show: permissions?.canViewSchedules },
         { id: 'reportsTab', label: 'التقارير', icon: FileText, show: permissions?.canViewReports },

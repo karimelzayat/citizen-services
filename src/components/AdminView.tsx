@@ -6,9 +6,17 @@ import { motion, AnimatePresence } from 'motion/react';
 
 import SearchComplaints from './SearchComplaints';
 import Reports from './Reports';
+import { UserPermissions } from '../types';
 
-export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
-  const [workType, setWorkType] = useState('الجاري');
+export default function AdminView({ activeSubTab, permissions }: { activeSubTab: string, permissions: UserPermissions | null }) {
+  const allWorkTypes = [
+    { id: 'الجاري', icon: LayoutGrid, color: 'blue', label: 'الجاري', show: permissions?.canRegisterOngoing },
+    { id: 'توجية خطأ', icon: AlertTriangle, color: 'amber', label: 'توجية خطأ', show: permissions?.canRegisterWrongDirection },
+    { id: 'شكاوي غير مسجلة', icon: FileX, color: 'rose', label: 'شكاوي غير مسجلة', show: permissions?.canRegisterUnregistered }
+  ];
+
+  const workTypes = allWorkTypes.filter(t => t.show);
+  const [workType, setWorkType] = useState(workTypes[0]?.id || 'الجاري');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     complaintNo: '',
@@ -27,7 +35,7 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
     try {
       await addAdminComplaint({ ...formData, workType: workType as any });
       
-      // Auto-reset and scroll to top as requested
+      // Auto-reset and scroll to top
       setFormData({
         complaintNo: '',
         governorate: '',
@@ -43,12 +51,6 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
       setIsSubmitting(false);
     }
   };
-
-  const workTypes = [
-    { id: 'الجاري', icon: LayoutGrid, color: 'blue', label: 'الجاري' },
-    { id: 'توجية خطأ', icon: AlertTriangle, color: 'amber', label: 'توجية خطأ' },
-    { id: 'شكاوي غير مسجلة', icon: FileX, color: 'rose', label: 'شكاوي غير مسجلة' }
-  ];
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -198,7 +200,7 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
             <div className="flex justify-center py-6">
                <button 
                   type="submit" 
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || workTypes.length === 0}
                   className="btn-primary min-w-[280px] h-14 flex items-center justify-center gap-3 shadow-blue-500/30"
                >
                   {isSubmitting ? (
@@ -234,7 +236,7 @@ export default function AdminView({ activeSubTab }: { activeSubTab: string }) {
                     </label>
                     <select className="form-input appearance-none bg-slate-50 dark:bg-slate-800 border-transparent transition-all">
                       <option value="today">اليوم</option>
-                      <option value="month" selected>هذا الشهر</option>
+                      <option value="month">هذا الشهر</option>
                       <option value="custom">فترة مخصصة...</option>
                     </select>
                  </div>

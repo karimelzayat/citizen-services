@@ -12,8 +12,11 @@ export interface UserCapabilities {
   canSearchHotline: boolean;
   canFollowUpHotline: boolean;
   
-  // Admin Tabs
+  // Admin Tabs & Work Types
   canRegisterAdminWork: boolean;
+  canRegisterOngoing: boolean;
+  canRegisterWrongDirection: boolean;
+  canRegisterUnregistered: boolean;
   canViewDirectorAssignments: boolean;
   canViewSchedules: boolean;
   canViewReports: boolean;
