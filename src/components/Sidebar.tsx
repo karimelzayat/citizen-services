@@ -82,7 +82,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
       initial={false}
       animate={{ width: collapsed ? 80 : 360 }}
       transition={{ duration: 0.7, ease: "easeInOut" }}
-      className="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-400 h-screen sticky top-0 flex flex-col shadow-2xl z-50 overflow-hidden border-l border-slate-100 dark:border-white/5 transition-colors duration-700"
+      className="bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-400 h-screen flex flex-col shadow-2xl z-50 overflow-hidden border-l border-slate-100 dark:border-white/5 transition-colors duration-700"
     >
       {/* Header */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-slate-100 dark:border-white/5 bg-white dark:bg-slate-900 transition-all duration-700">
