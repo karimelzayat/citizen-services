@@ -122,6 +122,7 @@ export default function App() {
       case 'faqTab': return <FAQ />;
       case 'settingsTab': return <SettingsView />;
       case 'adminWork': return <AdminView activeSubTab="register" permissions={permissions} />;
+      case 'adminSearch': return <AdminView activeSubTab="search" permissions={permissions} />;
       default: return <Dashboard />;
     }
   };
@@ -148,7 +149,7 @@ export default function App() {
               <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3">الخط الساخن</h2>
               <p className="text-slate-500 dark:text-slate-400 leading-relaxed font-medium">تسجيل المكالمات، البحث، متابعة الحالات، ومركز المعرفة الشامل (FAQ)</p>
             </div>
-            <div onClick={() => { setViewMode(ViewMode.Main); setActiveTab('directorTab'); }} className="group bg-white dark:bg-slate-900/50 p-10 rounded-[40px] border border-slate-200 dark:border-white/5 cursor-pointer transition-all hover:shadow-2xl hover:-translate-y-2">
+            <div onClick={() => { setViewMode(ViewMode.Main); setActiveTab('adminWork'); }} className="group bg-white dark:bg-slate-900/50 p-10 rounded-[40px] border border-slate-200 dark:border-white/5 cursor-pointer transition-all hover:shadow-2xl hover:-translate-y-2">
               <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 rounded-3xl flex items-center justify-center mb-8 group-hover:bg-emerald-600 group-hover:scale-110 transition-all">
                 <i className="fas fa-user-tie text-4xl text-emerald-600 group-hover:text-white"></i>
               </div>
