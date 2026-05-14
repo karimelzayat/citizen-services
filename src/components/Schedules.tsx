@@ -105,25 +105,44 @@ export default function Schedules() {
     const normalizedText = normalizeString(text);
     const normalizedMe = normalizeString(currentUserName);
     
-    // Direct inclusion
-    if (normalizedText.includes(normalizedMe) || normalizedMe.includes(normalizedText)) return true;
-    
-    // Split by spaces and check matches
-    const textWords = normalizedText.split(/[\s-]+/).filter(w => w.length >= 2);
-    const meWords = normalizedMe.split(/[\s-]+/).filter(w => w.length >= 2);
+    // Split the cell content into individual names
+    const individuals = normalizedText.split(/[-،,]/).map(s => s.trim()).filter(Boolean);
+    const meWords = normalizedMe.split(/\s+/).filter(w => w.length >= 2);
     
     if (meWords.length === 0) return false;
 
-    let matches = 0;
-    for (const mw of meWords) {
-      if (textWords.some(tw => tw.includes(mw) || mw.includes(tw))) {
-        matches++;
+    return individuals.some(individual => {
+      // Filter out common titles to get to the core name
+      const titles = ['د', 'ا', 'م', 'ا د', 'أ د', 'الأستاذ', 'الدكتور', 'المهندس'];
+      let indWords = individual.split(/\s+/).filter(w => w.length >= 2);
+      
+      // Skip titles at the beginning
+      while (indWords.length > 0 && titles.includes(indWords[0])) {
+        indWords.shift();
       }
-    }
-    
-    // If it's a multi-word name, we need at least 2 matches (e.g. "Karim" and "Sami")
-    // If it's a short name, 1 match might be enough but risky. Let's stick to 2 for certainty.
-    return matches >= 2;
+
+      if (indWords.length === 0) return false;
+
+      // Exact word matching
+      const matches = meWords.filter(mw => indWords.includes(mw));
+      
+      // LOGIC:
+      // 1. If we match at least 3 names, it's almost certainly the same person.
+      if (matches.length >= 3) return true;
+      
+      // 2. If we match exactly 2, they MUST be the first two names (e.g. Karim Sami)
+      // This prevents "Karim Sami" matching "Karim Saeed" even if both have "Mohamed" as a 3rd name.
+      if (matches.length === 2) {
+        return (meWords[0] === indWords[0] && meWords[1] === indWords[1]);
+      }
+      
+      // 3. If user name is very short (1-2 words), must match all words exactly in order
+      if (meWords.length <= 2) {
+        return matches.length === meWords.length && meWords[0] === indWords[0];
+      }
+
+      return false;
+    });
   };
 
   const handleBulkUpload = async () => {
