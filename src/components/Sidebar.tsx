@@ -15,8 +15,7 @@ import {
   ChevronDown,
   Briefcase,
   Layers,
-  Settings,
-  X
+  Settings
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -38,38 +37,45 @@ interface NavItem {
 
 interface Section {
   title: string;
-  showSection: boolean;
   items: NavItem[];
 }
 
 export default function Sidebar({ activeTab, onTabChange, permissions, collapsed, onToggle, onReturnHome, onLogout }: SidebarProps) {
   const sections: Section[] = [
     {
-      title: 'الخط الساخن',
-      showSection: permissions?.canViewHotlineSection,
+      title: 'الرئيسية',
       items: [
-        { id: 'dashboard', label: 'لوحة المؤشرات', icon: LayoutDashboard, show: permissions?.canViewDashboard },
-        { id: 'newComplaint', label: 'تسجيل مكالمة', icon: PlusCircle, show: permissions?.canRegisterHotline },
-        { id: 'searchComplaint', label: 'البحث', icon: Search, show: permissions?.canSearchHotline },
-        { id: 'followUp', label: 'متابعة المكالمات', icon: CheckSquare, show: permissions?.canFollowUpHotline },
+        { id: 'dashboard', label: 'لوحة المؤشرات', icon: LayoutDashboard, show: true },
       ]
     },
     {
-      title: 'لوحة الإدارة',
-      showSection: permissions?.canViewAdminSection,
+      title: 'إدارة الشكاوى',
       items: [
-        { id: 'adminWork', label: 'تسجيل عمل الإدارة', icon: Layers, show: permissions?.canRegisterAdminWork },
-        { id: 'adminSearch', label: 'بحث الإدارة', icon: Search, show: permissions?.canViewAdminSection },
-        { id: 'reportsTab', label: 'التقارير', icon: FileText, show: permissions?.canViewReports },
+        { id: 'newComplaint', label: 'تسجيل مكالمة', icon: PlusCircle, show: true },
+        { id: 'searchComplaint', label: 'البحث', icon: Search, show: true },
+        { id: 'followUp', label: 'متابعة المكالمات', icon: CheckSquare, show: true },
+      ]
+    },
+    {
+      title: 'العمل والتكليفات',
+      items: [
+        { id: 'directorTab', label: 'تكليفات المدير', icon: Briefcase, show: true },
+        { id: 'schedulesTab', label: 'الجداول والتبديلات', icon: Calendar, show: true },
+        { id: 'reportsTab', label: 'التقارير', icon: FileText, show: true },
       ]
     },
     {
       title: 'مركز المساعدة',
-      showSection: permissions?.canViewHelpCenterSection,
       items: [
-        { id: 'inquiryButton', label: 'الاستفسار عن', icon: HelpCircle, show: permissions?.canViewInquiry },
-        { id: 'phonebookButton', label: 'دليل الهاتف', icon: Contact, show: permissions?.canViewPhonebook },
-        { id: 'faqTab', label: 'دليل الأسئلة (FAQ)', icon: BookOpen, show: permissions?.canViewFAQ },
+        { id: 'inquiryButton', label: 'الاستفسار عن', icon: HelpCircle, show: true },
+        { id: 'phonebookButton', label: 'دليل الهاتف', icon: Contact, show: true },
+        { id: 'faqTab', label: 'دليل الأسئلة (FAQ)', icon: BookOpen, show: true },
+      ]
+    },
+    {
+      title: 'النظام',
+      items: [
+        { id: 'settingsTab', label: 'إعدادات المنظومة', icon: Settings, show: permissions?.role === 'Admin' },
       ]
     }
   ];
@@ -141,7 +147,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
       <div className="flex-1 overflow-y-auto px-4 py-6 custom-scrollbar space-y-6">
         {sections.map((section, idx) => {
           const visibleItems = section.items.filter(i => i.show);
-          if (!section.showSection || visibleItems.length === 0) return null;
+          if (visibleItems.length === 0) return null;
 
           const isExpanded = expandedSections.includes(section.title);
 
