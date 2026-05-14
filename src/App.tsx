@@ -97,6 +97,8 @@ export default function App() {
       });
 
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
+      console.log("Auth state changed, user:", u?.email || "null");
+      
       if (!u) {
         setUser(null);
         setPermissions({ 
@@ -111,22 +113,22 @@ export default function App() {
           canViewAdminOngoing: false 
         });
 
-        // Only auto-redirect if we are sure we are not already in a redirect flow
-        // and if the user is attempting to access a specific module
         if (!isInitialCheck && viewMode !== ViewMode.Landing) {
-          // Check session storage to prevent infinite loops if something fails
           const hasAttempted = sessionStorage.getItem('auth_attempted');
           if (!hasAttempted) {
+            console.log("Auto-redirecting to Google...");
             sessionStorage.setItem('auth_attempted', 'true');
             const provider = new GoogleAuthProvider();
-            signInWithRedirect(auth, provider).catch(() => {});
+            signInWithRedirect(auth, provider).catch((err) => console.error("Redirect error", err));
           }
         }
       } else {
+        console.log("Successfully identified user:", u.email);
         setUser(u);
-        sessionStorage.removeItem('auth_attempted'); // Clear on success
+        sessionStorage.removeItem('auth_attempted');
         if (u.email) {
           const perms = await getUserPermissions(u.email);
+          console.log("Permissions assigned:", perms.role);
           setPermissions(perms);
         }
       }

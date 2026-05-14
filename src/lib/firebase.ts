@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import firebaseConfigFromJson from '../../firebase-applet-config.json';
@@ -23,7 +23,14 @@ const isConfigured = firebaseConfig.apiKey && firebaseConfig.apiKey !== "PLACEHO
 
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
-export const auth = getAuth(app);
+const auth = getAuth(app);
+
+// Force session persistence to local
+setPersistence(auth, browserLocalPersistence).catch((err) => {
+  console.error("Persistence error", err);
+});
+
+export { auth };
 export const db = getFirestore(app, firebaseConfig.firestoreDatabaseId); 
 export const storage = getStorage(app);
 export { isConfigured };
