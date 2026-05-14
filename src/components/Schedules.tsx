@@ -283,7 +283,7 @@ export default function Schedules() {
                  <div className="space-y-2">
                     <p className="text-sm font-black text-blue-900 dark:text-blue-100">تعليمات التنسيق (12 عمود):</p>
                     <p className="text-xs text-blue-700/80 dark:text-blue-300 font-medium leading-relaxed italic">
-                      التاريخ | اليوم | الشهر والسنة | شفت 24 | شفت 36 | عطلة م | عطلة ظ | مجلس1 | مجلس2 | مجلس3 | رعاية م | رعاية ل
+                      التاريخ | اليوم | الشهر والسنة | شفت 24 | شفت 36 | عطلة م | عطلة ظ | 2:30 - 5 | 5 - 7:30 | 7:30 - 10 | رعاية م | رعاية ل
                     </p>
                  </div>
               </div>
