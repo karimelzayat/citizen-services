@@ -294,7 +294,7 @@ export default function App() {
       )}
 
       {viewMode === ViewMode.Landing ? null : viewMode === ViewMode.Hotline ? (
-        <div className={`fixed inset-y-0 right-0 z-[70] lg:relative lg:block self-start transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}>
+        <div className={`fixed inset-y-0 right-0 z-[70] lg:relative lg:block self-start transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'} w-[360px] lg:w-auto`}>
           <Sidebar
             activeTab={activeTab}
             onTabChange={(tab) => {
@@ -311,7 +311,7 @@ export default function App() {
           />
         </div>
       ) : viewMode === ViewMode.Admin ? (
-        <div className={`fixed inset-y-0 right-0 z-[70] lg:relative lg:block self-start transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}>
+        <div className={`fixed inset-y-0 right-0 z-[70] lg:relative lg:block self-start transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'} w-[360px] lg:w-auto`}>
           <AdminSidebar
             activeSubTab={adminSubTab}
             onSubTabChange={(t) => { setAdminSubTab(t); setIsMobileMenuOpen(false); }}
@@ -321,7 +321,7 @@ export default function App() {
           />
         </div>
       ) : (
-        <div className={`fixed inset-y-0 right-0 z-[70] lg:relative lg:block self-start transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}`}>
+        <div className={`fixed inset-y-0 right-0 z-[70] lg:relative lg:block self-start transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'} w-[360px] lg:w-auto`}>
           <AdminSidebar
             activeSubTab="userManagement"
             onSubTabChange={() => {}}
@@ -430,13 +430,13 @@ export default function App() {
 
         {/* Content Area */}
         <div className="p-4 md:p-6 flex-1 bg-slate-50/50 dark:bg-transparent transition-colors duration-700">
-          <div className="w-full max-w-[2200px] mx-auto flex flex-col xl:flex-row gap-6 px-4">
+          <div className="w-full max-w-[1700px] mx-auto flex flex-col xl:flex-row gap-6 px-4">
             <div className="flex-1 min-w-0 bg-white dark:bg-slate-900/30 backdrop-blur-md rounded-[32px] p-6 md:p-8 transition-all duration-700 border border-slate-200/60 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none">
               {viewMode === ViewMode.Hotline ? renderContent() : viewMode === ViewMode.Admin ? <AdminView activeSubTab={adminSubTab} permissions={permissions} /> : <SettingsView />}
             </div>
 
             {viewMode === ViewMode.Hotline && (
-              <div className="w-full xl:w-[300px] flex flex-col gap-6 flex-shrink-0 sticky top-24 self-start">
+              <div className="w-full xl:w-[420px] flex flex-col gap-6 flex-shrink-0 sticky top-24 self-start">
                 <InquiryDatabase />
                 <CabinetTracking />
 
@@ -481,7 +481,7 @@ function AdminSidebar({ activeSubTab, onSubTabChange, onReturnHome, onLogout, pe
   const isPermissionsMode = activeSubTab === 'userManagement';
 
   return (
-    <div className="bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 h-screen sticky top-0 w-full lg:w-[300px] flex flex-col shadow-2xl z-50 overflow-hidden border-l border-slate-200 dark:border-white/5 font-bold transition-all duration-700">
+    <div className="bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 h-screen sticky top-0 w-full lg:w-[360px] flex flex-col shadow-2xl z-50 overflow-hidden border-l border-slate-200 dark:border-white/5 font-bold transition-all duration-700">
       <div className="h-16 flex items-center px-4 border-b border-slate-100 dark:border-white/5 bg-white dark:bg-slate-900 transition-all duration-700">
         <div className="flex items-center gap-3">
           <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-lg ${isPermissionsMode ? 'bg-amber-600 shadow-amber-500/20' : 'bg-red-600 shadow-red-500/20'}`}>

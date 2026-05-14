@@ -175,6 +175,7 @@ export default function NewComplaintForm() {
             <div className="grid grid-cols-1 gap-3">
                 <button 
                   type="button" 
+                  tabIndex={-1}
                   onClick={() => setIsCabinet(!isCabinet)}
                   className={`group flex items-center justify-between p-4 rounded-xl border transition-all duration-700 ${isCabinet ? 'bg-red-600 border-red-600 text-white shadow-md' : 'bg-slate-100/50 dark:bg-slate-800/50 border-slate-100 dark:border-white/5 text-slate-600 dark:text-slate-400 hover:border-red-500/30'}`}
                 >
@@ -210,7 +211,7 @@ export default function NewComplaintForm() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                        <label className="text-sm font-bold text-red-900 dark:text-red-200">الرقم القومي</label>
-                       <input type="text" name="cabinetNationalId" maxLength={14} placeholder="14 رقم" value={formData.cabinetNationalId} onChange={handleInputChange} className="form-input border-red-100 dark:border-red-900/30 bg-white/80 dark:bg-slate-900/50 font-mono tracking-widest h-14" />
+                       <input type="text" name="cabinetNationalId" tabIndex={-1} maxLength={14} placeholder="14 رقم" value={formData.cabinetNationalId} onChange={handleInputChange} className="form-input border-red-100 dark:border-red-900/30 bg-white/80 dark:bg-slate-900/50 font-mono tracking-widest h-14" />
                     </div>
                     <div className="space-y-2">
                        <label className="text-sm font-bold text-red-900 dark:text-red-200">المركز / المدينة</label>
@@ -220,11 +221,12 @@ export default function NewComplaintForm() {
                           onChange={(val) => setFormData(p => ({ ...p, cabinetCity: val }))}
                           placeholder="اختر المركز..."
                           className="bg-white/80 dark:bg-slate-900/50 rounded-xl"
+                          tabIndex={-1}
                        />
                     </div>
                     <div className="space-y-2 col-span-full">
                        <label className="text-sm font-bold text-red-900 dark:text-red-200">موضوع الشكوى (موجز)</label>
-                       <input type="text" name="cabinetSubject" value={formData.cabinetSubject} onChange={handleInputChange} className="form-input border-red-100 dark:border-red-900/30 bg-white/80 dark:bg-slate-900/50 h-14" placeholder="عنوان الشكوى في منظومة المجلس" />
+                       <input type="text" name="cabinetSubject" tabIndex={-1} value={formData.cabinetSubject} onChange={handleInputChange} className="form-input border-red-100 dark:border-red-900/30 bg-white/80 dark:bg-slate-900/50 h-14" placeholder="عنوان الشكوى في منظومة المجلس" />
                     </div>
                   </div>
                 </div>
@@ -239,6 +241,7 @@ export default function NewComplaintForm() {
               <div className="flex flex-wrap gap-4">
                 <button 
                   type="button" 
+                  tabIndex={-1}
                   onClick={() => setFormData({...formData, complaintStatus: 'تم الرد'})}
                   className={`flex-1 flex items-center justify-center gap-3 p-3 rounded-xl border-2 transition-all duration-500 shadow-sm ${formData.complaintStatus === 'تم الرد' ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20 font-black' : 'bg-white dark:bg-slate-900 border-transparent dark:border-white/5 text-slate-500'}`}
                 >
@@ -247,6 +250,7 @@ export default function NewComplaintForm() {
                 </button>
                 <button 
                   type="button" 
+                  tabIndex={-1}
                   onClick={() => setFormData({...formData, complaintStatus: 'جاري المتابعة'})}
                   className={`flex-1 flex items-center justify-center gap-3 p-3 rounded-xl border-2 transition-all duration-500 shadow-sm ${formData.complaintStatus === 'جاري المتابعة' ? 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-500/20 font-black' : 'bg-white dark:bg-slate-900 border-transparent dark:border-white/5 text-slate-500'}`}
                 >
