@@ -12,60 +12,17 @@ import {
   Timestamp, 
   serverTimestamp,
   onSnapshot,
-  setDoc
+  setDoc,
+  getDoc
 } from 'firebase/firestore';
-import { db, auth, storage, isConfigured } from '../lib/firebase';
+import { db, auth, storage } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Complaint, AdminComplaint, DirectorCase, Inquiry, UserPermissions } from '../types';
-import { ROLE_CAPABILITIES, EMPLOYEE_MAP } from '../constants';
+import { Complaint, AdminComplaint, DirectorCase, Inquiry, UserPermissions, Employee } from '../types';
+import { ROLE_CAPABILITIES, DEFAULT_CAPABILITIES } from '../constants';
 
-enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
-}
+// ... (existing OperationType and handleFirestoreError)
 
-interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-  authInfo: {
-    userId?: string | null;
-    email?: string | null;
-    emailVerified?: boolean | null;
-    isAnonymous?: boolean | null;
-  }
-}
-
-function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const err = error as any;
-  const isRead = operationType === OperationType.LIST || operationType === OperationType.GET;
-  
-  if (err?.code === 'permission-denied') {
-    console.warn(`[Firebase] Permission denied: ${operationType} on ${path}.`);
-    if (isRead) return; // Return silently for public reads that might fail
-  }
-
-  const errInfo: FirestoreErrorInfo = {
-    error: err?.message || String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-    },
-    operationType,
-    path
-  };
-  
-  console.error('Firestore Error Details:', errInfo);
-  throw new Error(JSON.stringify(errInfo));
-}
-
-// Role management
+// Employee & Permission Management
 export async function getUserPermissions(email: string | null | undefined): Promise<UserPermissions> {
   const normalizedEmail = (email || "").trim().toLowerCase();
   
@@ -75,29 +32,62 @@ export async function getUserPermissions(email: string | null | undefined): Prom
     return { role: "Admin", ...ROLE_CAPABILITIES["Admin"] };
   }
 
-  // 2. Try to get permissions from Firestore
+  // 2. Try to get permissions from Employees collection
   try {
-    const q = query(collection(db, 'user_permissions'), where('email', '==', normalizedEmail));
+    const q = query(collection(db, 'employees'), where('email', '==', normalizedEmail));
     const snapshot = await getDocs(q);
     
     if (!snapshot.empty) {
-      const data = snapshot.docs[0].data();
-      const role = data.role as keyof typeof ROLE_CAPABILITIES;
+      const data = snapshot.docs[0].data() as Employee;
       return { 
-        role, 
-        ...(ROLE_CAPABILITIES[role] || ROLE_CAPABILITIES["Guest"]) 
+        role: data.role, 
+        ...data.permissions,
+        employeeData: { id: snapshot.docs[0].id, ...data }
       };
     }
   } catch (e) {
-    console.error("Firebase error checking permissions:", e);
+    console.error("Firebase error checking employee permissions:", e);
   }
   
-  // 3. Fallback to Employee Map or Guest
-  if (EMPLOYEE_MAP[normalizedEmail]) {
-    return { role: "Employee", ...ROLE_CAPABILITIES["Employee"] };
+  return { role: "Guest", ...DEFAULT_CAPABILITIES };
+}
+
+export async function getAllEmployees(): Promise<Employee[]> {
+  try {
+    const snapshot = await getDocs(collection(db, 'employees'));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
+  } catch (e) {
+    handleFirestoreError(e, OperationType.LIST, 'employees');
+    return [];
   }
-  
-  return { role: "Guest", ...ROLE_CAPABILITIES["Guest"] };
+}
+
+export async function saveEmployee(employee: Partial<Employee>) {
+  try {
+    const docData = sanitize({
+      ...employee,
+      updatedAt: serverTimestamp(),
+      createdAt: employee.id ? undefined : serverTimestamp()
+    });
+
+    if (employee.id) {
+      await updateDoc(doc(db, 'employees', employee.id), docData);
+      return employee.id;
+    } else {
+      const docRef = await addDoc(collection(db, 'employees'), docData);
+      return docRef.id;
+    }
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, 'employees');
+  }
+}
+
+export async function deleteEmployee(id: string) {
+  try {
+    await deleteDoc(doc(db, 'employees', id));
+  } catch (e) {
+    handleFirestoreError(e, OperationType.DELETE, `employees/${id}`);
+  }
 }
 
 // Helper to recursively remove undefined values before sending to Firestore

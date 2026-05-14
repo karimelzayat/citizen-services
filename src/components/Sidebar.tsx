@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { 
-  LayoutDashboard, 
-  PlusCircle, 
-  Search, 
-  CheckSquare, 
-  Calendar, 
-  FileText, 
-  HelpCircle, 
-  Contact, 
-  BookOpen, 
-  Home, 
+import {
+  LayoutDashboard,
+  PlusCircle,
+  Search,
+  CheckSquare,
+  Calendar,
+  FileText,
+  HelpCircle,
+  Contact,
+  BookOpen,
+  Home,
   Menu,
   ChevronDown,
   Briefcase,
@@ -37,45 +37,47 @@ interface NavItem {
 
 interface Section {
   title: string;
+  showSection?: boolean;
   items: NavItem[];
 }
 
 export default function Sidebar({ activeTab, onTabChange, permissions, collapsed, onToggle, onReturnHome, onLogout }: SidebarProps) {
   const sections: Section[] = [
     {
-      title: 'الرئيسية',
+      title: 'الخط الساخن',
+      showSection: permissions?.showHotlineSection,
       items: [
-        { id: 'dashboard', label: 'لوحة المؤشرات', icon: LayoutDashboard, show: true },
+        { id: 'dashboard', label: 'لوحة المؤشرات', icon: LayoutDashboard, show: permissions?.canViewDashboard },
+        { id: 'newComplaint', label: 'تسجيل مكالمة', icon: PlusCircle, show: permissions?.canRegisterHotline },
+        { id: 'searchComplaint', label: 'البحث', icon: Search, show: permissions?.canSearchHotline },
+        { id: 'followUp', label: 'متابعة المكالمات', icon: CheckSquare, show: permissions?.canFollowUpHotline },
       ]
     },
     {
-      title: 'إدارة الشكاوى',
+      title: 'لوحة الإدارة',
+      showSection: permissions?.showAdminSection,
       items: [
-        { id: 'newComplaint', label: 'تسجيل مكالمة', icon: PlusCircle, show: true },
-        { id: 'searchComplaint', label: 'البحث', icon: Search, show: true },
-        { id: 'followUp', label: 'متابعة المكالمات', icon: CheckSquare, show: true },
-      ]
-    },
-    {
-      title: 'العمل والتكليفات',
-      items: [
-        { id: 'directorTab', label: 'تكليفات المدير', icon: Briefcase, show: true },
-        { id: 'schedulesTab', label: 'الجداول والتبديلات', icon: Calendar, show: true },
-        { id: 'reportsTab', label: 'التقارير', icon: FileText, show: true },
+        { id: 'adminWork', label: 'تسجيل عمل الإدارة', icon: Layers, show: permissions?.canRegisterAdminWork },
+        { id: 'adminSearch', label: 'بحث الإدارة', icon: Search, show: permissions?.showAdminSection },
+        { id: 'reportsTab', label: 'التقارير', icon: FileText, show: permissions?.canViewReports },
+        { id: 'directorTab', label: 'تكليفات المدير', icon: Briefcase, show: permissions?.canViewDirectorAssignments },
+        { id: 'schedulesTab', label: 'الجداول والتبديلات', icon: Calendar, show: permissions?.canViewSchedules },
       ]
     },
     {
       title: 'مركز المساعدة',
+      showSection: permissions?.showHelpCenterSection,
       items: [
-        { id: 'inquiryButton', label: 'الاستفسار عن', icon: HelpCircle, show: true },
-        { id: 'phonebookButton', label: 'دليل الهاتف', icon: Contact, show: true },
-        { id: 'faqTab', label: 'دليل الأسئلة (FAQ)', icon: BookOpen, show: true },
+        { id: 'inquiryButton', label: 'الاستفسار عن', icon: HelpCircle, show: permissions?.canViewInquiry },
+        { id: 'phonebookButton', label: 'دليل الهاتف', icon: Contact, show: permissions?.canViewPhonebook },
+        { id: 'faqTab', label: 'دليل الأسئلة (FAQ)', icon: BookOpen, show: permissions?.canViewFAQ },
       ]
     },
     {
       title: 'النظام',
+      showSection: permissions?.showSettingsSection,
       items: [
-        { id: 'settingsTab', label: 'إعدادات المنظومة', icon: Settings, show: permissions?.role === 'Admin' },
+        { id: 'settingsTab', label: 'إعدادات المنظومة', icon: Settings, show: permissions?.canManageUsers },
       ]
     }
   ];
@@ -83,13 +85,13 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
   const [expandedSections, setExpandedSections] = useState<string[]>(sections.map(s => s.title));
 
   const toggleSection = (title: string) => {
-    setExpandedSections(prev => 
+    setExpandedSections(prev =>
       prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]
     );
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={false}
       animate={{ width: collapsed ? 80 : 300 }}
       transition={{ duration: 0.7, ease: "easeInOut" }}
@@ -98,7 +100,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
       {/* Header */}
       <div className="h-16 flex items-center justify-between px-4 border-b border-slate-100 dark:border-white/5 bg-white dark:bg-slate-900 transition-all duration-700">
         {!collapsed && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             className="flex items-center gap-3"
@@ -109,7 +111,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
             <span className="font-black text-slate-900 dark:text-white tracking-tight text-xl">الخط الساخن</span>
           </motion.div>
         )}
-        <button 
+        <button
           onClick={onToggle}
           className="w-10 h-10 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all text-slate-500 dark:text-slate-400 active:scale-90"
         >
@@ -119,7 +121,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
 
       {/* Action Buttons */}
       <div className="p-4 space-y-2 bg-white dark:bg-slate-900/40 border-b border-slate-100 dark:border-white/5">
-        <button 
+        <button
           onClick={onReturnHome}
           className={`w-full group flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-300 
             ${collapsed ? 'justify-center bg-slate-50 dark:bg-slate-800 hover:bg-blue-600/10' : 'bg-slate-50 dark:bg-slate-800/60 hover:bg-white dark:hover:bg-slate-700'} 
@@ -132,7 +134,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
           )}
         </button>
 
-        <button 
+        <button
           onClick={onLogout}
           className={`w-full group flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-300 
             ${collapsed ? 'justify-center bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-500' : 'bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-500 hover:text-white'} 
@@ -147,14 +149,14 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
       <div className="flex-1 overflow-y-auto px-4 py-6 custom-scrollbar space-y-6">
         {sections.map((section, idx) => {
           const visibleItems = section.items.filter(i => i.show);
-          if (visibleItems.length === 0) return null;
+          if (section.showSection === false || visibleItems.length === 0) return null;
 
           const isExpanded = expandedSections.includes(section.title);
 
           return (
             <div key={idx} className="space-y-2">
               {!collapsed && (
-                <button 
+                <button
                   onClick={() => toggleSection(section.title)}
                   className="w-full flex items-center justify-between px-2 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-slate-300 transition-all"
                 >
@@ -167,7 +169,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
                   </motion.div>
                 </button>
               )}
-              
+
               <AnimatePresence initial={false}>
                 {(isExpanded || collapsed) && (
                   <motion.ul
@@ -181,8 +183,8 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
                         <button
                           onClick={() => onTabChange(item.id)}
                           className={`w-full group flex items-center gap-4 p-2.5 rounded-[24px] transition-all duration-300 
-                            ${activeTab === item.id 
-                              ? 'bg-blue-600 text-white shadow-2xl shadow-blue-500/40 font-black scale-[1.02]' 
+                            ${activeTab === item.id
+                              ? 'bg-blue-600 text-white shadow-2xl shadow-blue-500/40 font-black scale-[1.02]'
                               : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-900 dark:hover:text-slate-200'} 
                             ${collapsed ? 'justify-center px-0' : ''}`}
                         >
@@ -209,8 +211,8 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-black text-slate-900 dark:text-white truncate tracking-tight">{permissions?.role || 'مستخدم'}</span>
               <div className="flex items-center gap-1.5 mt-0.5">
-                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
-                 <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">متصل الآن</span>
+                <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
+                <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">متصل الآن</span>
               </div>
             </div>
           )}

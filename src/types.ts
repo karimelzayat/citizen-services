@@ -1,10 +1,11 @@
 export type UserRole = "Admin" | "Supervisor" | "Employee" | "Guest" | "FollowUpSpecialist" | "AdminOnly" | "HotlineAndLimitedAdmin";
 
 export interface UserCapabilities {
-  // Main Section Visibility
-  canViewHotlineSection: boolean;
-  canViewAdminSection: boolean;
-  canViewHelpCenterSection: boolean;
+  // Main Sections
+  showHotlineSection: boolean;
+  showAdminSection: boolean;
+  showHelpCenterSection: boolean;
+  showSettingsSection: boolean;
 
   // Hotline Tabs
   canViewDashboard: boolean;
@@ -20,21 +21,41 @@ export interface UserCapabilities {
   canViewDirectorAssignments: boolean;
   canViewSchedules: boolean;
   canViewReports: boolean;
-  canViewSettings: boolean;
 
   // Help Center Tabs
   canViewInquiry: boolean;
   canViewPhonebook: boolean;
   canViewFAQ: boolean;
 
-  // Global Actions
+  // System Actions
   canEditAny: boolean;
-  showMonthlyCount: boolean;
-  canApproveSwaps?: boolean;
+  canApproveSwaps: boolean;
+  canManageUsers: boolean;
+}
+
+export interface Employee {
+  id?: string;
+  name: string;
+  status: 'انتداب' | 'قوة أساسية';
+  jobTitle: string;
+  phone: string;
+  nationalId: string;
+  address: string;
+  code: string;
+  email: string;
+  startDate: string;
+  assignmentStatus: string;
+  annualLeave: number;
+  casualLeave: number;
+  gender: 'ذكر' | 'أنثى';
+  role: UserRole;
+  permissions: UserCapabilities;
+  createdAt: Date;
 }
 
 export interface UserPermissions extends UserCapabilities {
   role: UserRole;
+  employeeData?: Employee;
 }
 
 export interface Complaint {

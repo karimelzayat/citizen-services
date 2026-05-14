@@ -89,61 +89,74 @@ export const EMPLOYEE_MAP: Record<string, string> = {
   "safaaallam2000@gmail.com": "أ/صفاء علام"
 };
 
+export const DEFAULT_CAPABILITIES: UserCapabilities = {
+  showHotlineSection: false,
+  showAdminSection: false,
+  showHelpCenterSection: true,
+  showSettingsSection: false,
+  canViewDashboard: false,
+  canRegisterHotline: false,
+  canSearchHotline: false,
+  canFollowUpHotline: false,
+  canRegisterAdminWork: false,
+  canRegisterOngoing: false,
+  canRegisterWrongDirection: false,
+  canRegisterUnregistered: false,
+  canViewDirectorAssignments: false,
+  canViewSchedules: false,
+  canViewReports: false,
+  canViewInquiry: true,
+  canViewPhonebook: true,
+  canViewFAQ: true,
+  canEditAny: false,
+  canApproveSwaps: false,
+  canManageUsers: false
+};
+
 export const ROLE_CAPABILITIES: Record<UserRole, UserCapabilities> = {
   "Admin": { 
-    canViewHotlineSection: true, canViewAdminSection: true, canViewHelpCenterSection: true,
+    ...DEFAULT_CAPABILITIES,
+    showHotlineSection: true, showAdminSection: true, showSettingsSection: true,
     canViewDashboard: true, canRegisterHotline: true, canSearchHotline: true, canFollowUpHotline: true,
     canRegisterAdminWork: true, canRegisterOngoing: true, canRegisterWrongDirection: true, canRegisterUnregistered: true,
-    canViewDirectorAssignments: true, canViewSchedules: true, canViewReports: true, canViewSettings: true,
-    canViewInquiry: true, canViewPhonebook: true, canViewFAQ: true,
-    canEditAny: true, showMonthlyCount: true, canApproveSwaps: true
+    canViewDirectorAssignments: true, canViewSchedules: true, canViewReports: true,
+    canEditAny: true, canApproveSwaps: true, canManageUsers: true
   },
   "Supervisor": { 
-    canViewHotlineSection: true, canViewAdminSection: true, canViewHelpCenterSection: true,
-    canViewDashboard: true, canRegisterHotline: true, canSearchHotline: true, canFollowUpHotline: false,
+    ...DEFAULT_CAPABILITIES,
+    showHotlineSection: true, showAdminSection: true,
+    canViewDashboard: true, canRegisterHotline: true, canSearchHotline: true,
     canRegisterAdminWork: true, canRegisterOngoing: true, canRegisterWrongDirection: true, canRegisterUnregistered: true,
-    canViewDirectorAssignments: true, canViewSchedules: true, canViewReports: false, canViewSettings: false,
-    canViewInquiry: true, canViewPhonebook: true, canViewFAQ: true,
-    canEditAny: true, showMonthlyCount: true, canApproveSwaps: true
+    canViewDirectorAssignments: true, canViewSchedules: true,
+    canEditAny: true, canApproveSwaps: true
   }, 
   "Employee": { 
-    canViewHotlineSection: true, canViewAdminSection: false, canViewHelpCenterSection: true,
-    canViewDashboard: true, canRegisterHotline: true, canSearchHotline: true, canFollowUpHotline: false,
-    canRegisterAdminWork: false, canRegisterOngoing: false, canRegisterWrongDirection: false, canRegisterUnregistered: false,
-    canViewDirectorAssignments: false, canViewSchedules: true, canViewReports: false, canViewSettings: false,
-    canViewInquiry: true, canViewPhonebook: true, canViewFAQ: true,
-    canEditAny: false, showMonthlyCount: true, canApproveSwaps: false
+    ...DEFAULT_CAPABILITIES,
+    showHotlineSection: true,
+    canViewDashboard: true, canRegisterHotline: true, canSearchHotline: true,
+    canViewSchedules: true
   },
   "FollowUpSpecialist": { 
-    canViewHotlineSection: true, canViewAdminSection: false, canViewHelpCenterSection: true,
+    ...DEFAULT_CAPABILITIES,
+    showHotlineSection: true,
     canViewDashboard: true, canRegisterHotline: true, canSearchHotline: true, canFollowUpHotline: true,
-    canRegisterAdminWork: false, canRegisterOngoing: false, canRegisterWrongDirection: false, canRegisterUnregistered: false,
-    canViewDirectorAssignments: false, canViewSchedules: true, canViewReports: true, canViewSettings: false,
-    canViewInquiry: true, canViewPhonebook: true, canViewFAQ: true,
-    canEditAny: true, showMonthlyCount: true, canApproveSwaps: false
+    canViewSchedules: true, canViewReports: true,
+    canEditAny: true
   },
   "AdminOnly": { 
-    canViewHotlineSection: false, canViewAdminSection: true, canViewHelpCenterSection: true,
-    canViewDashboard: false, canRegisterHotline: false, canSearchHotline: false, canFollowUpHotline: false,
+    ...DEFAULT_CAPABILITIES,
+    showAdminSection: true,
     canRegisterAdminWork: true, canRegisterOngoing: true, canRegisterWrongDirection: true, canRegisterUnregistered: true,
-    canViewDirectorAssignments: true, canViewSchedules: true, canViewReports: true, canViewSettings: false,
-    canViewInquiry: true, canViewPhonebook: true, canViewFAQ: true,
-    canEditAny: false, showMonthlyCount: false, canApproveSwaps: false
+    canViewDirectorAssignments: true, canViewSchedules: true, canViewReports: true
   },
   "HotlineAndLimitedAdmin": { 
-    canViewHotlineSection: true, canViewAdminSection: true, canViewHelpCenterSection: true,
-    canViewDashboard: true, canRegisterHotline: true, canSearchHotline: true, canFollowUpHotline: false,
-    canRegisterAdminWork: true, canRegisterOngoing: true, canRegisterWrongDirection: false, canRegisterUnregistered: false,
-    canViewDirectorAssignments: false, canViewSchedules: true, canViewReports: false, canViewSettings: false,
-    canViewInquiry: true, canViewPhonebook: true, canViewFAQ: true,
-    canEditAny: false, showMonthlyCount: true, canApproveSwaps: false
+    ...DEFAULT_CAPABILITIES,
+    showHotlineSection: true, showAdminSection: true,
+    canViewDashboard: true, canRegisterHotline: true, canSearchHotline: true,
+    canRegisterAdminWork: true, canRegisterOngoing: true, canViewSchedules: true
   },
   "Guest": { 
-    canViewHotlineSection: false, canViewAdminSection: false, canViewHelpCenterSection: false,
-    canViewDashboard: false, canRegisterHotline: false, canSearchHotline: false, canFollowUpHotline: false,
-    canRegisterAdminWork: false, canRegisterOngoing: false, canRegisterWrongDirection: false, canRegisterUnregistered: false,
-    canViewDirectorAssignments: false, canViewSchedules: false, canViewReports: false, canViewSettings: false,
-    canViewInquiry: false, canViewPhonebook: false, canViewFAQ: false,
-    canEditAny: false, showMonthlyCount: false, canApproveSwaps: false
+    ...DEFAULT_CAPABILITIES,
+    showHelpCenterSection: false, canViewInquiry: false, canViewPhonebook: false, canViewFAQ: false
   }
 };
