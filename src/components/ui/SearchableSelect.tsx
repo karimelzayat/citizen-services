@@ -16,6 +16,7 @@ interface SearchableSelectProps {
   disabled?: boolean;
   required?: boolean;
   name?: string;
+  tabIndex?: number;
 }
 
 const normalizeArabic = (text: string) => {
@@ -35,11 +36,14 @@ export default function SearchableSelect({
   className = "",
   disabled = false,
   required = false,
-  name
+  name,
+  tabIndex = 0
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
+  const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const options: Option[] = rawOptions.map(opt => 
     typeof opt === 'string' ? { value: opt, label: opt } : opt
@@ -61,13 +65,66 @@ export default function SearchableSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (isOpen) {
+      setActiveIndex(0);
+    } else {
+      setActiveIndex(-1);
+      setSearch('');
+    }
+  }, [isOpen]);
+
+  const handleSelect = (val: string) => {
+    onChange(val);
+    setIsOpen(false);
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if (disabled) return;
+
+    if (e.key === 'Enter' || e.key === ' ') {
+      if (!isOpen) {
+        setIsOpen(true);
+        e.preventDefault();
+      } else if (activeIndex >= 0 && filteredOptions[activeIndex]) {
+        handleSelect(filteredOptions[activeIndex].value);
+        e.preventDefault();
+      }
+    } else if (e.key === 'Escape') {
+      setIsOpen(false);
+    } else if (e.key === 'ArrowDown') {
+      if (!isOpen) {
+        setIsOpen(true);
+      } else {
+        setActiveIndex(prev => (prev < filteredOptions.length - 1 ? prev + 1 : prev));
+      }
+      e.preventDefault();
+    } else if (e.key === 'ArrowUp') {
+      if (isOpen) {
+        setActiveIndex(prev => (prev > 0 ? prev - 1 : 0));
+      }
+      e.preventDefault();
+    } else if (e.key === 'Tab' && isOpen) {
+      // User requested: "when I choose and press tab, it should accept the choice"
+      if (filteredOptions.length > 0) {
+        const target = activeIndex >= 0 ? filteredOptions[activeIndex] : filteredOptions[0];
+        handleSelect(target.value);
+      } else {
+        setIsOpen(false);
+      }
+      // We don't preventDefault here so it moves focus to next element
+    }
+  };
+
   return (
     <div className={`relative ${className}`} ref={containerRef}>
       <div
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`form-input flex items-center justify-between cursor-pointer transition-all duration-300 min-h-[3.5rem] ${
+        onKeyDown={onKeyDown}
+        tabIndex={disabled ? -1 : tabIndex}
+        className={`form-input flex items-center justify-between cursor-pointer transition-all duration-300 min-h-[3.5rem] outline-none ${
           disabled ? 'opacity-50 cursor-not-allowed' : ''
-        } ${isOpen ? 'border-blue-500 ring-2 ring-blue-500/10' : ''}`}
+        } ${isOpen ? 'border-blue-500 ring-2 ring-blue-500/10' : 'focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10'}`}
       >
         <span className={`truncate ${!selectedOption ? 'text-slate-400' : 'text-slate-700 dark:text-slate-200 font-bold'}`}>
           {selectedOption ? selectedOption.label : placeholder}
@@ -87,11 +144,13 @@ export default function SearchableSelect({
               <div className="relative">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
+                  ref={inputRef}
                   type="text"
                   autoFocus
                   placeholder="ابحث هنا..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={onKeyDown}
                   className="w-full bg-transparent border-none focus:ring-0 text-sm pr-9 text-slate-700 dark:text-slate-200 font-bold h-10"
                 />
               </div>
@@ -99,18 +158,17 @@ export default function SearchableSelect({
 
             <div className="max-h-[250px] overflow-y-auto custom-scrollbar p-1">
               {filteredOptions.length > 0 ? (
-                filteredOptions.map((opt) => (
+                filteredOptions.map((opt, idx) => (
                   <div
                     key={opt.value}
-                    onClick={() => {
-                      onChange(opt.value);
-                      setIsOpen(false);
-                      setSearch('');
-                    }}
+                    onClick={() => handleSelect(opt.value)}
+                    onMouseEnter={() => setActiveIndex(idx)}
                     className={`flex items-center justify-between p-3 cursor-pointer rounded-xl transition-all duration-200 group ${
                       value === opt.value 
                         ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/20' 
-                        : 'hover:bg-slate-50 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400 font-medium'
+                        : idx === activeIndex
+                          ? 'bg-slate-100 dark:bg-white/10 text-slate-900 dark:text-white font-bold'
+                          : 'hover:bg-slate-50 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400 font-medium'
                     }`}
                   >
                     <span className="text-sm truncate pr-2">{opt.label}</span>
