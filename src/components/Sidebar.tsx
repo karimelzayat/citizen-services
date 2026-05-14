@@ -15,7 +15,8 @@ import {
   ChevronDown,
   Briefcase,
   Layers,
-  Settings
+  Settings,
+  X
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -25,6 +26,7 @@ interface SidebarProps {
   collapsed: boolean;
   onToggle: () => void;
   onReturnHome: () => void;
+  onLogout: () => void;
 }
 
 interface NavItem {
@@ -39,28 +41,24 @@ interface Section {
   items: NavItem[];
 }
 
-export default function Sidebar({ activeTab, onTabChange, permissions, collapsed, onToggle, onReturnHome }: SidebarProps) {
+export default function Sidebar({ activeTab, onTabChange, permissions, collapsed, onToggle, onReturnHome, onLogout }: SidebarProps) {
   const sections: Section[] = [
     {
-      title: 'الرئيسية',
+      title: 'الخط الساخن',
       items: [
-        { id: 'dashboard', label: 'لوحة المؤشرات', icon: LayoutDashboard, show: true },
+        { id: 'dashboard', label: 'لوحة المؤشرات', icon: LayoutDashboard, show: permissions?.canViewStats },
+        { id: 'newComplaint', label: 'تسجيل مكالمة', icon: PlusCircle, show: permissions?.canRegisterComplaint },
+        { id: 'searchComplaint', label: 'البحث', icon: Search, show: permissions?.canSearchComplaints },
+        { id: 'followUp', label: 'متابعة المكالمات', icon: CheckSquare, show: permissions?.canFollowUpComplaints },
       ]
     },
     {
-      title: 'إدارة الشكاوى',
+      title: 'الإدارة',
       items: [
-        { id: 'newComplaint', label: 'تسجيل مكالمة', icon: PlusCircle, show: true },
-        { id: 'searchComplaint', label: 'البحث', icon: Search, show: true },
-        { id: 'followUp', label: 'متابعة المكالمات', icon: CheckSquare, show: true },
-      ]
-    },
-    {
-      title: 'العمل والتكليفات',
-      items: [
-        { id: 'directorTab', label: 'تكليفات المدير', icon: Briefcase, show: true },
-        { id: 'schedulesTab', label: 'الجداول والتبديلات', icon: Calendar, show: true },
-        { id: 'reportsTab', label: 'التقارير', icon: FileText, show: true },
+        { id: 'directorTab', label: 'تكليفات المدير', icon: Briefcase, show: permissions?.canViewDirectorAssignments },
+        { id: 'schedulesTab', label: 'الجداول والتبديلات', icon: Calendar, show: permissions?.canViewSchedules },
+        { id: 'reportsTab', label: 'التقارير', icon: FileText, show: permissions?.canViewReports },
+        { id: 'settingsTab', label: 'إعدادات المنظومة', icon: Settings, show: permissions?.canViewSettings },
       ]
     },
     {
@@ -69,12 +67,6 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
         { id: 'inquiryButton', label: 'الاستفسار عن', icon: HelpCircle, show: true },
         { id: 'phonebookButton', label: 'دليل الهاتف', icon: Contact, show: true },
         { id: 'faqTab', label: 'دليل الأسئلة (FAQ)', icon: BookOpen, show: true },
-      ]
-    },
-    {
-      title: 'النظام',
-      items: [
-        { id: 'settingsTab', label: 'إعدادات المنظومة', icon: Settings, show: permissions?.role === 'Admin' },
       ]
     }
   ];
@@ -129,6 +121,16 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
           {!collapsed && (
             <div className="absolute right-0 top-0 h-full w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
           )}
+        </button>
+
+        <button 
+          onClick={onLogout}
+          className={`w-full group flex items-center gap-3 p-3.5 rounded-2xl transition-all duration-300 
+            ${collapsed ? 'justify-center bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-500' : 'bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-500 hover:text-white'} 
+            border border-rose-100 dark:border-rose-500/20 overflow-hidden relative shadow-sm`}
+        >
+          <X className={`w-5 h-5 ${collapsed ? 'text-rose-500' : 'text-rose-400 group-hover:text-white'}`} />
+          {!collapsed && <span className="font-bold text-sm">تسجيل الخروج</span>}
         </button>
       </div>
 

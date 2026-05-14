@@ -89,40 +89,40 @@ export const EMPLOYEE_MAP: Record<string, string> = {
   "safaaallam2000@gmail.com": "أ/صفاء علام"
 };
 
-export const ROLE_CAPABILITIES = {
+export const ROLE_CAPABILITIES: Record<UserRole, UserCapabilities> = {
   "Admin": { 
-    canRegister: true, canSearch: true, canEditAny: true, showMonthlyCount: true, 
-    canFollowUp: true, canGenerateReports: true,
-    canViewHotline: true, canViewAdminOngoing: true
+    canViewHotline: true, canRegisterComplaint: true, canSearchComplaints: true, canFollowUpComplaints: true, canViewStats: true,
+    canViewAdmin: true, canViewDirectorAssignments: true, canViewSchedules: true, canViewReports: true, canViewSettings: true,
+    canEditAny: true, showMonthlyCount: true, canApproveSwaps: true
   },
   "Supervisor": { 
-    canRegister: true, canSearch: true, canEditAny: true, showMonthlyCount: true, 
-    canFollowUp: false, canApproveSwaps: true, canGenerateReports: false,
-    canViewHotline: true, canViewAdminOngoing: true
+    canViewHotline: true, canRegisterComplaint: true, canSearchComplaints: true, canFollowUpComplaints: false, canViewStats: true,
+    canViewAdmin: true, canViewDirectorAssignments: true, canViewSchedules: true, canViewReports: false, canViewSettings: false,
+    canEditAny: true, showMonthlyCount: true, canApproveSwaps: true
   }, 
   "Employee": { 
-    canRegister: true, canSearch: true, canEditAny: false, showMonthlyCount: true, 
-    canFollowUp: false, canGenerateReports: false,
-    canViewHotline: true, canViewAdminOngoing: true
+    canViewHotline: true, canRegisterComplaint: true, canSearchComplaints: true, canFollowUpComplaints: false, canViewStats: false,
+    canViewAdmin: false, canViewDirectorAssignments: false, canViewSchedules: true, canViewReports: false, canViewSettings: false,
+    canEditAny: false, showMonthlyCount: true, canApproveSwaps: false
   },
-  "Guest": { 
-    canRegister: false, canSearch: false, canEditAny: false, showMonthlyCount: false, 
-    canFollowUp: false, canGenerateReports: false,
-    canViewHotline: false, canViewAdminOngoing: false
-  }, 
   "FollowUpSpecialist": { 
-    canRegister: true, canSearch: true, canEditAny: true, showMonthlyCount: true, 
-    canFollowUp: true, canGenerateReports: true,
-    canViewHotline: true, canViewAdminOngoing: true
+    canViewHotline: true, canRegisterComplaint: true, canSearchComplaints: true, canFollowUpComplaints: true, canViewStats: true,
+    canViewAdmin: false, canViewDirectorAssignments: false, canViewSchedules: true, canViewReports: true, canViewSettings: false,
+    canEditAny: true, showMonthlyCount: true, canApproveSwaps: false
   },
   "AdminOnly": { 
-    canRegister: true, canSearch: true, canEditAny: false, showMonthlyCount: false, 
-    canFollowUp: false, canGenerateReports: false,
-    canViewHotline: false, canViewAdminOngoing: true
+    canViewHotline: false, canRegisterComplaint: false, canSearchComplaints: false, canFollowUpComplaints: false, canViewStats: false,
+    canViewAdmin: true, canViewDirectorAssignments: true, canViewSchedules: true, canViewReports: true, canViewSettings: false,
+    canEditAny: false, showMonthlyCount: false, canApproveSwaps: false
   },
   "HotlineAndLimitedAdmin": { 
-    canRegister: true, canSearch: true, canEditAny: false, showMonthlyCount: true, 
-    canFollowUp: false, canGenerateReports: false,
-    canViewHotline: true, canViewAdminOngoing: false
+    canViewHotline: true, canRegisterComplaint: true, canSearchComplaints: true, canFollowUpComplaints: false, canViewStats: true,
+    canViewAdmin: true, canViewDirectorAssignments: false, canViewSchedules: true, canViewReports: false, canViewSettings: false,
+    canEditAny: false, showMonthlyCount: true, canApproveSwaps: false
+  },
+  "Guest": { 
+    canViewHotline: false, canRegisterComplaint: false, canSearchComplaints: false, canFollowUpComplaints: false, canViewStats: false,
+    canViewAdmin: false, canViewDirectorAssignments: false, canViewSchedules: false, canViewReports: false, canViewSettings: false,
+    canEditAny: false, showMonthlyCount: false, canApproveSwaps: false
   }
 };
