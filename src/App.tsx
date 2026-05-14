@@ -89,16 +89,9 @@ export default function App() {
       if (!u) {
         setUser(null);
         setPermissions({
+          ...DEFAULT_CAPABILITIES,
           role: 'Guest',
-          canRegister: true,
-          canSearch: true,
-          canEditAny: false,
-          showMonthlyCount: false,
-          canFollowUp: true,
-          canGenerateReports: false,
-          canViewHotline: true,
-          canViewAdminOngoing: false
-        });
+        } as any);
       } else {
         setUser(u);
         if (u.email) {
@@ -184,49 +177,53 @@ export default function App() {
             <p className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto font-medium">المنصة الشاملة لإدارة الشكاوى والمكالمات وتكليفات الإدارة العامة بوزارة الصحة والسكان</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-fade-in">
-            <div
-              onClick={() => { setViewMode(ViewMode.Hotline); setActiveTab('newComplaint'); }}
-              className="group relative bg-white dark:bg-slate-900/50 p-10 rounded-[40px] border border-slate-200 dark:border-white/5 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-2 overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600 opacity-[0.03] group-hover:opacity-10 transition-opacity rounded-full -mr-16 -mt-16 blur-2xl"></div>
-              <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-3xl flex items-center justify-center mb-8 group-hover:bg-blue-600 group-hover:scale-110 transition-all duration-500">
-                <i className="fas fa-headset text-4xl text-blue-600 group-hover:text-white transition-colors duration-500"></i>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-fade-in items-stretch">
+            {permissions?.showHotlineSection && (
+              <div
+                onClick={() => { setViewMode(ViewMode.Hotline); setActiveTab('newComplaint'); }}
+                className="group relative bg-white dark:bg-slate-900/50 p-10 rounded-[40px] border border-slate-200 dark:border-white/5 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-2 overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600 opacity-[0.03] group-hover:opacity-10 transition-opacity rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-3xl flex items-center justify-center mb-8 group-hover:bg-blue-600 group-hover:scale-110 transition-all duration-500">
+                  <i className="fas fa-headset text-4xl text-blue-600 group-hover:text-white transition-colors duration-500"></i>
+                </div>
+                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                  الخط الساخن
+                  <i className="fas fa-arrow-left text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all"></i>
+                </h2>
+                <p className="text-slate-500 dark:text-slate-400 leading-relaxed font-medium">تسجيل المكالمات، البحث، متابعة الحالات، ومركز المعرفة الشامل (FAQ)</p>
+                <div className="mt-8 flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400">
+                  <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-full">تسجيل سريع</span>
+                  <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-full">مخططات ذكية</span>
+                </div>
               </div>
-              <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-                الخط الساخن
-                <i className="fas fa-arrow-left text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all"></i>
-              </h2>
-              <p className="text-slate-500 dark:text-slate-400 leading-relaxed font-medium">تسجيل المكالمات، البحث، متابعة الحالات، ومركز المعرفة الشامل (FAQ)</p>
-              <div className="mt-8 flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400">
-                <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-full">تسجيل سريع</span>
-                <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-full">مخططات ذكية</span>
-              </div>
-            </div>
+            )}
 
-            <div
-              onClick={() => { setViewMode(ViewMode.Admin); setActiveTab('adminWork'); }}
-              className="group relative bg-white dark:bg-slate-900/50 p-10 rounded-[40px] border border-slate-200 dark:border-white/5 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-2 overflow-hidden"
-            >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600 opacity-[0.03] group-hover:opacity-10 transition-opacity rounded-full -mr-16 -mt-16 blur-2xl"></div>
-              <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 rounded-3xl flex items-center justify-center mb-8 group-hover:bg-emerald-600 group-hover:scale-110 transition-all duration-500">
-                <i className="fas fa-user-tie text-4xl text-emerald-600 group-hover:text-white transition-colors duration-500"></i>
+            {permissions?.showAdminSection && (
+              <div
+                onClick={() => { setViewMode(ViewMode.Admin); setActiveTab('adminWork'); }}
+                className="group relative bg-white dark:bg-slate-900/50 p-10 rounded-[40px] border border-slate-200 dark:border-white/5 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-2 overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600 opacity-[0.03] group-hover:opacity-10 transition-opacity rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 rounded-3xl flex items-center justify-center mb-8 group-hover:bg-emerald-600 group-hover:scale-110 transition-all duration-500">
+                  <i className="fas fa-user-tie text-4xl text-emerald-600 group-hover:text-white transition-colors duration-500"></i>
+                </div>
+                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                  لوحة الإدارة
+                  <i className="fas fa-arrow-left text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all"></i>
+                </h2>
+                <p className="text-slate-500 dark:text-slate-400 leading-relaxed font-medium">متابعة التكليفات، إدارة الشكاوى الجارية، وتصحيح التوجيه الخاطئ</p>
+                <div className="mt-8 flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                  <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 rounded-full">تقارير متقدمة</span>
+                  <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 rounded-full">توجيه ذكي</span>
+                </div>
               </div>
-              <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-                لوحة الإدارة
-                <i className="fas fa-arrow-left text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all"></i>
-              </h2>
-              <p className="text-slate-500 dark:text-slate-400 leading-relaxed font-medium">متابعة التكليفات، إدارة الشكاوى الجارية، وتصحيح التوجيه الخاطئ</p>
-              <div className="mt-8 flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 rounded-full">تقارير متقدمة</span>
-                <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 rounded-full">توجيه ذكي</span>
-              </div>
-            </div>
+            )}
 
             {permissions?.canManageUsers && (
               <div
                 onClick={() => { setViewMode(ViewMode.Settings); }}
-                className="group relative bg-white dark:bg-slate-900/50 p-10 rounded-[40px] border border-slate-200 dark:border-white/5 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-amber-500/10 hover:-translate-y-2 overflow-hidden md:col-span-2 lg:col-span-1"
+                className="group relative bg-white dark:bg-slate-900/50 p-10 rounded-[40px] border border-slate-200 dark:border-white/5 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-amber-500/10 hover:-translate-y-2 overflow-hidden"
               >
                 <div className="absolute top-0 right-0 w-32 h-32 bg-amber-600 opacity-[0.03] group-hover:opacity-10 transition-opacity rounded-full -mr-16 -mt-16 blur-2xl"></div>
                 <div className="w-20 h-20 bg-amber-50 dark:bg-amber-900/20 rounded-3xl flex items-center justify-center mb-8 group-hover:bg-amber-600 group-hover:scale-110 transition-all duration-500">

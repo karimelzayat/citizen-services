@@ -53,12 +53,6 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
         { id: 'newComplaint', label: 'تسجيل مكالمة', icon: PlusCircle, show: permissions?.canRegisterHotline },
         { id: 'searchComplaint', label: 'البحث', icon: Search, show: permissions?.canSearchHotline },
         { id: 'followUp', label: 'متابعة المكالمات', icon: CheckSquare, show: permissions?.canFollowUpHotline },
-      ]
-    },
-    {
-      title: 'العمليات المساندة',
-      showSection: true,
-      items: [
         { id: 'directorTab', label: 'تكليفات المدير', icon: Briefcase, show: permissions?.canViewDirectorAssignments },
         { id: 'schedulesTab', label: 'الجداول والتبديلات', icon: Calendar, show: permissions?.canViewSchedules },
       ]

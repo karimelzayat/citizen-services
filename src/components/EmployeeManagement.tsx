@@ -104,47 +104,37 @@ export default function EmployeeManagement() {
 
   const permissionGroups = [
     {
-      title: 'الأقسام الرئيسية',
+      title: 'محتوى الخط الساخن',
       items: [
-        { key: 'showHotlineSection', label: 'قسم الخط الساخن', icon: LayoutDashboard },
-        { key: 'showAdminSection', label: 'قسم لوحة الإدارة', icon: Layers },
-        { key: 'showHelpCenterSection', label: 'قسم مركز المساعدة', icon: HelpCircle },
-      ]
-    },
-    {
-      title: 'تبويبات الخط الساخن',
-      items: [
+        { key: 'showHotlineSection', label: 'دخول قسم الخط الساخن', icon: LayoutDashboard },
         { key: 'canViewDashboard', label: 'لوحة المؤشرات', icon: LayoutDashboard },
         { key: 'canRegisterHotline', label: 'تسجيل مكالمة', icon: PlusCircle },
         { key: 'canSearchHotline', label: 'البحث', icon: SearchIcon },
         { key: 'canFollowUpHotline', label: 'متابعة المكالمات', icon: CheckSquare },
-      ]
-    },
-    {
-      title: 'تبويبات وأعمال الإدارة',
-      items: [
-        { key: 'canRegisterOngoing', label: 'زر "الجاري"', icon: CheckCircle2 },
-        { key: 'canRegisterUnregistered', label: 'زر "شكاوى غير مسجلة"', icon: FileX },
-        { key: 'canRegisterWrongDirection', label: 'زر "توجيه خطأ"', icon: AlertTriangle },
         { key: 'canViewDirectorAssignments', label: 'تكليفات المدير', icon: Briefcase },
         { key: 'canViewSchedules', label: 'الجداول والتبديلات', icon: Calendar },
-        { key: 'canViewReports', label: 'التقارير', icon: FileText },
-      ]
-    },
-    {
-      title: 'مركز المساعدة والسياسات',
-      items: [
-        { key: 'canViewInquiry', label: 'الاستفسار عن', icon: HelpCircle },
+        { key: 'canViewInquiry', label: 'الاستفسارات', icon: HelpCircle },
         { key: 'canViewPhonebook', label: 'دليل الهاتف', icon: Contact },
         { key: 'canViewFAQ', label: 'دليل الأسئلة (FAQ)', icon: BookOpen },
       ]
     },
     {
-      title: 'صلاحيات إضافية',
+      title: 'لوحة الإدارة',
       items: [
+        { key: 'showAdminSection', label: 'دخول لوحة الإدارة', icon: Layers },
+        { key: 'canRegisterAdminWork', label: 'تسجيل عمل الإدارة', icon: Layers },
+        { key: 'canRegisterOngoing', label: 'زر "الجاري"', icon: CheckCircle2 },
+        { key: 'canRegisterUnregistered', label: 'زر "شكاوى غير مسجلة"', icon: FileX },
+        { key: 'canRegisterWrongDirection', label: 'زر "توجيه خطأ"', icon: AlertTriangle },
+        { key: 'canViewReports', label: 'التقارير', icon: FileText },
+      ]
+    },
+    {
+      title: 'النظام والصلاحيات',
+      items: [
+        { key: 'canManageUsers', label: 'إدارة الصلاحيات والموظفين', icon: Users },
         { key: 'canEditAny', label: 'تعديل أي شكوى', icon: Shield },
         { key: 'canApproveSwaps', label: 'اعتماد التبديلات', icon: UserCheck },
-        { key: 'canManageUsers', label: 'إدارة الموظفين والصلاحيات', icon: Users },
       ]
     }
   ];
@@ -217,9 +207,6 @@ export default function EmployeeManagement() {
                   <div className="flex items-center gap-2 mt-4 flex-wrap">
                     <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase ${emp.status === 'قوة أساسية' ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600' : 'bg-blue-50 dark:bg-blue-900/20 text-blue-600'}`}>
                       {emp.status}
-                    </span>
-                    <span className="px-3 py-1 bg-slate-100 dark:bg-slate-800 rounded-full text-[9px] font-black text-slate-500 uppercase">
-                      {emp.role}
                     </span>
                   </div>
                 </div>
@@ -352,14 +339,12 @@ export default function EmployeeManagement() {
 
                   <div className="space-y-2">
                     <label className="text-sm font-black text-slate-700 dark:text-slate-300">الحالة الإدارية</label>
-                    <select 
+                    <input 
+                      type="text"
                       value={editingEmployee?.status}
-                      onChange={e => setEditingEmployee({...editingEmployee!, status: e.target.value as any})}
-                      className="form-input font-bold"
-                    >
-                      <option value="قوة أساسية">قوة أساسية</option>
-                      <option value="انتداب">انتداب</option>
-                    </select>
+                      onChange={e => setEditingEmployee({...editingEmployee!, status: e.target.value})}
+                      className="form-input font-bold" placeholder="مثال: قوة أساسية، انتداب..."
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -412,8 +397,8 @@ export default function EmployeeManagement() {
                       >ذكر</button>
                       <button 
                         type="button"
-                        onClick={() => setEditingEmployee({...editingEmployee!, gender: 'أنثى'})}
-                        className={`flex-1 py-3 rounded-xl border-2 font-bold transition-all ${editingEmployee?.gender === 'أنثى' ? 'bg-rose-500 border-rose-500 text-white shadow-lg shadow-rose-500/20' : 'bg-slate-50 dark:bg-slate-800 border-transparent text-slate-500'}`}
+                        onClick={() => setEditingEmployee({...editingEmployee!, gender: 'انثى'})}
+                        className={`flex-1 py-3 rounded-xl border-2 font-bold transition-all ${editingEmployee?.gender === 'انثى' ? 'bg-rose-500 border-rose-500 text-white shadow-lg shadow-rose-500/20' : 'bg-slate-50 dark:bg-slate-800 border-transparent text-slate-500'}`}
                       >أنثى</button>
                     </div>
                   </div>
@@ -457,27 +442,6 @@ export default function EmployeeManagement() {
                     </div>
                   ))}
                 </div>
-              </div>
-
-              <div className="glass-card p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 rounded-[32px]">
-                 <label className="text-xs font-black text-slate-400 uppercase tracking-widest block mb-4">الدور الوظيفي العام</label>
-                 <select 
-                    value={editingEmployee?.role}
-                    onChange={e => {
-                      const role = e.target.value as UserRole;
-                      setEditingEmployee({
-                        ...editingEmployee!,
-                        role,
-                        permissions: { ...ROLE_CAPABILITIES[role] }
-                      });
-                    }}
-                    className="form-input bg-slate-50 dark:bg-slate-800 font-black text-blue-600"
-                 >
-                    {Object.keys(ROLE_CAPABILITIES).map(r => <option key={r} value={r}>{r}</option>)}
-                 </select>
-                 <p className="text-[10px] text-slate-400 mt-3 font-medium leading-relaxed italic">
-                   تنبيه: اختيار الدور الوظيفي سيقوم بإعادة ضبط الصلاحيات أعلاه للقيم الافتراضية الخاصة بهذا الدور.
-                 </p>
               </div>
             </div>
           </div>
