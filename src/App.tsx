@@ -22,6 +22,7 @@ import HotlineTreeModal from './components/HotlineTreeModal';
 import RankingModal from './components/RankingModal';
 import { Home, PlusCircle, Search, Settings, FileText, Bell, GitBranch, Trophy, Menu, X, LogOut, ChevronRight, Hash, Sun, Moon, Layers, Briefcase, Calendar, Users, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { DEFAULT_CAPABILITIES } from './constants';
 
 enum ViewMode {
   Landing = 'landing',

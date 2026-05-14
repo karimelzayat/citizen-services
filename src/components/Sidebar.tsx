@@ -55,6 +55,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
         { id: 'followUp', label: 'متابعة المكالمات', icon: CheckSquare, show: permissions?.canFollowUpHotline },
         { id: 'directorTab', label: 'تكليفات المدير', icon: Briefcase, show: permissions?.canViewDirectorAssignments },
         { id: 'schedulesTab', label: 'الجداول والتبديلات', icon: Calendar, show: permissions?.canViewSchedules },
+        { id: 'reportsTab', label: 'التقارير', icon: FileText, show: permissions?.canViewReports },
       ]
     },
     {

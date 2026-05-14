@@ -113,6 +113,7 @@ export default function EmployeeManagement() {
         { key: 'canFollowUpHotline', label: 'متابعة المكالمات', icon: CheckSquare },
         { key: 'canViewDirectorAssignments', label: 'تكليفات المدير', icon: Briefcase },
         { key: 'canViewSchedules', label: 'الجداول والتبديلات', icon: Calendar },
+        { key: 'canViewReports', label: 'التقارير', icon: FileText },
         { key: 'canViewInquiry', label: 'الاستفسارات', icon: HelpCircle },
         { key: 'canViewPhonebook', label: 'دليل الهاتف', icon: Contact },
         { key: 'canViewFAQ', label: 'دليل الأسئلة (FAQ)', icon: BookOpen },
@@ -126,7 +127,6 @@ export default function EmployeeManagement() {
         { key: 'canRegisterOngoing', label: 'زر "الجاري"', icon: CheckCircle2 },
         { key: 'canRegisterUnregistered', label: 'زر "شكاوى غير مسجلة"', icon: FileX },
         { key: 'canRegisterWrongDirection', label: 'زر "توجيه خطأ"', icon: AlertTriangle },
-        { key: 'canViewReports', label: 'التقارير', icon: FileText },
       ]
     },
     {
@@ -408,17 +408,17 @@ export default function EmployeeManagement() {
 
             {/* Permissions Panel */}
             <div className="space-y-6">
-              <div className="glass-card p-8 bg-slate-950 text-white rounded-[40px] shadow-2xl relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
-                <h4 className="text-lg font-black mb-8 flex items-center gap-3 relative z-10">
-                  <Shield className="w-5 h-5 text-blue-400" />
+              <div className="glass-card p-8 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/5 rounded-[40px] shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
+                <h4 className="text-lg font-black mb-8 flex items-center gap-3 relative z-10 text-slate-900 dark:text-white">
+                  <Shield className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   لوحة الصلاحيات الفردية
                 </h4>
                 
-                <div className="space-y-8 relative z-10 custom-scrollbar max-h-[800px] pr-2">
+                <div className="space-y-8 relative z-10 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
                   {permissionGroups.map(group => (
                     <div key={group.title} className="space-y-3">
-                      <div className="px-2 text-[10px] font-black text-blue-400/60 uppercase tracking-widest mb-1">{group.title}</div>
+                      <div className="px-2 text-[10px] font-black text-blue-600 dark:text-blue-400/60 uppercase tracking-widest mb-1">{group.title}</div>
                       <div className="space-y-1">
                         {group.items.map(item => {
                           const Icon = item.icon as any;
@@ -428,10 +428,10 @@ export default function EmployeeManagement() {
                               key={item.key}
                               type="button"
                               onClick={() => togglePermission(item.key as any)}
-                              className={`w-full flex items-center justify-between p-3.5 rounded-2xl transition-all duration-300 border ${isActive ? 'bg-blue-600 border-blue-500 text-white shadow-lg' : 'bg-white/5 border-transparent text-slate-400 hover:bg-white/10'}`}
+                              className={`w-full flex items-center justify-between p-3.5 rounded-2xl transition-all duration-300 border ${isActive ? 'bg-blue-600 border-blue-500 text-white shadow-lg' : 'bg-slate-50 dark:bg-white/5 border-transparent text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-white/10'}`}
                             >
                               <div className="flex items-center gap-3">
-                                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
                                 <span className="text-xs font-black">{item.label}</span>
                               </div>
                               {isActive ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4 opacity-20" />}

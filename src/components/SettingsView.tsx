@@ -1,19 +1,3 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  Shield, 
-  Users, 
-  Lock, 
-  Loader2
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { 
-  getRoleCapabilities,
-  updateRoleCapabilities
-} from '../services/dataService';
-import { ROLE_CAPABILITIES } from '../constants';
-import { UserRole } from '../types';
-import EmployeeManagement from './EmployeeManagement';
-
 import React from 'react';
 import { 
   Shield 
