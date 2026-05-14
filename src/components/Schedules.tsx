@@ -30,40 +30,49 @@ export default function Schedules() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [showMonthDropdown, setShowMonthDropdown] = useState(false);
 
+  const parseArabicMonth = (str: string) => {
+    const months = ["يناير", "فبراير", "مارس", "أبريل", "إبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
+    const normalizedStr = str.replace(/[أإآ]/g, 'ا').replace(/[ى]/g, 'ي');
+    const parts = normalizedStr.split(' ');
+    if (parts.length < 2) return 0;
+    const monthName = parts[0];
+    const year = parseInt(parts[1].replace(/[٠١٢٣٤٥٦٧٨٩]/g, (d) => '0123456789'['٠١٢٣٤٥٦٧٨٩'.indexOf(d)]));
+    
+    // Normalize month names for index lookup
+    const normalizedMonths = months.map(m => m.replace(/[أإآ]/g, 'ا').replace(/[ى]/g, 'ي'));
+    const monthIndex = normalizedMonths.indexOf(monthName);
+    
+    return year * 100 + (monthIndex === -1 ? 0 : monthIndex);
+  };
+
   useEffect(() => {
     const fetchInitialData = async () => {
       if (auth.currentUser?.email) {
         const perms = await getUserPermissions(auth.currentUser.email);
         setIsAdmin(perms.role === 'Admin');
         
-        // Priority for finding the user's name:
-        // 1. Employee record from DB
-        // 2. Hardcoded EMPLOYEE_MAP in constants
-        // 3. Firebase Auth display name
         if (perms.employeeData?.name) {
           setCurrentUserName(perms.employeeData.name);
         } else {
           // Check constants
-          import('../constants').then(({ EMPLOYEE_MAP }) => {
-            const hardcodedName = EMPLOYEE_MAP[auth.currentUser?.email || ""];
-            if (hardcodedName) {
-              setCurrentUserName(hardcodedName);
-            } else if (auth.currentUser?.displayName) {
-              setCurrentUserName(auth.currentUser.displayName);
-            }
-          });
+          const { EMPLOYEE_MAP } = await import('../constants');
+          const hardcodedName = EMPLOYEE_MAP[auth.currentUser?.email || ""];
+          if (hardcodedName) {
+            setCurrentUserName(hardcodedName);
+          } else if (auth.currentUser?.displayName) {
+            setCurrentUserName(auth.currentUser.displayName);
+          }
         }
       }
       
       const months = await getAvailableScheduleMonths();
       if (months.length > 0) {
-        setAvailableMonths(months);
-        // If current month is not in data, but data exists, select the latest month
-        if (!months.includes(currentMonth)) {
-          setSelectedMonth(months[0]);
+        const sorted = months.sort((a, b) => parseArabicMonth(a) - parseArabicMonth(b)); // ASC as requested: April 2025 then May 2025
+        setAvailableMonths(sorted);
+        if (sorted.length > 0 && !sorted.includes(selectedMonth)) {
+          setSelectedMonth(sorted[sorted.length - 1]); // Default to latest month in list for view
         }
       } else {
-        // Fallback for current range if empty
         setAvailableMonths([currentMonth]);
       }
     };
@@ -99,15 +108,21 @@ export default function Schedules() {
     // Direct inclusion
     if (normalizedText.includes(normalizedMe) || normalizedMe.includes(normalizedText)) return true;
     
-    // Split by spaces and check if at least 2 significant words match
-    const textWords = normalizedText.split(/\s+/).filter(w => w.length > 2);
-    const meWords = normalizedMe.split(/\s+/).filter(w => w.length > 2);
+    // Split by spaces and check matches
+    const textWords = normalizedText.split(/[\s-]+/).filter(w => w.length >= 2);
+    const meWords = normalizedMe.split(/[\s-]+/).filter(w => w.length >= 2);
     
+    if (meWords.length === 0) return false;
+
     let matches = 0;
-    for (const w of textWords) {
-      if (meWords.includes(w)) matches++;
+    for (const mw of meWords) {
+      if (textWords.some(tw => tw.includes(mw) || mw.includes(tw))) {
+        matches++;
+      }
     }
     
+    // If it's a multi-word name, we need at least 2 matches (e.g. "Karim" and "Sami")
+    // If it's a short name, 1 match might be enough but risky. Let's stick to 2 for certainty.
     return matches >= 2;
   };
 
@@ -151,7 +166,8 @@ export default function Schedules() {
       
       // Update available months after upload
       const updatedMonths = await getAvailableScheduleMonths();
-      setAvailableMonths(updatedMonths);
+      const sorted = updatedMonths.sort((a, b) => parseArabicMonth(a) - parseArabicMonth(b));
+      setAvailableMonths(sorted);
       
       setShowUploadModal(false);
       setBulkData('');
@@ -170,9 +186,10 @@ export default function Schedules() {
       await deleteSchedulesByMonth(selectedMonth);
       alert('تم مسح بيانات الشهر بنجاح');
       const updatedMonths = await getAvailableScheduleMonths();
-      setAvailableMonths(updatedMonths);
-      if (updatedMonths.length > 0) {
-        setSelectedMonth(updatedMonths[0]);
+      const sorted = updatedMonths.sort((a, b) => parseArabicMonth(a) - parseArabicMonth(b));
+      setAvailableMonths(sorted);
+      if (sorted.length > 0) {
+        setSelectedMonth(sorted[sorted.length - 1]);
       } else {
         setSelectedMonth(currentMonth);
         setAvailableMonths([currentMonth]);
@@ -255,7 +272,7 @@ export default function Schedules() {
                     initial={{ opacity: 0, y: -10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                    className="absolute top-full mt-2 left-0 w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/10 rounded-3xl shadow-2xl z-50 overflow-hidden max-h-[350px] overflow-y-auto custom-scrollbar"
+                    className="absolute top-full mt-2 left-0 w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/10 rounded-3xl shadow-2xl z-50 overflow-hidden max-h-[500px] overflow-y-auto custom-scrollbar"
                   >
                     <div className="p-2 space-y-1">
                       {availableMonths.map((month) => (
