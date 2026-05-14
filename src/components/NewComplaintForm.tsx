@@ -124,15 +124,13 @@ export default function NewComplaintForm() {
 
               <div className="space-y-2">
                 <label className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest leading-none block mb-1">المحافظة</label>
-                <div className="relative">
-                   <MapPin className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400 pointer-events-none z-10" />
-                   <SearchableSelect
-                      options={GOVERNORATES_LIST}
-                      value={formData.governorate}
-                      onChange={(val) => setFormData(p => ({ ...p, governorate: val, cabinetCity: '' }))}
-                      placeholder="اختر المحافظة..."
-                   />
-                </div>
+                <SearchableSelect
+                    options={GOVERNORATES_LIST}
+                    value={formData.governorate}
+                    onChange={(val) => setFormData(p => ({ ...p, governorate: val, cabinetCity: '' }))}
+                    placeholder="اختر المحافظة..."
+                    icon={<MapPin className="w-4 h-4" />}
+                />
               </div>
 
               <div className="space-y-2">
@@ -154,6 +152,7 @@ export default function NewComplaintForm() {
                     onChange={(val) => setFormData(p => ({ ...p, complaintEntity: val }))}
                     placeholder="اختر جهة الشكوى..."
                     required={!isEmergency}
+                    icon={<Building2 className="w-4 h-4" />}
                  />
               </div>
 
@@ -165,6 +164,7 @@ export default function NewComplaintForm() {
                     onChange={(val) => setFormData(p => ({ ...p, complaintSubject: val }))}
                     placeholder="اختر الموضوع..."
                     required={!isEmergency}
+                    icon={<AlertCircle className="w-4 h-4" />}
                  />
               </div>
             </div>

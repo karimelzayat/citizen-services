@@ -17,6 +17,7 @@ interface SearchableSelectProps {
   required?: boolean;
   name?: string;
   tabIndex?: number;
+  icon?: React.ReactNode;
 }
 
 const normalizeArabic = (text: string) => {
@@ -37,7 +38,8 @@ export default function SearchableSelect({
   disabled = false,
   required = false,
   name,
-  tabIndex = 0
+  tabIndex = 0,
+  icon
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -133,9 +135,12 @@ export default function SearchableSelect({
           disabled ? 'opacity-50 cursor-not-allowed' : ''
         } ${isOpen ? 'border-blue-500 ring-2 ring-blue-500/10' : 'focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10'}`}
       >
-        <span className={`truncate ${!selectedOption ? 'text-slate-400' : 'text-slate-700 dark:text-slate-200 font-bold'}`}>
-          {selectedOption ? selectedOption.label : placeholder}
-        </span>
+        <div className="flex items-center gap-3 truncate ml-2">
+          {icon && <div className="shrink-0 text-slate-400">{icon}</div>}
+          <span className={`truncate ${!selectedOption ? 'text-slate-400' : 'text-slate-700 dark:text-slate-200 font-bold'}`}>
+            {selectedOption ? selectedOption.label : placeholder}
+          </span>
+        </div>
         <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
       </div>
 
