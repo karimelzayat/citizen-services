@@ -117,6 +117,16 @@ export default function App() {
     }
   }, [isDarkMode]);
 
+  useEffect(() => {
+    const isAnyModalOpen = isHotlineTreeOpen || isRankingModalOpen;
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isHotlineTreeOpen, isRankingModalOpen]);
+
   if (loading) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-white dark:bg-slate-950 text-blue-600 transition-colors duration-300">

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'motion/react';
 import { searchPhonebook } from '../services/dataService';
 import { Phone, Search, Building2, MapPin } from 'lucide-react';
 import SearchableSelect from './ui/SearchableSelect';
@@ -21,8 +22,21 @@ export default function PhonebookModal({ isOpen, onClose }: { isOpen: boolean, o
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
-      <div className="bg-white dark:bg-slate-900 shadow-2xl shadow-slate-300/50 dark:shadow-none rounded-[32px] border border-slate-100 dark:border-white/5 p-0 flex flex-col !h-[80vh] overflow-hidden !max-w-4xl w-full" onClick={e => e.stopPropagation()}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+      />
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        className="relative bg-white dark:bg-slate-900 shadow-2xl rounded-[32px] border border-slate-100 dark:border-white/5 p-0 flex flex-col h-[85vh] max-h-[800px] overflow-hidden max-w-4xl w-full" 
+        onClick={e => e.stopPropagation()}
+      >
         <div className="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">
           <div className="flex items-center gap-4">
              <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
@@ -101,7 +115,7 @@ export default function PhonebookModal({ isOpen, onClose }: { isOpen: boolean, o
              </div>
            )}
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

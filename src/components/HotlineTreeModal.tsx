@@ -74,11 +74,19 @@ export default function HotlineTreeModal({ isOpen, onClose }: { isOpen: boolean,
     : currentNodes;
 
   return (
-    <div className="modal-overlay" onClick={onClose}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+      />
       <motion.div 
         initial={{ opacity: 0, scale: 0.95, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        className="bg-white dark:bg-slate-900 shadow-2xl shadow-slate-300/50 dark:shadow-none rounded-[32px] border border-slate-100 dark:border-white/5 !max-w-3xl !h-[80vh] flex flex-col overflow-hidden"
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        className="relative bg-white dark:bg-slate-900 shadow-2xl rounded-[32px] border border-slate-100 dark:border-white/5 max-w-3xl w-full h-[85vh] max-h-[800px] flex flex-col overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
