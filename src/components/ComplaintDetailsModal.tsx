@@ -59,7 +59,7 @@ export default function ComplaintDetailsModal({
                     {isEditing ? 'تعديل بيانات الشكوى' : selectedComplaint.callerName}
                   </h3>
                   <p className="text-[10px] text-slate-400 font-bold tracking-widest uppercase mt-0.5">
-                    {isEditing ? `شكوى رقم: ${selectedComplaint.id?.slice(-6) || '---'}` : 'تفاصيل المكالمة والشكوى المسجلة'}
+                    {isEditing ? 'تعديل البيانات الأساسية للمكالمة' : 'تفاصيل المكالمة والشكوى المسجلة'}
                   </p>
                 </div>
               </div>
@@ -246,7 +246,10 @@ export default function ComplaintDetailsModal({
               ) : (
                 <>
                   <button 
-                    onClick={() => setIsEditing(true)}
+                    onClick={() => {
+                      setEditFormData({ ...selectedComplaint });
+                      setIsEditing(true);
+                    }}
                     className="flex-1 bg-amber-500 text-white rounded-2xl px-8 py-4 text-sm font-black shadow-lg shadow-amber-500/30 flex items-center justify-center gap-2 hover:bg-amber-400 transition-all active:scale-95"
                   >
                     <FileText className="w-4 h-4" />
