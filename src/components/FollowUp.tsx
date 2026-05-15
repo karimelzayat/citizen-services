@@ -62,8 +62,43 @@ export default function FollowUp() {
             let timestampValue: Timestamp;
             try {
               if (row[0]) {
-                const date = new Date(row[0]);
-                if (!isNaN(date.getTime())) {
+                let date: Date;
+                const dateVal = row[0];
+                
+                if (typeof dateVal === 'number') {
+                  // Excel serial number
+                  date = new Date((dateVal - (25567 + 1)) * 86400 * 1000);
+                } else if (typeof dateVal === 'string') {
+                  const trimmed = dateVal.trim();
+                  // Check for format "HH:mm DD/MM/YYYY" or "DD/MM/YYYY HH:mm"
+                  const parts = trimmed.split(/\s+/);
+                  if (parts.length >= 2) {
+                    let timePart = '';
+                    let datePart = '';
+                    
+                    if (parts[0].includes(':') && parts[1].includes('/')) {
+                      timePart = parts[0];
+                      datePart = parts[1];
+                    } else if (parts[1].includes(':') && parts[0].includes('/')) {
+                      timePart = parts[1];
+                      datePart = parts[0];
+                    }
+                    
+                    if (timePart && datePart) {
+                      const [hours, minutes] = timePart.split(':').map(Number);
+                      const [day, month, year] = datePart.split('/').map(Number);
+                      date = new Date(year, month - 1, day, hours, minutes);
+                    } else {
+                      date = new Date(dateVal);
+                    }
+                  } else {
+                    date = new Date(dateVal);
+                  }
+                } else {
+                  date = new Date(dateVal);
+                }
+
+                if (!isNaN(date.getTime()) && date.getFullYear() > 1900) {
                   timestampValue = Timestamp.fromDate(date);
                 } else {
                   timestampValue = Timestamp.now();
@@ -79,15 +114,15 @@ export default function FollowUp() {
               callerName: String(row[1] || 'مجهول'),
               phoneNumber: String(row[2] || ''),
               complaintSubject: String(row[3] || ''),
-              governorate: String(row[4] || ''),
-              complaintEntity: String(row[5] || ''),
+              governorate: String(row[5] || ''),
+              complaintEntity: String(row[4] || ''),
               complaintStatus: String(row[6] || 'تم الرد'),
               employeeName: String(row[7] || ''),
               employeeEmail: String(row[8] || ''),
-              callDetails: String(row[9] || ''),
-              followUpOfficer: String(row[19] || ''),
-              followUpNotes: String(row[21] || ''),
-              followUpResult: String(row[18] || ''), // Mapping Review Status to followUpResult
+              callDetails: String(row[13] || ''),
+              followUpOfficer: String(row[11] || ''),
+              followUpNotes: String(row[12] || ''),
+              followUpResult: String(row[10] || ''),
               followUpStatus: uploadType,
               timestamp: timestampValue,
               isBulkUploaded: true
@@ -564,7 +599,7 @@ export default function FollowUp() {
                    </div>
                    <div className="space-y-1 text-right">
                      <p className="font-black text-slate-700 dark:text-slate-200 text-center">اضغط لرفع ملف (Excel)</p>
-                     <p className="text-[10px] text-slate-400 leading-relaxed text-center">يرجى التأكد من ترتيب الأعمدة: طابع زمني، اسم المتصل، التليفون، الموضوع، المحافظة، الجهة، الموقف، الموظف...</p>
+                     <p className="text-[10px] text-slate-400 leading-relaxed text-center">يرجى التأكد من ترتيب الأعمدة: طابع زمني، اسم المتصل، التليفون، الموضوع، الجهة، المحافظة، موقف الشكوى، الموظف، البريد، الطوارئ، متابعة المكالمة، الموظف المتابع، ملاحظات المتابعة النهائية، تفاصيل المكالمة.</p>
                    </div>
                  </div>
                </div>
