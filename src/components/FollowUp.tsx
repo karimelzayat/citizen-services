@@ -119,7 +119,7 @@ export default function FollowUp() {
               complaintStatus: String(row[6] || 'تم الرد'),
               employeeName: String(row[7] || ''),
               employeeEmail: String(row[8] || ''),
-              callDetails: String(row[13] || ''),
+              callDetails: String(row[9] || ''),
               followUpOfficer: String(row[11] || ''),
               followUpNotes: String(row[12] || ''),
               followUpResult: String(row[10] || ''),
@@ -155,6 +155,15 @@ export default function FollowUp() {
       e.target.value = '';
     }
   };
+
+  useEffect(() => {
+    if (isReviewOpen || isUploadModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => { document.body.style.overflow = 'unset'; };
+  }, [isReviewOpen, isUploadModalOpen]);
 
   useEffect(() => {
     const targetCollection = activeSubTab === 'pending' ? 'followUpPending' : 'followUpCompleted';
@@ -225,26 +234,6 @@ export default function FollowUp() {
       alert('خطأ أثناء حفظ المراجعة: ' + err.message);
     } finally {
       setIsSavingReview(false);
-    }
-  };
-
-  const handleManualAdd = async () => {
-    setIsAddingManual(true);
-    try {
-      await addFollowUpManual(manualCallData);
-      setIsAddModalOpen(false);
-      setManualCallData({
-        callerName: '',
-        phoneNumber: '',
-        governorate: '',
-        complaintEntity: '',
-        complaintSubject: '',
-        callDetails: ''
-      });
-    } catch (err: any) {
-      alert('خطأ في الإضافة: ' + err.message);
-    } finally {
-      setIsAddingManual(false);
     }
   };
 
@@ -364,31 +353,31 @@ export default function FollowUp() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="bg-white dark:bg-slate-900/40 rounded-[28px] border border-slate-100 dark:border-white/5 p-8 shadow-sm hover:shadow-xl hover:scale-[1.002] transition-all duration-700 relative group overflow-hidden"
+                    className="bg-white dark:bg-slate-900/40 rounded-[24px] border border-slate-100 dark:border-white/5 p-5 shadow-sm hover:shadow-xl hover:scale-[1.002] transition-all duration-700 relative group overflow-hidden"
                   >
-                    <div className="absolute top-0 right-0 w-2 h-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <div className="absolute top-0 right-0 w-1.5 h-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
                     
                     {/* Top Meta */}
-                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-slate-50 dark:border-white/5 pb-6">
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 border-b border-slate-50 dark:border-white/5 pb-3">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
-                          <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                        <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-500" />
                         </div>
-                        <h4 className="text-xl font-black text-emerald-600 dark:text-emerald-400">مكالمة # {filteredComplaints.length - ((currentPage - 1) * itemsPerPage + idx)}</h4>
+                        <h4 className="text-lg font-black text-emerald-600 dark:text-emerald-400">مكالمة # {filteredComplaints.length - ((currentPage - 1) * itemsPerPage + idx)}</h4>
                       </div>
-                      <div className="flex items-center gap-2 text-sm font-bold text-slate-400 mt-2 md:mt-0">
+                      <div className="flex items-center gap-2 text-xs font-bold text-slate-400 mt-2 md:mt-0">
                         <span>{c.timestamp instanceof Timestamp ? c.timestamp.toDate().toLocaleString('ar-EG') : 'تاريخ غير معروف'}</span>
                       </div>
                     </div>
 
                     {/* Info Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-12 text-right">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-4 gap-x-12 text-right">
                       <InfoRow label="اسم المتصل" value={c.callerName} icon={<User className="w-4 h-4" />} />
                       <InfoRow label="رقم التليفون" value={c.phoneNumber} icon={<Phone className="w-4 h-4" />} />
                       <InfoRow label="المحافظة" value={c.governorate} icon={<MapPin className="w-4 h-4" />} />
                       <InfoRow label="جهة الشكوى" value={c.complaintEntity} icon={<AlertCircle className="w-4 h-4" />} />
                       <InfoRow label="موضوع الشكوى" value={c.complaintSubject} icon={<AlertCircle className="w-4 h-4" />} />
-                      <InfoRow label="الموظف المسجل" value={c.employeeName} icon={<User className="w-4 h-4" />} />
+                      {/* Hidden registered employee for review integrity */}
                       <div className="col-span-full">
                         <InfoRow label="تفاصيل المكالمة" value={c.callDetails} isLong icon={<FileText className="w-4 h-4" />} />
                       </div>
@@ -399,16 +388,18 @@ export default function FollowUp() {
                       </div>
                     </div>
 
-                    {activeSubTab === 'pending' && (
-                      <div className="mt-8 pt-8 border-t border-slate-50 dark:border-white/5">
-                        <button 
-                          onClick={() => handleReviewClick(c)}
-                          className="px-8 py-3 bg-blue-600 text-white rounded-xl font-black text-sm shadow-xl shadow-blue-600/20 hover:bg-blue-500 transition-all active:scale-95"
-                        >
-                          مراجعة المكالمة
-                        </button>
-                      </div>
-                    )}
+                    <div className="mt-6 pt-4 border-t border-slate-50 dark:border-white/5">
+                      <button 
+                        onClick={() => handleReviewClick(c)}
+                        className={`px-8 py-2.5 rounded-xl font-black text-sm transition-all active:scale-95 ${
+                          activeSubTab === 'completed' 
+                            ? 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-white hover:bg-slate-200' 
+                            : 'bg-blue-600 text-white shadow-xl shadow-blue-600/20 hover:bg-blue-500'
+                        }`}
+                      >
+                        {activeSubTab === 'completed' ? 'تعديل المراجعة' : 'مراجعة المكالمة'}
+                      </button>
+                    </div>
                   </motion.div>
                 ))}
 
@@ -621,14 +612,14 @@ export default function FollowUp() {
 
 function InfoRow({ label, value, icon, isLong, status = 'default' }: { label: string, value: string, icon?: React.ReactNode, isLong?: boolean, status?: 'default' | 'success' }) {
   return (
-    <div className={`space-y-2 ${isLong ? 'col-span-full' : ''}`}>
-      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+    <div className={`space-y-1 ${isLong ? 'col-span-full' : ''}`}>
+      <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-widest text-slate-400">
         {icon}
         {label}:
       </div>
       <div className={`text-sm font-bold transition-all duration-500 
         ${status === 'success' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'} 
-        ${isLong ? 'leading-relaxed bg-slate-50/50 dark:bg-slate-800 p-4 rounded-xl' : ''}`}>
+        ${isLong ? 'leading-relaxed bg-slate-50/50 dark:bg-slate-800 p-3 rounded-xl' : ''}`}>
         {value}
       </div>
     </div>
