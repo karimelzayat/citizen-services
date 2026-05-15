@@ -23,17 +23,59 @@ export default function FollowUp() {
   });
   const [isSavingReview, setIsSavingReview] = useState(false);
 
-  // Manual Add Modal State
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [manualCallData, setManualCallData] = useState({
-    callerName: '',
-    phoneNumber: '',
-    governorate: '',
-    complaintEntity: '',
-    complaintSubject: '',
-    callDetails: ''
-  });
-  const [isAddingManual, setIsAddingManual] = useState(false);
+  // Bulk Upload State
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadType, setUploadType] = useState<'pending' | 'completed'>('pending');
+  const [uploadLoading, setUploadLoading] = useState(false);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadLoading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const content = event.target?.result as string;
+          // Basic CSV/JSON parsing logic (assuming CSV for simplicity)
+          const rows = content.split('\n').filter(row => row.trim());
+          const headers = rows[0].split(',');
+          
+          const batchData = rows.slice(1).map(row => {
+            const cols = row.split(',');
+            return {
+              callerName: cols[0] || 'مجهول',
+              phoneNumber: cols[1] || '',
+              governorate: cols[2] || '',
+              complaintEntity: cols[3] || '',
+              complaintSubject: cols[4] || '',
+              callDetails: cols[5] || '',
+              followUpNotes: cols[6] || '',
+              followUpResult: cols[7] || '',
+              followUpStatus: uploadType,
+              timestamp: Timestamp.now(),
+              employeeName: 'رفع تلقائي (نظام قديم)',
+              employeeEmail: auth.currentUser?.email || ''
+            };
+          });
+
+          const collectionName = uploadType === 'pending' ? 'followUpPending' : 'followUpCompleted';
+          for (const item of batchData) {
+            await addDoc(collection(db, collectionName), item);
+          }
+          
+          alert(`تم رفع ${batchData.length} سجل بنجاح`);
+          setIsUploadModalOpen(false);
+        } catch (err: any) {
+          alert('خطأ في معالجة الملف: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    } finally {
+      setUploadLoading(false);
+    }
+  };
 
   useEffect(() => {
     const targetCollection = activeSubTab === 'pending' ? 'followUpPending' : 'followUpCompleted';
@@ -126,15 +168,16 @@ export default function FollowUp() {
         </div>
       </div>
 
-      <div className="flex justify-end mb-4">
+      <div className="flex justify-end mb-4 gap-3">
         <button 
-          onClick={() => setIsAddModalOpen(true)}
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-blue-600/20 hover:bg-blue-500 transition-all hover:scale-[1.02] active:scale-95"
+          onClick={() => setIsUploadModalOpen(true)}
+          className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-600/20 hover:bg-emerald-500 transition-all hover:scale-[1.02] active:scale-95"
         >
-          <Plus className="w-5 h-5" />
-          إضافة مكالمة من النظام القديم
+          <FileText className="w-5 h-5" />
+          رفع سجلات من النظام القديم
         </button>
       </div>
+
 
       {/* Summary Bar */}
       <div 
@@ -247,13 +290,15 @@ export default function FollowUp() {
                   </button>
                </div>
 
-               <div className="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar">
+               <div className="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar text-right">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <ReadOnlyField label="اسم المتصل" value={selectedComplaint?.callerName} />
                      <ReadOnlyField label="رقم التليفون" value={selectedComplaint?.phoneNumber} />
                      <ReadOnlyField label="المحافظة" value={selectedComplaint?.governorate} />
                      <div className="col-span-full">
                        <ReadOnlyField label="جهة الشكوى" value={selectedComplaint?.complaintEntity} />
                      </div>
+
                      <div className="col-span-full">
                        <ReadOnlyField label="موضوع الشكوى" value={selectedComplaint?.complaintSubject} />
                      </div>
@@ -317,85 +362,74 @@ export default function FollowUp() {
         )}
       </AnimatePresence>
 
-      {/* Manual Add Modal */}
+      {/* Upload Modal */}
       <AnimatePresence>
-        {isAddModalOpen && (
+        {isUploadModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div 
                initial={{ opacity: 0 }}
                animate={{ opacity: 1 }}
                exit={{ opacity: 0 }}
-               onClick={() => setIsAddModalOpen(false)}
+               onClick={() => setIsUploadModalOpen(false)}
                className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
             />
             <motion.div 
                initial={{ scale: 0.9, opacity: 0, y: 20 }}
                animate={{ scale: 1, opacity: 1, y: 0 }}
                exit={{ scale: 0.9, opacity: 0, y: 20 }}
-               className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[40px] shadow-2xl overflow-hidden p-10 space-y-8"
+               className="relative bg-white dark:bg-slate-900 w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden p-10 space-y-8"
             >
                <div className="flex items-center justify-between">
-                  <h3 className="text-2xl font-black text-slate-900 dark:text-white">إضافة مكالمة متابعة يدوياً</h3>
-                  <button onClick={() => setIsAddModalOpen(false)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800">
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-white">رفع سجلات النظام القديم</h3>
+                  <button onClick={() => setIsUploadModalOpen(false)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800">
                     <X className="w-5 h-5 text-slate-400" />
                   </button>
                </div>
 
-               <div className="space-y-4">
-                 <input 
-                    type="text" 
-                    placeholder="اسم المتصل" 
-                    className="form-input h-14"
-                    value={manualCallData.callerName}
-                    onChange={(e) => setManualCallData({...manualCallData, callerName: e.target.value})}
-                 />
-                 <input 
-                    type="tel" 
-                    placeholder="رقم التليفون" 
-                    className="form-input h-14 font-mono tracking-widest"
-                    value={manualCallData.phoneNumber}
-                    onChange={(e) => setManualCallData({...manualCallData, phoneNumber: e.target.value})}
-                 />
-                 <SearchableSelect
-                    options={GOVERNORATES_LIST}
-                    value={manualCallData.governorate}
-                    onChange={(val) => setManualCallData({...manualCallData, governorate: val})}
-                    placeholder="المحافظة"
-                 />
-                 <input 
-                    type="text" 
-                    placeholder="جهة الشكوى" 
-                    className="form-input h-14"
-                    value={manualCallData.complaintEntity}
-                    onChange={(e) => setManualCallData({...manualCallData, complaintEntity: e.target.value})}
-                 />
-                 <SearchableSelect
-                    options={COMPLAINT_SUBJECTS}
-                    value={manualCallData.complaintSubject}
-                    onChange={(val) => setManualCallData({...manualCallData, complaintSubject: val})}
-                    placeholder="موضوع الشكوى"
-                 />
-                 <textarea 
-                    rows={4} 
-                    placeholder="تفاصيل المكالمة" 
-                    className="form-input resize-none"
-                    value={manualCallData.callDetails}
-                    onChange={(e) => setManualCallData({...manualCallData, callDetails: e.target.value})}
-                 />
+               <div className="space-y-6">
+                 <div className="grid grid-cols-2 gap-4">
+                   <button 
+                     onClick={() => setUploadType('pending')}
+                     className={`p-4 rounded-2xl border-2 font-black transition-all ${uploadType === 'pending' ? 'bg-emerald-50 border-emerald-500 text-emerald-600' : 'bg-slate-50 border-transparent text-slate-400'}`}
+                   >
+                     مكالمات جارية
+                   </button>
+                   <button 
+                     onClick={() => setUploadType('completed')}
+                     className={`p-4 rounded-2xl border-2 font-black transition-all ${uploadType === 'completed' ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-slate-50 border-transparent text-slate-400'}`}
+                   >
+                     مكالمات مكتملة
+                   </button>
+                 </div>
+
+                 <div className="p-8 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-[32px] text-center space-y-4 hover:border-blue-500/50 transition-colors relative cursor-pointer group">
+                   <input 
+                     type="file" 
+                     accept=".csv,.txt"
+                     onChange={handleFileUpload}
+                     className="absolute inset-0 opacity-0 cursor-pointer"
+                   />
+                   <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                     <Plus className="w-8 h-8 text-blue-600" />
+                   </div>
+                   <div className="space-y-1">
+                     <p className="font-black text-slate-700 dark:text-slate-200">اضغط لرفع ملف (CSV)</p>
+                     <p className="text-xs text-slate-400">اسم المتصل، التليفون، المحافظة، الجهة، الموضوع، التفاصيل، الملاحظات، النتيجة</p>
+                   </div>
+                 </div>
                </div>
 
-               <button 
-                 onClick={handleManualAdd}
-                 disabled={isAddingManual}
-                 className="w-full h-16 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-600/20 hover:bg-blue-500 transition-all flex items-center justify-center gap-3 active:scale-95"
-               >
-                 {isAddingManual ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                 إضافة للسجلات
-               </button>
+               {uploadLoading && (
+                 <div className="flex items-center justify-center gap-3 text-blue-600 font-bold uppercase tracking-widest text-[10px]">
+                   <Loader2 className="w-4 h-4 animate-spin" />
+                   جاري معالجة البيانات...
+                 </div>
+               )}
             </motion.div>
           </div>
         )}
       </AnimatePresence>
+
     </div>
   );
 }
