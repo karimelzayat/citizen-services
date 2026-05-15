@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { FileBarChart, PieChart, Activity, Calendar, Download, Info, Search, FileText } from 'lucide-react';
 import { motion } from 'motion/react';
 
-export default function Reports() {
+import { UserPermissions } from '../types';
+
+export default function Reports({ permissions }: { permissions: UserPermissions | null }) {
   const [activeSubTab, setActiveSubTab] = useState('entity');
 
   const tabs = [

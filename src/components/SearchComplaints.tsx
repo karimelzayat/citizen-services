@@ -6,7 +6,9 @@ import { Search, Calendar as CalendarIcon, Phone, User, MapPin, Database, Filter
 import { motion, AnimatePresence } from 'motion/react';
 import ComplaintDetailsModal from './ComplaintDetailsModal';
 
-export default function SearchComplaints() {
+import { UserPermissions } from '../types';
+
+export default function SearchComplaints({ permissions }: { permissions: UserPermissions | null }) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [phone, setPhone] = useState('');
   const [callerName, setCallerName] = useState('');

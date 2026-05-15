@@ -18,7 +18,9 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
-export default function Schedules() {
+import { UserPermissions } from '../types';
+
+export default function Schedules({ permissions }: { permissions: UserPermissions | null }) {
   const currentMonth = new Date().toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
   const [selectedMonth, setSelectedMonth] = useState(currentMonth);
   const [dbSchedules, setDbSchedules] = useState<any[]>([]);

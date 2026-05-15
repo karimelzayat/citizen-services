@@ -153,13 +153,13 @@ export default function App() {
         {(() => {
           switch (activeTab) {
             case 'dashboard': return <Dashboard />;
-            case 'newComplaint': return <NewComplaintForm />;
-            case 'directorTab': return <DirectorAssignments />;
-            case 'searchComplaint': return <SearchComplaints />;
-            case 'followUp': return <FollowUp />;
-            case 'schedulesTab': return <Schedules />;
-            case 'reportsTab': return <Reports />;
-            case 'faqTab': return <FAQ />;
+            case 'newComplaint': return <NewComplaintForm permissions={permissions} />;
+            case 'directorTab': return <DirectorAssignments permissions={permissions} />;
+            case 'searchComplaint': return <SearchComplaints permissions={permissions} />;
+            case 'followUp': return <FollowUp permissions={permissions} />;
+            case 'schedulesTab': return <Schedules permissions={permissions} />;
+            case 'reportsTab': return <Reports permissions={permissions} />;
+            case 'faqTab': return <FAQ permissions={permissions} />;
             case 'settingsTab': return <SettingsView />;
             default: return <Dashboard />;
           }
@@ -351,7 +351,7 @@ export default function App() {
                 <div className="flex flex-col">
                   {user ? (
                     <div className="flex items-center gap-3 text-slate-950 dark:text-white font-black text-base md:text-lg tracking-tight">
-                      <span className="truncate max-w-[150px] md:max-w-none">{user?.email?.split('@')[0]}</span>
+                      <span className="truncate max-w-[150px] md:max-w-none">{permissions?.employeeData?.name || user?.displayName || user?.email?.split('@')[0]}</span>
                       <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-wider border border-blue-100 dark:border-blue-800/30">{permissions?.role}</span>
                     </div>
                   ) : (

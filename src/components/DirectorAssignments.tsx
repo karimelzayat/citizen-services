@@ -3,7 +3,9 @@ import { addDirectorCase, listenToDirectorCases } from '../services/dataService'
 import { DirectorCase } from '../types';
 import SearchableSelect from './ui/SearchableSelect';
 
-export default function DirectorAssignments() {
+import { UserPermissions } from '../types';
+
+export default function DirectorAssignments({ permissions }: { permissions: UserPermissions | null }) {
   const [cases, setCases] = useState<DirectorCase[]>([]);
   const [formData, setFormData] = useState({
     source: 'واتساب المدير',

@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 
-export default function FAQ() {
+import { UserPermissions } from '../types';
+
+export default function FAQ({ permissions }: { permissions: UserPermissions | null }) {
   const [search, setSearch] = useState('');
   const faqs = [
     { question: 'ما هي مواعيد عمل مكاتب الصحة؟', answer: 'تعمل مكاتب الصحة على مدار ٢٤ ساعة في الحالات الطارئة، والمواعيد الرسمية من ٨ صباحاً حتى ٢ مساءً.', category: 'عام' },

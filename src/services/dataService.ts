@@ -192,7 +192,14 @@ export async function addComplaint(complaint: Partial<Complaint>, file?: File) {
     }
   }
 
-  const employeeName = user ? (EMPLOYEE_MAP[user.email || ""] || user.email || "Unknown") : "مواطن (ضيف)";
+  // Use provided employeeName or try to look it up
+  let employeeName = complaint.employeeName;
+  if (!employeeName && user) {
+    employeeName = EMPLOYEE_MAP[user.email || ""] || user.displayName || user.email || "Unknown";
+  }
+  if (!employeeName && !user) {
+    employeeName = "مواطن (ضيف)";
+  }
 
   try {
     const docData = sanitize({
@@ -237,12 +244,14 @@ export async function checkAndAddFollowUp(complaintId: string, data: any) {
 
   if (isSelected) {
     const user = auth.currentUser;
+    const employeeName = data.employeeName || (user ? (EMPLOYEE_MAP[user.email || ""] || user.displayName || user.email || 'نظام') : 'نظام');
+    
     await addDoc(collection(db, 'followUpPending'), sanitize({
       ...data,
       originalDocId: complaintId,
       followUpStatus: 'pending',
       timestamp: serverTimestamp(),
-      employeeName: user?.displayName || 'نظام',
+      employeeName,
       employeeEmail: user?.email || '',
     }));
   }
@@ -251,11 +260,13 @@ export async function checkAndAddFollowUp(complaintId: string, data: any) {
 export async function addFollowUpManual(data: any) {
   try {
     const user = auth.currentUser;
+    const employeeName = data.employeeName || (user ? (EMPLOYEE_MAP[user.email || ""] || user.displayName || user.email || 'نظام') : 'نظام');
+    
     const docData = sanitize({
       ...data,
       timestamp: serverTimestamp(),
       followUpStatus: 'pending',
-      employeeName: user?.displayName || 'نظام',
+      employeeName,
       employeeEmail: user?.email || '',
       complaintStatus: 'تم الرد'
     });
@@ -398,7 +409,7 @@ export async function searchComplaints(params: { date?: string, phoneNumber?: st
 // Admin Work
 export async function addAdminComplaint(data: Partial<AdminComplaint>) {
   const user = auth.currentUser;
-  const employeeName = user ? (EMPLOYEE_MAP[user.email || ""] || user.email || "Unknown") : "ضيف";
+  const employeeName = data.employeeName || (user ? (EMPLOYEE_MAP[user.email || ""] || user.displayName || user.email || "Unknown") : "ضيف");
 
   try {
     const docData = sanitize({
@@ -449,7 +460,7 @@ export function listenToDirectorCases(callback: (cases: DirectorCase[]) => void)
 // Inquiries
 export async function addInquiry(question: string) {
   const user = auth.currentUser;
-  const employeeName = user ? (EMPLOYEE_MAP[user.email || ""] || user.email || "Unknown") : "ضيف";
+  const employeeName = user ? (EMPLOYEE_MAP[user.email || ""] || user.displayName || user.email || "Unknown") : "ضيف";
 
   try {
     await addDoc(collection(db, 'inquiries'), {

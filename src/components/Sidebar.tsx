@@ -198,7 +198,9 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
           </div>
           {!collapsed && (
             <div className="flex flex-col min-w-0">
-              <span className="text-sm font-black text-slate-900 dark:text-white truncate tracking-tight">{permissions?.role || 'مستخدم'}</span>
+              <span className="text-sm font-black text-slate-900 dark:text-white truncate tracking-tight">
+                {permissions?.employeeData?.name || permissions?.role || 'مستخدم'}
+              </span>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
                 <span className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">متصل الآن</span>

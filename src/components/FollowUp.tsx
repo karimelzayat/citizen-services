@@ -10,7 +10,9 @@ import ReviewModal from './ReviewModal';
 
 import * as XLSX from 'xlsx';
 
-export default function FollowUp() {
+import { UserPermissions } from '../types';
+
+export default function FollowUp({ permissions }: { permissions: UserPermissions | null }) {
   const [activeSubTab, setActiveSubTab] = useState<'pending' | 'completed'>('pending');
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -214,7 +216,7 @@ export default function FollowUp() {
     setIsSavingReview(true);
     try {
       await reviewFollowUp(selectedComplaint.id, {
-        followUpOfficer: auth.currentUser?.displayName || 'غير معروف',
+        followUpOfficer: permissions?.employeeData?.name || auth.currentUser?.displayName || 'غير معروف',
         followUpNotes: reviewData.notes,
         followUpResult: reviewData.result,
       });

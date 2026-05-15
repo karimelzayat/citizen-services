@@ -6,7 +6,9 @@ import { User, MapPin, Phone, Building2, AlertCircle, PenTool, CheckCircle2, Tim
 import { motion, AnimatePresence } from 'motion/react';
 import SearchableSelect from './ui/SearchableSelect';
 
-export default function NewComplaintForm() {
+import { UserPermissions } from '../types';
+
+export default function NewComplaintForm({ permissions }: { permissions: UserPermissions | null }) {
   const [isCabinet, setIsCabinet] = useState(false);
   const [formData, setFormData] = useState<any>({
     callerName: '',
@@ -34,6 +36,7 @@ export default function NewComplaintForm() {
       const submissionData: any = {
         ...formData,
         isCabinetComplaint: isCabinet,
+        employeeName: permissions?.employeeData?.name || '',
       };
       
       const docId = await addComplaint(submissionData);

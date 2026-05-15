@@ -43,7 +43,11 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await addAdminComplaint({ ...formData, workType: workType as any });
+      await addAdminComplaint({ 
+        ...formData, 
+        workType: workType as any,
+        employeeName: permissions?.employeeData?.name || ''
+      });
       
       // Auto-reset and scroll to top
       setFormData({
