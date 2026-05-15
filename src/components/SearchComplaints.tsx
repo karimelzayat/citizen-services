@@ -216,7 +216,7 @@ export default function SearchComplaints() {
 
       <AnimatePresence>
         {selectedComplaint && createPortal(
-          <div className="fixed inset-0 z-[10000] grid place-items-center p-4">
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 md:p-8 overflow-hidden">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -225,10 +225,10 @@ export default function SearchComplaints() {
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
             />
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 10 }}
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 10 }}
-              className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[32px] shadow-2xl overflow-hidden flex flex-col h-[90vh] max-h-[850px]"
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-2xl bg-white dark:bg-slate-900 rounded-[40px] shadow-2xl overflow-hidden flex flex-col h-full max-h-[85vh]"
             >
               {/* Modal Header */}
               <div className="p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-white dark:bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
@@ -241,15 +241,15 @@ export default function SearchComplaints() {
                     <p className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">تفاصيل المكالمة والشكوى</p>
                   </div>
                 </div>
-                <button onClick={() => setSelectedComplaint(null)} className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors">
+                <button onClick={() => setSelectedComplaint(null)} className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-400 hover:text-rose-500 transition-colors font-bold">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
               {/* Modal Body */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar text-right">
                 {/* Status and Time badges */}
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 justify-end">
                   <div className="px-3 py-1.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold flex items-center gap-2 border border-blue-100 dark:border-blue-900/30">
                     <Clock className="w-3.5 h-3.5" />
                     {selectedComplaint.timestamp && typeof (selectedComplaint.timestamp as any).toDate === 'function' 
@@ -350,7 +350,7 @@ export default function SearchComplaints() {
 
                 {/* Documents / Photos */}
                 {selectedComplaint.photoUrl && (
-                  <div className="space-y-3">
+                  <div className="space-y-3 text-right">
                     <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-100 pb-1">المرفقات</h4>
                     <div className="relative group rounded-3xl overflow-hidden border-4 border-white dark:border-slate-800 shadow-xl">
                       <img src={selectedComplaint.photoUrl} alt="Complaint Attachment" className="w-full h-auto max-h-60 object-cover transition-transform duration-700 group-hover:scale-105" />

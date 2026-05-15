@@ -118,14 +118,14 @@ export default function App() {
   }, [isDarkMode]);
 
   useEffect(() => {
-    const isAnyModalOpen = isHotlineTreeOpen || isRankingModalOpen;
+    const isAnyModalOpen = isHotlineTreeOpen || isRankingModalOpen || isInquiryModalOpen || isPhonebookModalOpen;
     if (isAnyModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
     return () => { document.body.style.overflow = 'unset'; };
-  }, [isHotlineTreeOpen, isRankingModalOpen]);
+  }, [isHotlineTreeOpen, isRankingModalOpen, isInquiryModalOpen, isPhonebookModalOpen]);
 
   if (loading) {
     return (
@@ -295,6 +295,12 @@ export default function App() {
 
   return (
     <div className={`flex h-screen overflow-hidden transition-colors duration-700 ${isDarkMode ? 'dark bg-slate-950' : 'bg-white'}`}>
+      {/* Portals for Modals */}
+      <InquiryModal isOpen={isInquiryModalOpen} onClose={() => setIsInquiryModalOpen(false)} />
+      <PhonebookModal isOpen={isPhonebookModalOpen} onClose={() => setIsPhonebookModalOpen(false)} />
+      <HotlineTreeModal isOpen={isHotlineTreeOpen} onClose={() => setIsHotlineTreeOpen(false)} />
+      <RankingModal isOpen={isRankingModalOpen} onClose={() => setIsRankingModalOpen(false)} />
+
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div
@@ -482,19 +488,6 @@ export default function App() {
           </div>
         </footer>
       </main>
-
-      <AnimatePresence>
-        {isInquiryModalOpen && <InquiryModal isOpen={isInquiryModalOpen} onClose={() => setIsInquiryModalOpen(false)} />}
-      </AnimatePresence>
-      <AnimatePresence>
-        {isPhonebookModalOpen && <PhonebookModal isOpen={isPhonebookModalOpen} onClose={() => setIsPhonebookModalOpen(false)} />}
-      </AnimatePresence>
-      <AnimatePresence>
-        {isHotlineTreeOpen && <HotlineTreeModal isOpen={isHotlineTreeOpen} onClose={() => setIsHotlineTreeOpen(false)} />}
-      </AnimatePresence>
-      <AnimatePresence>
-        {isRankingModalOpen && <RankingModal isOpen={isRankingModalOpen} onClose={() => setIsRankingModalOpen(false)} />}
-      </AnimatePresence>
     </div>
   );
 }

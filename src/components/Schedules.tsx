@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { listenToSchedules, bulkUploadSchedules, getUserPermissions, deleteSchedulesByMonth, getAvailableScheduleMonths } from '../services/dataService';
 import { auth } from '../lib/firebase';
 import { 
@@ -12,7 +13,8 @@ import {
   XCircle,
   Trash2,
   ChevronDown,
-  User
+  User,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -38,7 +40,6 @@ export default function Schedules() {
     const monthName = parts[0];
     const year = parseInt(parts[1].replace(/[٠١٢٣٤٥٦٧٨٩]/g, (d) => '0123456789'['٠١٢٣٤٥٦٧٨٩'.indexOf(d)]));
     
-    // Normalize month names for index lookup
     const normalizedMonths = months.map(m => m.replace(/[أإآ]/g, 'ا').replace(/[ى]/g, 'ي'));
     const monthIndex = normalizedMonths.indexOf(monthName);
     
@@ -54,7 +55,6 @@ export default function Schedules() {
         if (perms.employeeData?.name) {
           setCurrentUserName(perms.employeeData.name);
         } else {
-          // Check constants
           const { EMPLOYEE_MAP } = await import('../constants');
           const hardcodedName = EMPLOYEE_MAP[auth.currentUser?.email || ""];
           if (hardcodedName) {
@@ -67,10 +67,10 @@ export default function Schedules() {
       
       const months = await getAvailableScheduleMonths();
       if (months.length > 0) {
-        const sorted = months.sort((a, b) => parseArabicMonth(a) - parseArabicMonth(b)); // ASC as requested: April 2025 then May 2025
+        const sorted = months.sort((a, b) => parseArabicMonth(a) - parseArabicMonth(b));
         setAvailableMonths(sorted);
         if (sorted.length > 0 && !sorted.includes(selectedMonth)) {
-          setSelectedMonth(sorted[sorted.length - 1]); // Default to latest month in list for view
+          setSelectedMonth(sorted[sorted.length - 1]);
         }
       } else {
         setAvailableMonths([currentMonth]);
@@ -94,8 +94,8 @@ export default function Schedules() {
       .replace(/[أإآ]/g, 'ا')
       .replace(/[ة]/g, 'ه')
       .replace(/[ى]/g, 'ي')
-      .replace(/[١٢٣٤٥٦٧٨٩٠]/g, (d) => '0123456789'['٠١٢٣٤٥٦٧٨٩'.indexOf(d)]) // Arabic to Latin
-      .replace(/[0123456789]/g, (d) => '0123456789'[d as any]) // Ensure Latin digits
+      .replace(/[١٢٣٤٥٦٧٨٩٠]/g, (d) => '0123456789'['٠١٢٣٤٥٦٧٨٩'.indexOf(d)])
+      .replace(/[0123456789]/g, (d) => '0123456789'[d as any])
       .toLowerCase()
       .trim();
   };
@@ -105,38 +105,29 @@ export default function Schedules() {
     const normalizedText = normalizeString(text);
     const normalizedMe = normalizeString(currentUserName);
     
-    // Split the cell content into individual names
     const individuals = normalizedText.split(/[-،,]/).map(s => s.trim()).filter(Boolean);
     const meWords = normalizedMe.split(/\s+/).filter(w => w.length >= 2);
     
     if (meWords.length === 0) return false;
 
     return individuals.some(individual => {
-      // Filter out common titles to get to the core name
       const titles = ['د', 'ا', 'م', 'ا د', 'أ د', 'الأستاذ', 'الدكتور', 'المهندس'];
       let indWords = individual.split(/\s+/).filter(w => w.length >= 2);
       
-      // Skip titles at the beginning
       while (indWords.length > 0 && titles.includes(indWords[0])) {
         indWords.shift();
       }
 
       if (indWords.length === 0) return false;
 
-      // Exact word matching
       const matches = meWords.filter(mw => indWords.includes(mw));
       
-      // LOGIC:
-      // 1. If we match at least 3 names, it's almost certainly the same person.
       if (matches.length >= 3) return true;
       
-      // 2. If we match exactly 2, they MUST be the first two names (e.g. Karim Sami)
-      // This prevents "Karim Sami" matching "Karim Saeed" even if both have "Mohamed" as a 3rd name.
       if (matches.length === 2) {
         return (meWords[0] === indWords[0] && meWords[1] === indWords[1]);
       }
       
-      // 3. If user name is very short (1-2 words), must match all words exactly in order
       if (meWords.length <= 2) {
         return matches.length === meWords.length && meWords[0] === indWords[0];
       }
@@ -151,15 +142,13 @@ export default function Schedules() {
     try {
       const lines = bulkData.trim().split('\n');
       const schedules = lines.map(line => {
-        // Handle both tab and multiple spaces as delimiters
         const parts = line.split(/\t| {2,}/).map(p => p.trim());
         if (parts.length < 3) return null;
         
-        const is12Cols = parts.length >= 11; // Some lines might skip empty last columns
+        const is12Cols = parts.length >= 11;
         const rawMonth = is12Cols ? parts[2] : selectedMonth;
         const normalizedMonth = normalizeString(rawMonth);
         
-        // Find matching month from our UI options OR if not found, it might be a new month we will add to the list
         const matchedMonth = availableMonths.find(opt => normalizeString(opt) === normalizedMonth) || rawMonth;
 
         const offset = is12Cols ? 1 : 0;
@@ -183,7 +172,6 @@ export default function Schedules() {
       await bulkUploadSchedules(schedules as any[]);
       alert(`تم رفع ${schedules.length} سجل بنجاح لشهر ${selectedMonth}`);
       
-      // Update available months after upload
       const updatedMonths = await getAvailableScheduleMonths();
       const sorted = updatedMonths.sort((a, b) => parseArabicMonth(a) - parseArabicMonth(b));
       setAvailableMonths(sorted);
@@ -258,7 +246,7 @@ export default function Schedules() {
         <div className="absolute top-0 right-0 w-2 h-full bg-blue-600 rounded-r-[40px]"></div>
         <div className="absolute top-0 right-0 w-full h-full bg-blue-600 opacity-0 group-hover:opacity-[0.02] transform scale-x-0 group-hover:scale-x-100 origin-right transition-all duration-700 rounded-[40px]"></div>
         
-        <div className="relative z-10">
+        <div className="relative z-10 text-right">
           <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">الفترة الزمنية المختارة:</label>
           <div className="flex items-center gap-3">
              <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
@@ -328,7 +316,7 @@ export default function Schedules() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse min-w-[1400px]">
+            <table className="w-full border-collapse min-w-[1400px] text-right">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-white/5">
                   <th className="p-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">التاريخ</th>
@@ -392,13 +380,20 @@ export default function Schedules() {
       </div>
 
       <AnimatePresence>
-        {showUploadModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/60 backdrop-blur-sm RTL">
+        {showUploadModal && createPortal(
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 md:p-8 overflow-hidden RTL">
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[48px] border border-white/10 shadow-2xl overflow-hidden p-10"
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               exit={{ opacity: 0 }}
+               onClick={() => setShowUploadModal(false)}
+               className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="relative bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[48px] border border-white/10 shadow-2xl overflow-hidden p-10 flex flex-col h-full max-h-[85vh] text-right"
             >
               <div className="flex items-center justify-between mb-8">
                 <div>
@@ -406,19 +401,19 @@ export default function Schedules() {
                     <FileSpreadsheet className="w-8 h-8 text-blue-600" />
                     رفع الجدول الشهري
                   </h3>
-                  <p className="text-slate-500 dark:text-slate-400 font-medium mt-2">انسخ البيانات من Excel والصقها هنا مباشرة لشهر {selectedMonth}</p>
+                  <p className="text-slate-500 dark:text-slate-400 font-medium mt-2 text-right">انسخ البيانات من Excel والصقها هنا مباشرة لشهر {selectedMonth}</p>
                 </div>
                 <button 
                   onClick={() => setShowUploadModal(false)}
-                  className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:rotate-90 transition-all text-slate-500"
+                  className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:rotate-90 transition-all text-slate-500 font-bold"
                 >
-                  <XCircle className="w-6 h-6" />
+                  <X className="w-6 h-6" />
                 </button>
               </div>
 
               <div className="mb-6 p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/20 rounded-[32px] flex items-start gap-4">
                  <Info className="w-6 h-6 text-blue-600 shrink-0 mt-1" />
-                 <div className="space-y-2">
+                 <div className="space-y-2 text-right w-full">
                     <p className="text-sm font-black text-blue-900 dark:text-blue-100">تعليمات التنسيق (12 عمود):</p>
                     <p className="text-xs text-blue-700/80 dark:text-blue-300 font-medium leading-relaxed italic">
                       التاريخ | اليوم | الشهر والسنة | شفت 24 | شفت 36 | عطلة م | عطلة ظ | 2:30 - 5 | 5 - 7:30 | 7:30 - 10 | رعاية م | رعاية ل
@@ -430,7 +425,7 @@ export default function Schedules() {
                 value={bulkData}
                 onChange={(e) => setBulkData(e.target.value)}
                 placeholder="الصق البيانات هنا..."
-                className="w-full h-[400px] bg-slate-50 dark:bg-slate-850 p-6 rounded-[32px] border-2 border-transparent focus:border-blue-600 outline-none font-mono text-sm dark:text-white transition-all resize-none"
+                className="flex-1 w-full bg-slate-50 dark:bg-slate-850 p-6 rounded-[32px] border-2 border-transparent focus:border-blue-600 outline-none font-mono text-sm dark:text-white transition-all resize-none text-right"
               />
 
               <div className="mt-10 flex items-center gap-4">
@@ -450,7 +445,8 @@ export default function Schedules() {
                 </button>
               </div>
             </motion.div>
-          </div>
+          </div>,
+          document.body
         )}
       </AnimatePresence>
     </div>

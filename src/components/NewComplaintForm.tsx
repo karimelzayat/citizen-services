@@ -2,14 +2,12 @@ import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { GOVERNORATES_LIST, GOVERNORATES_ENTITIES, COMPLAINT_SUBJECTS, CABINET_CITIES_MAP } from '../constants';
 import { addComplaint, checkAndAddFollowUp } from '../services/dataService';
-import { User, MapPin, Phone, Building2, AlertCircle, PenTool, CheckCircle2, Timer, Save, Loader2, Info } from 'lucide-react';
+import { User, MapPin, Phone, Building2, AlertCircle, PenTool, CheckCircle2, Timer, Save, Loader2, Info, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import SearchableSelect from './ui/SearchableSelect';
 
 export default function NewComplaintForm() {
-  const [isEmergency, setIsEmergency] = useState(false);
   const [isCabinet, setIsCabinet] = useState(false);
-  const [hospitalType, setHospitalType] = useState('حكومي');
   const [formData, setFormData] = useState<any>({
     callerName: '',
     phoneNumber: '',
@@ -18,18 +16,10 @@ export default function NewComplaintForm() {
     complaintSubject: '',
     complaintStatus: 'تم الرد',
     callDetails: '',
-    // Cabinet fields
     cabinetNationalId: '',
     cabinetCity: '',
     cabinetAddress: '',
     cabinetSubject: '',
-    // Emergency fields
-    responsibleEntity: '',
-    hospitalName: '',
-    emergencyGovernorate: '',
-    hospitalAddress: '',
-    diagnosis: '',
-    otherDiagnosis: ''
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,24 +33,16 @@ export default function NewComplaintForm() {
     try {
       const submissionData: any = {
         ...formData,
-        isEmergency,
         isCabinetComplaint: isCabinet,
       };
       
-      if (isEmergency) {
-        submissionData.hospitalType = hospitalType;
-      }
-      
-      // Save to main complaints collection
       const docId = await addComplaint(submissionData);
 
-      // Trigger automatic follow-up check (5% selection)
       if (docId) {
         await checkAndAddFollowUp(docId, submissionData);
       }
       
       setShowSuccessModal(true);
-      // Auto-reset
       resetForm();
     } catch (err: any) {
       alert('خطأ أثناء الحفظ: ' + err.message);
@@ -82,15 +64,8 @@ export default function NewComplaintForm() {
       cabinetCity: '',
       cabinetAddress: '',
       cabinetSubject: '',
-      responsibleEntity: '',
-      hospitalName: '',
-      emergencyGovernorate: '',
-      hospitalAddress: '',
-      diagnosis: '',
-      otherDiagnosis: ''
     });
     setIsCabinet(false);
-    setIsEmergency(false);
   };
 
   const handleInputChange = (e: React.ChangeEvent<any>) => {
@@ -159,7 +134,6 @@ export default function NewComplaintForm() {
                     value={formData.complaintEntity}
                     onChange={(val) => setFormData(p => ({ ...p, complaintEntity: val }))}
                     placeholder="اختر جهة الشكوى..."
-                    required={!isEmergency}
                     icon={<Building2 className="w-4 h-4" />}
                  />
               </div>
@@ -171,14 +145,13 @@ export default function NewComplaintForm() {
                     value={formData.complaintSubject}
                     onChange={(val) => setFormData(p => ({ ...p, complaintSubject: val }))}
                     placeholder="اختر الموضوع..."
-                    required={!isEmergency}
                     icon={<AlertCircle className="w-4 h-4" />}
                  />
               </div>
             </div>
           </div>
 
-          {/* Section: Feature Toggles (Cabinet Only now) */}
+          {/* Section: Feature Toggles */}
           <div className="space-y-3">
             <div className="grid grid-cols-1 gap-3">
                 <button 
@@ -284,7 +257,6 @@ export default function NewComplaintForm() {
               ></textarea>
             </div>
 
-            {/* Action Button moved right under details */}
             <div className="flex justify-center pt-2">
                <button 
                   type="submit" 
@@ -319,10 +291,10 @@ export default function NewComplaintForm() {
               className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
             />
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-white dark:bg-slate-900 shadow-2xl rounded-[32px] border border-slate-100 dark:border-white/5 p-12 max-w-sm w-full text-center space-y-6"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative bg-white dark:bg-slate-900 shadow-2xl rounded-[40px] border border-slate-100 dark:border-white/5 p-12 max-w-sm w-full text-center space-y-6"
               onClick={e => e.stopPropagation()}
             >
               <div className="w-20 h-20 bg-emerald-500 rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20">

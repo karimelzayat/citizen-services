@@ -5,9 +5,7 @@ import { db, auth } from '../lib/firebase';
 import { Complaint } from '../types';
 import { Clock, CheckCircle2, ChevronDown, User, Phone, MapPin, AlertCircle, FileText, Plus, Loader2, Save, X, XCircle, PhoneOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import SearchableSelect from './ui/SearchableSelect';
-import { GOVERNORATES_LIST, COMPLAINT_SUBJECTS } from '../constants';
-import { reviewFollowUp, addFollowUpManual, deleteBulkFollowUpData } from '../services/dataService';
+import { reviewFollowUp, deleteBulkFollowUpData } from '../services/dataService';
 
 import * as XLSX from 'xlsx';
 
@@ -141,7 +139,6 @@ export default function FollowUp() {
           
           alert(`تم رفع ${batchData.length} سجل بنجاح`);
           setIsUploadModalOpen(false);
-          // Refresh list if needed (it should auto-refresh via onSnapshot)
         } catch (err: any) {
           console.error('Excel processing error:', err);
           alert('خطأ في معالجة الملف: تأكد من صحة التنسيق');
@@ -156,15 +153,6 @@ export default function FollowUp() {
       e.target.value = '';
     }
   };
-
-  useEffect(() => {
-    if (isReviewOpen || isUploadModalOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => { document.body.style.overflow = 'unset'; };
-  }, [isReviewOpen, isUploadModalOpen]);
 
   useEffect(() => {
     const targetCollection = activeSubTab === 'pending' ? 'followUpPending' : 'followUpCompleted';
@@ -446,7 +434,7 @@ export default function FollowUp() {
       {/* Review Modal */}
       <AnimatePresence>
         {isReviewOpen && createPortal(
-          <div className="fixed inset-0 z-[10000] grid place-items-center p-4">
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 md:p-8 overflow-hidden">
             <motion.div 
                initial={{ opacity: 0 }}
                animate={{ opacity: 1 }}
@@ -455,14 +443,14 @@ export default function FollowUp() {
                className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
             />
             <motion.div 
-               initial={{ scale: 0.95, opacity: 0, y: 10 }}
+               initial={{ scale: 0.95, opacity: 0, y: 20 }}
                animate={{ scale: 1, opacity: 1, y: 0 }}
-               exit={{ scale: 0.95, opacity: 0, y: 10 }}
-               className="relative bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col h-[90vh] max-h-[850px]"
+               exit={{ scale: 0.95, opacity: 0, y: 20 }}
+               className="relative bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col h-full max-h-[85vh]"
             >
                <div className="p-8 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
                   <h3 className="text-2xl font-black text-slate-900 dark:text-white">مراجعة بيانات المكالمة</h3>
-                  <button onClick={() => setIsReviewOpen(false)} className="w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-white dark:hover:bg-slate-700 shadow-sm transition-all">
+                  <button onClick={() => setIsReviewOpen(false)} className="w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-white dark:hover:bg-slate-700 shadow-sm transition-all font-bold">
                     <X className="w-6 h-6 text-slate-400" />
                   </button>
                </div>
@@ -543,7 +531,7 @@ export default function FollowUp() {
       {/* Upload Modal */}
       <AnimatePresence>
         {isUploadModalOpen && createPortal(
-          <div className="fixed inset-0 z-[10000] grid place-items-center p-4">
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
             <motion.div 
                initial={{ opacity: 0 }}
                animate={{ opacity: 1 }}
@@ -552,14 +540,14 @@ export default function FollowUp() {
                className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
             />
             <motion.div 
-               initial={{ scale: 0.95, opacity: 0, y: 10 }}
+               initial={{ scale: 0.95, opacity: 0, y: 20 }}
                animate={{ scale: 1, opacity: 1, y: 0 }}
-               exit={{ scale: 0.95, opacity: 0, y: 10 }}
-               className="relative bg-white dark:bg-slate-900 w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden p-10 space-y-8 h-[80vh] max-h-[600px] flex flex-col"
+               exit={{ scale: 0.95, opacity: 0, y: 20 }}
+               className="relative bg-white dark:bg-slate-900 w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden p-10 space-y-8 h-full max-h-[600px] flex flex-col"
             >
                <div className="flex items-center justify-between">
                   <h3 className="text-2xl font-black text-slate-900 dark:text-white">رفع سجلات النظام القديم</h3>
-                  <button onClick={() => setIsUploadModalOpen(false)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800">
+                  <button onClick={() => setIsUploadModalOpen(false)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800 font-bold">
                     <X className="w-5 h-5 text-slate-400" />
                   </button>
                </div>
