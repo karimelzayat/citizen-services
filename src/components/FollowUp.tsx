@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, Timestamp, addDoc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { Complaint } from '../types';
-import { Clock, CheckCircle2, ChevronDown, User, Phone, MapPin, AlertCircle, FileText, Plus, Loader2, Save, X } from 'lucide-react';
+import { Clock, CheckCircle2, ChevronDown, User, Phone, MapPin, AlertCircle, FileText, Plus, Loader2, Save, X, XCircle, PhoneOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import SearchableSelect from './ui/SearchableSelect';
 import { GOVERNORATES_LIST, COMPLAINT_SUBJECTS } from '../constants';
@@ -17,7 +17,6 @@ export default function FollowUp() {
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
   const [isReviewOpen, setIsReviewOpen] = useState(false);
   const [reviewData, setReviewData] = useState({
-    officer: '',
     notes: '',
     result: ''
   });
@@ -29,6 +28,7 @@ export default function FollowUp() {
     callerName: '',
     phoneNumber: '',
     governorate: '',
+    complaintEntity: '',
     complaintSubject: '',
     callDetails: ''
   });
@@ -54,7 +54,6 @@ export default function FollowUp() {
   const handleReviewClick = (complaint: Complaint) => {
     setSelectedComplaint(complaint);
     setReviewData({
-      officer: complaint.followUpOfficer || auth.currentUser?.displayName || '',
       notes: complaint.followUpNotes || '',
       result: complaint.followUpResult || ''
     });
@@ -63,12 +62,17 @@ export default function FollowUp() {
 
   const handleSaveReview = async () => {
     if (!selectedComplaint?.id) return;
+    if (!reviewData.result) {
+      alert('الرجاء تحديد موقف الشكوى (النهائي)');
+      return;
+    }
+
     setIsSavingReview(true);
     try {
       const complaintRef = doc(db, 'complaints', selectedComplaint.id);
       await updateDoc(complaintRef, {
         followUpStatus: 'completed',
-        followUpOfficer: reviewData.officer,
+        followUpOfficer: auth.currentUser?.displayName || 'غير معروف',
         followUpNotes: reviewData.notes,
         followUpResult: reviewData.result,
         followUpCompletedAt: Timestamp.now()
@@ -99,6 +103,7 @@ export default function FollowUp() {
         callerName: '',
         phoneNumber: '',
         governorate: '',
+        complaintEntity: '',
         complaintSubject: '',
         callDetails: ''
       });
@@ -198,6 +203,7 @@ export default function FollowUp() {
                     <InfoRow label="اسم المتصل" value={c.callerName} icon={<User className="w-4 h-4" />} />
                     <InfoRow label="رقم التليفون" value={c.phoneNumber} icon={<Phone className="w-4 h-4" />} />
                     <InfoRow label="المحافظة" value={c.governorate} icon={<MapPin className="w-4 h-4" />} />
+                    <InfoRow label="جهة الشكوى" value={c.complaintEntity} icon={<AlertCircle className="w-4 h-4" />} />
                     <InfoRow label="موضوع الشكوى" value={c.complaintSubject} icon={<AlertCircle className="w-4 h-4" />} />
                     <div className="col-span-full">
                       <InfoRow label="تفاصيل المكالمة" value={c.callDetails} isLong icon={<FileText className="w-4 h-4" />} />
@@ -257,6 +263,9 @@ export default function FollowUp() {
                      <ReadOnlyField label="رقم التليفون" value={selectedComplaint?.phoneNumber} />
                      <ReadOnlyField label="المحافظة" value={selectedComplaint?.governorate} />
                      <div className="col-span-full">
+                       <ReadOnlyField label="جهة الشكوى" value={selectedComplaint?.complaintEntity} />
+                     </div>
+                     <div className="col-span-full">
                        <ReadOnlyField label="موضوع الشكوى" value={selectedComplaint?.complaintSubject} />
                      </div>
                      <div className="col-span-full">
@@ -266,36 +275,38 @@ export default function FollowUp() {
 
                   <div className="h-px bg-slate-100 dark:bg-white/5" />
 
-                  <div className="space-y-6">
-                    <div className="space-y-2">
-                       <label className="text-sm font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest block">الموظف المتابع</label>
-                       <input 
-                         type="text" 
-                         value={reviewData.officer} 
-                         onChange={(e) => setReviewData({...reviewData, officer: e.target.value})}
-                         className="form-input h-14 bg-blue-50/30 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800/30" 
-                         placeholder="اسم الموظف القائم بالمتابعة" 
-                       />
+                  <div className="space-y-8">
+                    <div className="space-y-4">
+                       <label className="text-sm font-black text-slate-700 dark:text-slate-300 block text-right">تحديد موقف الشكوى (النهائي):</label>
+                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          {[
+                            { id: 'مقبول', label: 'مقبول', icon: <CheckCircle2 className="w-5 h-5" />, active: 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-lg shadow-emerald-500/10' },
+                            { id: 'غير مقبول', label: 'غير مقبول', icon: <XCircle className="w-5 h-5" />, active: 'bg-rose-50 dark:bg-rose-900/20 border-rose-500 text-rose-600 dark:text-rose-400 shadow-lg shadow-rose-500/10' },
+                            { id: 'لم يتم الرد', label: 'لم يتم الرد', icon: <PhoneOff className="w-5 h-5" />, active: 'bg-slate-50 dark:bg-slate-900/20 border-slate-500 text-slate-600 dark:text-slate-400 shadow-lg shadow-slate-500/10' }
+                          ].map((option) => (
+                            <button
+                              key={option.id}
+                              onClick={() => setReviewData({ ...reviewData, result: option.id })}
+                              className={`flex items-center justify-center gap-3 p-4 rounded-2xl border-2 transition-all font-black text-sm
+                                ${reviewData.result === option.id 
+                                  ? `${option.active} scale-[1.02]` 
+                                  : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-white/5 text-slate-500 hover:border-slate-300 dark:hover:border-slate-600'
+                                }`}
+                            >
+                              {option.icon}
+                              <span>{option.label}</span>
+                            </button>
+                          ))}
+                       </div>
                     </div>
 
                     <div className="space-y-2">
-                       <label className="text-sm font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest block">النتيجة النهائية للمتابعة</label>
-                       <input 
-                         type="text" 
-                         value={reviewData.result} 
-                         onChange={(e) => setReviewData({...reviewData, result: e.target.value})}
-                         className="form-input h-14" 
-                         placeholder="مثلاً: تم التأكد من وصول الحالة / تم توجيه المريض..." 
-                       />
-                    </div>
-
-                    <div className="space-y-2">
-                       <label className="text-sm font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest block">ملاحظات المتابعة</label>
+                       <label className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest block">ملاحظات المتابعة</label>
                        <textarea 
                          rows={5}
                          value={reviewData.notes}
                          onChange={(e) => setReviewData({...reviewData, notes: e.target.value})}
-                         className="form-input min-h-[120px] resize-none" 
+                         className="form-input min-h-[120px] resize-none text-slate-700 dark:text-slate-200" 
                          placeholder="اكتب أي ملاحظات إضافية ظهرت أثناء المتابعة..."
                        />
                     </div>
@@ -361,6 +372,13 @@ export default function FollowUp() {
                     value={manualCallData.governorate}
                     onChange={(val) => setManualCallData({...manualCallData, governorate: val})}
                     placeholder="المحافظة"
+                 />
+                 <input 
+                    type="text" 
+                    placeholder="جهة الشكوى" 
+                    className="form-input h-14"
+                    value={manualCallData.complaintEntity}
+                    onChange={(e) => setManualCallData({...manualCallData, complaintEntity: e.target.value})}
                  />
                  <SearchableSelect
                     options={COMPLAINT_SUBJECTS}
