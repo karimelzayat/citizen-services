@@ -50,7 +50,7 @@ export default function SearchComplaints() {
   };
 
   const filteredResults = filterType === 'duplicates' 
-    ? results.filter((item, index) => results.findIndex(r => r.phoneNumber === item.phoneNumber) !== index)
+    ? results.filter(item => results.filter(r => r.phoneNumber === item.phoneNumber).length > 1)
     : results;
 
   const viewAllForDate = (dateStr: string) => {

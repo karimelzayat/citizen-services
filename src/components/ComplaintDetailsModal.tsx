@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { FileText, User, X, Clock, Info, Phone, MapPin, Layers, AlertCircle, UserCheck, Save, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { Complaint } from '../types';
+import { GOVERNORATES_LIST, GOVERNORATES_ENTITIES, COMPLAINT_SUBJECTS } from '../constants';
 
 interface ComplaintDetailsModalProps {
   selectedComplaint: Complaint | null;
@@ -85,58 +86,75 @@ export default function ComplaintDetailsModal({
               )}
 
               {isEditing ? (
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pr-1">اسم المتصل</label>
+                        <input 
+                          type="text" 
+                          value={editFormData.callerName || ''} 
+                          onChange={e => setEditFormData({...editFormData, callerName: e.target.value})}
+                          className="form-input h-12 bg-slate-50 dark:bg-slate-800"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pr-1">رقم الهاتف</label>
+                        <input 
+                          type="text" 
+                          value={editFormData.phoneNumber || ''} 
+                          onChange={e => setEditFormData({...editFormData, phoneNumber: e.target.value})}
+                          className="form-input h-12 bg-slate-50 dark:bg-slate-800 font-mono"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pr-1">المحافظة</label>
+                        <select 
+                          value={editFormData.governorate || ''} 
+                          onChange={e => setEditFormData({...editFormData, governorate: e.target.value})}
+                          className="form-input h-12 bg-slate-50 dark:bg-slate-800"
+                        >
+                          <option value="">اختر المحافظة...</option>
+                          {GOVERNORATES_LIST.map(g => <option key={g} value={g}>{g}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pr-1">جهة الشكوى</label>
+                        <select 
+                          value={editFormData.complaintEntity || ''} 
+                          onChange={e => setEditFormData({...editFormData, complaintEntity: e.target.value})}
+                          className="form-input h-12 bg-slate-50 dark:bg-slate-800"
+                        >
+                          <option value="">اختر الجهة...</option>
+                          {GOVERNORATES_ENTITIES.map(e => <option key={e} value={e}>{e}</option>)}
+                        </select>
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pr-1">اسم المتصل</label>
-                      <input 
-                        type="text" 
-                        value={editFormData.callerName} 
-                        onChange={e => setEditFormData({...editFormData, callerName: e.target.value})}
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pr-1">موضوع الشكوى</label>
+                      <select 
+                        value={editFormData.complaintSubject || ''} 
+                        onChange={e => setEditFormData({...editFormData, complaintSubject: e.target.value})}
                         className="form-input h-12 bg-slate-50 dark:bg-slate-800"
-                      />
+                      >
+                        <option value="">اختر الموضوع...</option>
+                        {COMPLAINT_SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
                     </div>
+
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pr-1">رقم الهاتف</label>
-                      <input 
-                        type="text" 
-                        value={editFormData.phoneNumber} 
-                        onChange={e => setEditFormData({...editFormData, phoneNumber: e.target.value})}
-                        className="form-input h-12 bg-slate-50 dark:bg-slate-800 font-mono"
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pr-1">تفاصيل المكالمة</label>
+                      <textarea 
+                        rows={4}
+                        value={editFormData.callDetails || (editFormData as any).cabinetSubject || ''} 
+                        onChange={e => setEditFormData({...editFormData, callDetails: e.target.value})}
+                        className="form-input min-h-[120px] bg-slate-50 dark:bg-slate-800 resize-none"
                       />
                     </div>
                   </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pr-1">جهة الشكوى</label>
-                    <input 
-                      type="text" 
-                      value={editFormData.complaintEntity} 
-                      onChange={e => setEditFormData({...editFormData, complaintEntity: e.target.value})}
-                      className="form-input h-12 bg-slate-50 dark:bg-slate-800"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pr-1">موضوع الشكوى</label>
-                    <input 
-                      type="text" 
-                      value={editFormData.complaintSubject} 
-                      onChange={e => setEditFormData({...editFormData, complaintSubject: e.target.value})}
-                      className="form-input h-12 bg-slate-50 dark:bg-slate-800"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pr-1">تفاصيل المكالمة</label>
-                    <textarea 
-                      rows={4}
-                      value={editFormData.callDetails} 
-                      onChange={e => setEditFormData({...editFormData, callDetails: e.target.value})}
-                      className="form-input min-h-[120px] bg-slate-50 dark:bg-slate-800 resize-none"
-                    />
-                  </div>
-                </div>
               ) : (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
