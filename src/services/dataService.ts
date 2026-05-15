@@ -770,6 +770,42 @@ export async function getMonthlyRanking() {
 }
 
 // Dashboard Stats
+// Notifications
+export function listenToNotifications(email: string, callback: (notifications: any[]) => void) {
+  const q = query(
+    collection(db, 'notifications'),
+    where('userEmail', '==', email),
+    orderBy('timestamp', 'desc'),
+    limit(20)
+  );
+  
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  }, (e) => console.error("Notifications listener error:", e));
+}
+
+export async function markNotificationAsRead(notificationId: string) {
+  try {
+    await updateDoc(doc(db, 'notifications', notificationId), { status: 'read' });
+  } catch (e) {
+    console.error("Error marking notification as read:", e);
+  }
+}
+
+export async function addSystemNotification(email: string, message: string, actionLink?: string) {
+  try {
+    await addDoc(collection(db, 'notifications'), {
+      userEmail: email,
+      message,
+      status: 'unread',
+      timestamp: serverTimestamp(),
+      actionLink: actionLink || ''
+    });
+  } catch (e) {
+    console.error("Error adding notification:", e);
+  }
+}
+
 // User Management
 export async function getAllUsers() {
   try {

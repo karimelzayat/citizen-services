@@ -20,6 +20,9 @@ import PhonebookModal from './components/PhonebookModal';
 import InquiryModal from './components/InquiryModal';
 import HotlineTreeModal from './components/HotlineTreeModal';
 import RankingPopover from './components/RankingModal';
+import NotificationsPopover from './components/NotificationsPopover';
+import { listenToNotifications } from './services/dataService';
+import { AppNotification } from './types';
 import { ToastContainer } from './components/ui/Toast';
 import { toast } from './lib/toast';
 import { Home, PlusCircle, Search, Settings, FileText, Bell, GitBranch, Trophy, Menu, X, LogOut, ChevronRight, Hash, Sun, Moon, Layers, Briefcase, Calendar, Users, ShieldCheck } from 'lucide-react';
@@ -52,7 +55,8 @@ export default function App() {
   const [monthlyCallCount, setMonthlyCallCount] = useState(0);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   const fetchMonthlyCount = async (email: string) => {
     const count = await getUserMonthlyCallCount(email);
@@ -87,6 +91,15 @@ export default function App() {
     window.addEventListener('switchTab', handleSwitchTab);
     return () => window.removeEventListener('switchTab', handleSwitchTab);
   }, []);
+
+  useEffect(() => {
+    if (user?.email) {
+      const unsubscribe = listenToNotifications(user.email, (data) => {
+        setNotifications(data as any);
+      });
+      return () => unsubscribe();
+    }
+  }, [user]);
 
   const handleLogin = async () => {
     const provider = new GoogleAuthProvider();
@@ -431,9 +444,26 @@ export default function App() {
                     </button>
                     <RankingPopover isOpen={isRankingModalOpen} />
                   </div>
-                  <button onClick={() => setIsInquiryModalOpen(true)} className="nav-tool-btn group" title="الاستفسارات">
-                    <FileText className="w-4 h-4 text-slate-500 group-hover:text-blue-600 transition-colors" />
-                  </button>
+
+                  <div className="relative">
+                    <button 
+                      onClick={() => setIsNotificationsOpen(!isNotificationsOpen)} 
+                      className="nav-tool-btn group" 
+                      title="الإشعارات"
+                    >
+                      <Bell className="w-4 h-4 text-slate-500 group-hover:text-blue-600 transition-colors" />
+                      {notifications.filter(n => n.status === 'unread').length > 0 && (
+                        <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 animate-bounce">
+                          {notifications.filter(n => n.status === 'unread').length}
+                        </span>
+                      )}
+                    </button>
+                    <NotificationsPopover 
+                      isOpen={isNotificationsOpen} 
+                      onClose={() => setIsNotificationsOpen(false)} 
+                      notifications={notifications} 
+                    />
+                  </div>
 
                   <div className="w-px h-8 bg-slate-200 dark:bg-white/10 mx-1 hidden xs:block"></div>
 
