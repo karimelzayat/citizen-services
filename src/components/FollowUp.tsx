@@ -8,6 +8,8 @@ import SearchableSelect from './ui/SearchableSelect';
 import { GOVERNORATES_LIST, COMPLAINT_SUBJECTS } from '../constants';
 import { reviewFollowUp, addFollowUpManual } from '../services/dataService';
 
+import * as XLSX from 'xlsx';
+
 export default function FollowUp() {
   const [activeSubTab, setActiveSubTab] = useState<'pending' | 'completed'>('pending');
   const [complaints, setComplaints] = useState<Complaint[]>([]);
@@ -37,43 +39,62 @@ export default function FollowUp() {
       const reader = new FileReader();
       reader.onload = async (event) => {
         try {
-          const content = event.target?.result as string;
-          // Basic CSV/JSON parsing logic (assuming CSV for simplicity)
-          const rows = content.split('\n').filter(row => row.trim());
-          const headers = rows[0].split(',');
+          const data = new Uint8Array(event.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
           
-          const batchData = rows.slice(1).map(row => {
-            const cols = row.split(',');
+          if (jsonData.length <= 1) {
+            alert('الملف فارغ أو لا يحتوي على بيانات');
+            return;
+          }
+
+          // Map data based on user provided column structure
+          const batchData = jsonData.slice(1).filter(row => row.length > 0).map(row => {
             return {
-              callerName: cols[0] || 'مجهول',
-              phoneNumber: cols[1] || '',
-              governorate: cols[2] || '',
-              complaintEntity: cols[3] || '',
-              complaintSubject: cols[4] || '',
-              callDetails: cols[5] || '',
-              followUpNotes: cols[6] || '',
-              followUpResult: cols[7] || '',
+              callerName: String(row[1] || 'مجهول'),
+              phoneNumber: String(row[2] || ''),
+              complaintSubject: String(row[3] || ''),
+              governorate: String(row[4] || ''),
+              complaintEntity: String(row[5] || ''),
+              complaintStatus: String(row[6] || 'تم الرد'),
+              employeeName: String(row[7] || ''),
+              employeeEmail: String(row[8] || ''),
+              callDetails: String(row[9] || ''),
+              followUpOfficer: String(row[19] || ''),
+              followUpNotes: String(row[21] || ''),
+              followUpResult: String(row[21] || ''), // Using notes as result if not specified
               followUpStatus: uploadType,
               timestamp: Timestamp.now(),
-              employeeName: 'رفع تلقائي (نظام قديم)',
-              employeeEmail: auth.currentUser?.email || ''
+              isBulkUploaded: true
             };
           });
 
           const collectionName = uploadType === 'pending' ? 'followUpPending' : 'followUpCompleted';
-          for (const item of batchData) {
-            await addDoc(collection(db, collectionName), item);
+          
+          // Split into smaller batches for performance/avoiding timeouts
+          const chunkSize = 50;
+          for (let i = 0; i < batchData.length; i += chunkSize) {
+            const chunk = batchData.slice(i, i + chunkSize);
+            await Promise.all(chunk.map(item => addDoc(collection(db, collectionName), item)));
           }
           
           alert(`تم رفع ${batchData.length} سجل بنجاح`);
           setIsUploadModalOpen(false);
+          // Refresh list if needed (it should auto-refresh via onSnapshot)
         } catch (err: any) {
-          alert('خطأ في معالجة الملف: ' + err.message);
+          console.error('Excel processing error:', err);
+          alert('خطأ في معالجة الملف: تأكد من صحة التنسيق');
         }
       };
-      reader.readAsText(file);
+      reader.readAsArrayBuffer(file);
+    } catch (err: any) {
+      alert('خطأ في قراءة الملف');
     } finally {
       setUploadLoading(false);
+      // Reset input
+      e.target.value = '';
     }
   };
 
@@ -405,16 +426,16 @@ export default function FollowUp() {
                  <div className="p-8 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-[32px] text-center space-y-4 hover:border-blue-500/50 transition-colors relative cursor-pointer group">
                    <input 
                      type="file" 
-                     accept=".csv,.txt"
+                     accept=".xlsx,.xls,.csv"
                      onChange={handleFileUpload}
                      className="absolute inset-0 opacity-0 cursor-pointer"
                    />
                    <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
                      <Plus className="w-8 h-8 text-blue-600" />
                    </div>
-                   <div className="space-y-1">
-                     <p className="font-black text-slate-700 dark:text-slate-200">اضغط لرفع ملف (CSV)</p>
-                     <p className="text-xs text-slate-400">اسم المتصل، التليفون، المحافظة، الجهة، الموضوع، التفاصيل، الملاحظات، النتيجة</p>
+                   <div className="space-y-1 text-right">
+                     <p className="font-black text-slate-700 dark:text-slate-200 text-center">اضغط لرفع ملف (Excel)</p>
+                     <p className="text-[10px] text-slate-400 leading-relaxed text-center">يرجى التأكد من ترتيب الأعمدة: طابع زمني، اسم المتصل، التليفون، الموضوع، المحافظة، الجهة، الموقف، الموظف...</p>
                    </div>
                  </div>
                </div>
