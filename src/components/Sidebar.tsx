@@ -10,6 +10,8 @@ import {
   HelpCircle,
   Contact,
   BookOpen,
+  Trophy,
+  GitBranch,
   Home,
   Menu,
   ChevronDown,
@@ -64,6 +66,8 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
       items: [
         { id: 'inquiryButton', label: 'الاستفسار عن', icon: HelpCircle, show: permissions?.canViewInquiry },
         { id: 'phonebookButton', label: 'دليل الهاتف', icon: Contact, show: permissions?.canViewPhonebook },
+        { id: 'rankingButton', label: 'ترتيب الموظفين', icon: Trophy, show: true },
+        { id: 'treeButton', label: 'شجرة الخط الساخن', icon: GitBranch, show: true },
         { id: 'faqTab', label: 'دليل الأسئلة (FAQ)', icon: BookOpen, show: permissions?.canViewFAQ },
       ]
     }

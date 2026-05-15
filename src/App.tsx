@@ -314,6 +314,8 @@ export default function App() {
                 onTabChange={(tab) => {
                   if (tab === 'inquiryButton') setIsInquiryModalOpen(true);
                   else if (tab === 'phonebookButton') setIsPhonebookModalOpen(true);
+                  else if (tab === 'rankingButton') setIsRankingModalOpen(true);
+                  else if (tab === 'treeButton') setIsHotlineTreeOpen(true);
                   else setActiveTab(tab);
                   setIsMobileMenuOpen(false);
                 }}
