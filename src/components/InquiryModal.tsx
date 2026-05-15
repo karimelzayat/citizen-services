@@ -6,7 +6,7 @@ export default function InquiryModal({ isOpen, onClose }: { isOpen: boolean, onC
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 md:p-8 overflow-hidden">
+        <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 md:p-8 overflow-hidden RTL" dir="rtl">
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -26,12 +26,12 @@ export default function InquiryModal({ isOpen, onClose }: { isOpen: boolean, onC
                  <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-600/20">
                    <i className="fas fa-database text-xl"></i>
                  </div>
-                 <div>
+                 <div className="text-right">
                    <h2 className="font-black text-2xl text-slate-900 dark:text-white">قاعدة الاستفسارات المختصرة</h2>
                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">المعلومات النموذجية لخدمة المواطنين</p>
                  </div>
               </div>
-              <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-all font-bold" onClick={onClose}>
+              <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-all font-black" onClick={onClose}>
                 <i className="fas fa-times text-xl"></i>
               </button>
             </div>
@@ -40,17 +40,17 @@ export default function InquiryModal({ isOpen, onClose }: { isOpen: boolean, onC
               <div className="bg-slate-50 dark:bg-slate-800/40 p-2 flex gap-4 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
                  <div className="relative flex-1">
                    <i className="fas fa-search absolute right-5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                   <input type="text" placeholder="ابحث في قاعدة البيانات (مثلاً: تطعيمات، تكليف، كورونا)..." className="form-input pr-12 border-none bg-transparent h-14" />
+                   <input type="text" placeholder="ابحث في قاعدة البيانات (مثلاً: تطعيمات، تكليف، كورونا)..." className="form-input pr-12 border-none bg-transparent h-14 text-right" />
                  </div>
-                 <button className="btn-primary px-10 rounded-xl">بحث الآن</button>
+                 <button className="btn-primary px-10 rounded-xl font-black">بحث الآن</button>
               </div>
             </div>
 
             <div className="flex-grow overflow-y-auto p-12 flex flex-col items-center justify-center opacity-40">
-               <div className="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-[32px] flex items-center justify-center text-slate-300 dark:text-slate-700 mb-6">
+               <div className="w-24 h-24 bg-slate-100 dark:bg-slate-800 rounded-[32px] flex items-center justify-center text-slate-300 dark:text-slate-700 mb-6 font-black translate-y-0">
                  <i className="fas fa-database text-4xl"></i>
                </div>
-               <p className="text-slate-500 dark:text-slate-400 font-bold text-lg">الرجاء اختيار فئة أو كتابة كلمة بحث لبدء التصفح</p>
+               <p className="text-slate-500 dark:text-slate-400 font-black text-lg">الرجاء اختيار فئة أو كتابة كلمة بحث لبدء التصفح</p>
             </div>
           </motion.div>
         </div>

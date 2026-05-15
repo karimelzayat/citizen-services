@@ -127,367 +127,274 @@ export default function App() {
     return () => { document.body.style.overflow = 'unset'; };
   }, [isHotlineTreeOpen, isRankingModalOpen, isInquiryModalOpen, isPhonebookModalOpen]);
 
-  if (loading) {
-    return (
-      <div className="fixed inset-0 flex flex-col items-center justify-center bg-white dark:bg-slate-950 text-blue-600 transition-colors duration-300">
-        <div className="relative">
-          <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-8 h-8 bg-blue-600/10 rounded-full animate-pulse"></div>
-          </div>
-        </div>
-        <span className="mt-6 font-bold text-lg tracking-wider animate-pulse">جاري التحقق من الصلاحيات...</span>
-        <button
-          onClick={handleLogin}
-          className="mt-8 px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-bold shadow-lg"
-        >
-          تسجيل الدخول يدوياً
-        </button>
-      </div>
-    );
-  }
-
-  const renderContent = () => {
-    return (
-      <div className="animate-fade-in">
-        {(() => {
-          switch (activeTab) {
-            case 'dashboard': return <Dashboard />;
-            case 'newComplaint': return <NewComplaintForm />;
-            case 'directorTab': return <DirectorAssignments />;
-            case 'searchComplaint': return <SearchComplaints />;
-            case 'followUp': return <FollowUp />;
-            case 'schedulesTab': return <Schedules />;
-            case 'reportsTab': return <Reports />;
-            case 'faqTab': return <FAQ />;
-            case 'settingsTab': return <SettingsView />;
-            default: return <Dashboard />;
-          }
-        })()}
-      </div>
-    );
-  };
-
-  if (viewMode === ViewMode.Landing) {
-    return (
-      <div className="min-h-screen bg-white dark:bg-slate-950 transition-colors duration-700 flex items-center justify-center p-6 relative overflow-hidden">
-        {/* Theme Toggle for Landing */}
-        <div className="absolute top-8 left-8 z-50">
-          <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-100 dark:border-white/10 flex items-center justify-center text-slate-800 dark:text-white hover:scale-110 transition-all active:scale-95"
-          >
-            {isDarkMode ? <Sun className="w-6 h-6 text-amber-500" /> : <Moon className="w-6 h-6 text-blue-600" />}
-          </button>
-        </div>
-
-        <div className="w-full max-w-5xl relative z-10">
-          <div className="text-center mb-16 space-y-4 animate-slide-in-down">
-            <div className="inline-block px-4 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold tracking-widest uppercase mb-2">منظومة خدمة المواطنين الذكية</div>
-            <h1 className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter leading-tight">الخط الساخن لخدمة المواطنين</h1>
-            <p className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto font-medium">المنصة الشاملة لإدارة الشكاوى والمكالمات وتكليفات الإدارة العامة بوزارة الصحة والسكان</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-fade-in items-stretch">
-            {!user ? (
-              <div
-                onClick={handleLogin}
-                className="group relative bg-blue-600 p-10 rounded-[40px] border border-blue-500 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/40 hover:-translate-y-2 overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-[0.1] rounded-full -mr-16 -mt-16 blur-2xl"></div>
-                <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center mb-8 group-hover:scale-110 transition-all duration-500">
-                  <i className="fab fa-google text-4xl text-white"></i>
-                </div>
-                <h2 className="text-3xl font-bold text-white mb-3">
-                  تسجيل الدخول
-                </h2>
-                <p className="text-blue-100 leading-relaxed font-medium">قم بتسجيل الدخول بحساب جوجل الخاص بك للوصول إلى المنظومة</p>
-                <div className="mt-8 flex items-center gap-2 text-xs font-bold text-white">
-                  <span className="px-3 py-1 bg-white/20 rounded-full">دخول آمن</span>
-                </div>
-              </div>
-            ) : (permissions?.role === 'Guest') ? (
-              <div
-                onClick={handleLogout}
-                className="group relative bg-red-600 p-10 rounded-[40px] border border-red-500 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-red-500/40 hover:-translate-y-2 overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-[0.1] rounded-full -mr-16 -mt-16 blur-2xl"></div>
-                <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center mb-8 group-hover:scale-110 transition-all duration-500">
-                  <LogOut className="w-10 h-10 text-white" />
-                </div>
-                <h2 className="text-3xl font-bold text-white mb-3">
-                  تغيير الحساب
-                </h2>
-                <p className="text-red-100 leading-relaxed font-medium">هذا الحساب ({user.email}) غير مصرح له بالدخول. اضغط لتسجيل الخروج والدخول بحساب آخر.</p>
-                <div className="mt-8 flex items-center gap-2 text-xs font-bold text-white">
-                  <span className="px-3 py-1 bg-white/20 rounded-full">حساب غير مسجل</span>
-                </div>
-              </div>
-            ) : null}
-
-            {permissions?.showHotlineSection && (
-              <div
-                onClick={() => { setViewMode(ViewMode.Hotline); setActiveTab('newComplaint'); }}
-                className="group relative bg-white dark:bg-slate-900/50 p-10 rounded-[40px] border border-slate-200 dark:border-white/5 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-2 overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600 opacity-[0.03] group-hover:opacity-10 transition-opacity rounded-full -mr-16 -mt-16 blur-2xl"></div>
-                <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-3xl flex items-center justify-center mb-8 group-hover:bg-blue-600 group-hover:scale-110 transition-all duration-500">
-                  <i className="fas fa-headset text-4xl text-blue-600 group-hover:text-white transition-colors duration-500"></i>
-                </div>
-                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-                  الخط الساخن
-                  <i className="fas fa-arrow-left text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all"></i>
-                </h2>
-                <p className="text-slate-500 dark:text-slate-400 leading-relaxed font-medium">تسجيل المكالمات، البحث، متابعة الحالات، ومركز المعرفة الشامل (FAQ)</p>
-                <div className="mt-8 flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400">
-                  <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-full">تسجيل سريع</span>
-                  <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-full">مخططات ذكية</span>
-                </div>
-              </div>
-            )}
-
-            {permissions?.showAdminSection && (
-              <div
-                onClick={() => { setViewMode(ViewMode.Admin); setActiveTab('adminWork'); }}
-                className="group relative bg-white dark:bg-slate-900/50 p-10 rounded-[40px] border border-slate-200 dark:border-white/5 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-2 overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600 opacity-[0.03] group-hover:opacity-10 transition-opacity rounded-full -mr-16 -mt-16 blur-2xl"></div>
-                <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 rounded-3xl flex items-center justify-center mb-8 group-hover:bg-emerald-600 group-hover:scale-110 transition-all duration-500">
-                  <i className="fas fa-user-tie text-4xl text-emerald-600 group-hover:text-white transition-colors duration-500"></i>
-                </div>
-                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-                  لوحة الإدارة
-                  <i className="fas fa-arrow-left text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all"></i>
-                </h2>
-                <p className="text-slate-500 dark:text-slate-400 leading-relaxed font-medium">متابعة التكليفات، إدارة الشكاوى الجارية، وتصحيح التوجيه الخاطئ</p>
-                <div className="mt-8 flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
-                  <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 rounded-full">تقارير متقدمة</span>
-                  <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 rounded-full">توجيه ذكي</span>
-                </div>
-              </div>
-            )}
-
-            {permissions?.canManageUsers && (
-              <div
-                onClick={() => { setViewMode(ViewMode.Settings); }}
-                className="group relative bg-white dark:bg-slate-900/50 p-10 rounded-[40px] border border-slate-200 dark:border-white/5 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-amber-500/10 hover:-translate-y-2 overflow-hidden"
-              >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-amber-600 opacity-[0.03] group-hover:opacity-10 transition-opacity rounded-full -mr-16 -mt-16 blur-2xl"></div>
-                <div className="w-20 h-20 bg-amber-50 dark:bg-amber-900/20 rounded-3xl flex items-center justify-center mb-8 group-hover:bg-amber-600 group-hover:scale-110 transition-all duration-500">
-                  <ShieldCheck className="w-10 h-10 text-amber-600 group-hover:text-white transition-colors duration-500" />
-                </div>
-                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-                  الصلاحيات
-                  <i className="fas fa-arrow-left text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all"></i>
-                </h2>
-                <p className="text-slate-500 dark:text-slate-400 leading-relaxed font-medium">إدارة أدوار المستخدمين وتعديل صلاحيات الوصول للمنظومة</p>
-                <div className="mt-8 flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
-                  <span className="px-3 py-1 bg-amber-50 dark:bg-amber-900/30 rounded-full">أدوار المستخدمين</span>
-                  <span className="px-3 py-1 bg-amber-50 dark:bg-amber-900/30 rounded-full">تحكم كامل</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className={`flex h-screen overflow-hidden transition-colors duration-700 ${isDarkMode ? 'dark bg-slate-950' : 'bg-white'}`}>
+    <div className={`flex h-screen overflow-hidden transition-colors duration-700 ${isDarkMode ? 'dark bg-slate-950' : 'bg-white'}`} dir="rtl">
       {/* Portals for Modals */}
       <InquiryModal isOpen={isInquiryModalOpen} onClose={() => setIsInquiryModalOpen(false)} />
       <PhonebookModal isOpen={isPhonebookModalOpen} onClose={() => setIsPhonebookModalOpen(false)} />
       <HotlineTreeModal isOpen={isHotlineTreeOpen} onClose={() => setIsHotlineTreeOpen(false)} />
       <RankingModal isOpen={isRankingModalOpen} onClose={() => setIsRankingModalOpen(false)} />
 
-      {/* Mobile Overlay */}
-      {isMobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] lg:hidden animate-fade-in transition-opacity duration-700"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
-
-      {viewMode === ViewMode.Landing ? null : viewMode === ViewMode.Hotline ? (
-        <div className={`fixed inset-y-0 right-0 z-[70] transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'} w-[360px] lg:w-auto`}>
-          <Sidebar
-            activeTab={activeTab}
-            onTabChange={(tab) => {
-              if (tab === 'inquiryButton') setIsInquiryModalOpen(true);
-              else if (tab === 'phonebookButton') setIsPhonebookModalOpen(true);
-              else setActiveTab(tab);
-              setIsMobileMenuOpen(false); // Close on selection
-            }}
-            permissions={permissions}
-            collapsed={isSidebarCollapsed}
-            onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            onReturnHome={() => setViewMode(ViewMode.Landing)}
-            onLogout={handleLogout}
-          />
-        </div>
-      ) : viewMode === ViewMode.Admin ? (
-        <div className={`fixed inset-y-0 right-0 z-[70] transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'} w-[360px] lg:w-auto`}>
-          <AdminSidebar
-            activeSubTab={adminSubTab}
-            onSubTabChange={(t) => { setAdminSubTab(t); setIsMobileMenuOpen(false); }}
-            onReturnHome={() => setViewMode(ViewMode.Landing)}
-            onLogout={handleLogout}
-            permissions={permissions}
-            collapsed={isSidebarCollapsed}
-            onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          />
-        </div>
-      ) : (
-        <div className={`fixed inset-y-0 right-0 z-[70] transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'} w-[360px] lg:w-auto`}>
-          <AdminSidebar
-            activeSubTab="userManagement"
-            onSubTabChange={() => {}}
-            onReturnHome={() => setViewMode(ViewMode.Landing)}
-            onLogout={handleLogout}
-            permissions={permissions}
-            collapsed={isSidebarCollapsed}
-            onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-          />
-        </div>
-      )}
-
-      <main className={`flex-1 flex flex-col min-w-0 transition-colors duration-700 bg-slate-50 dark:bg-slate-950 overflow-y-auto ${viewMode !== ViewMode.Landing ? (isSidebarCollapsed ? 'lg:mr-20' : 'lg:mr-[360px]') : ''}`}>
-        {/* Top Header / Welcome Bar */}
-        <header className="h-20 flex items-center justify-between px-6 md:px-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border-b border-slate-200/60 dark:border-white/5 sticky top-0 z-40 transition-all duration-700">
-          <div className="flex items-center gap-4">
+      {viewMode === ViewMode.Landing ? (
+        <div className="min-h-screen w-full bg-white dark:bg-slate-950 transition-colors duration-700 flex items-center justify-center p-6 relative overflow-hidden">
+          {/* Theme Toggle for Landing */}
+          <div className="absolute top-8 left-8 z-50">
             <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-200 transition-all shadow-sm"
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="w-12 h-12 rounded-2xl bg-white dark:bg-slate-900 shadow-xl border border-slate-100 dark:border-white/10 flex items-center justify-center text-slate-800 dark:text-white hover:scale-110 transition-all active:scale-95"
             >
-              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isDarkMode ? <Sun className="w-6 h-6 text-amber-500" /> : <Moon className="w-6 h-6 text-blue-600" />}
             </button>
+          </div>
 
-            <div className="flex flex-col">
-              {user ? (
-                <div className="flex items-center gap-3 text-slate-950 dark:text-white font-black text-base md:text-lg tracking-tight">
-                  <span className="truncate max-w-[150px] md:max-w-none">{user?.email?.split('@')[0]}</span>
-                  <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-wider border border-blue-100 dark:border-blue-800/30">{permissions?.role}</span>
-                </div>
-              ) : (
-                <button
+          <div className="w-full max-w-5xl relative z-10">
+            <div className="text-center mb-16 space-y-4 animate-slide-in-down">
+              <div className="inline-block px-4 py-1.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-xs font-bold tracking-widest uppercase mb-2">منظومة خدمة المواطنين الذكية</div>
+              <h1 className="text-5xl md:text-6xl font-black text-slate-900 dark:text-white tracking-tighter leading-tight">الخط الساخن لخدمة المواطنين</h1>
+              <p className="text-slate-500 dark:text-slate-400 text-lg max-w-2xl mx-auto font-medium">المنصة الشاملة لإدارة الشكاوى والمكالمات وتكليفات الإدارة العامة بوزارة الصحة والسكان</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-fade-in items-stretch">
+              {!user ? (
+                <div
                   onClick={handleLogin}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
+                  className="group relative bg-blue-600 p-10 rounded-[40px] border border-blue-500 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/40 hover:-translate-y-2 overflow-hidden"
                 >
-                  <i className="fab fa-google"></i>
-                  تسجيل الدخول
-                </button>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-[0.1] rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                  <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center mb-8 group-hover:scale-110 transition-all duration-500">
+                    <i className="fab fa-google text-4xl text-white"></i>
+                  </div>
+                  <h2 className="text-3xl font-bold text-white mb-3">
+                    تسجيل الدخول
+                  </h2>
+                  <p className="text-blue-100 leading-relaxed font-medium">قم بتسجيل الدخول بحساب جوجل الخاص بك للوصول إلى المنظومة</p>
+                  <div className="mt-8 flex items-center gap-2 text-xs font-bold text-white">
+                    <span className="px-3 py-1 bg-white/20 rounded-full">دخول آمن</span>
+                  </div>
+                </div>
+              ) : (permissions?.role === 'Guest') ? (
+                <div
+                  onClick={handleLogout}
+                  className="group relative bg-red-600 p-10 rounded-[40px] border border-red-500 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-red-500/40 hover:-translate-y-2 overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white opacity-[0.1] rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                  <div className="w-20 h-20 bg-white/20 rounded-3xl flex items-center justify-center mb-8 group-hover:scale-110 transition-all duration-500">
+                    <LogOut className="w-10 h-10 text-white" />
+                  </div>
+                  <h2 className="text-3xl font-bold text-white mb-3">
+                    تغيير الحساب
+                  </h2>
+                  <p className="text-red-100 leading-relaxed font-medium">هذا الحساب ({user.email}) غير مصرح له بالدخول. اضغط لتسجيل الخروج والدخول بحساب آخر.</p>
+                  <div className="mt-8 flex items-center gap-2 text-xs font-bold text-white">
+                    <span className="px-3 py-1 bg-white/20 rounded-full">حساب غير مسجل</span>
+                  </div>
+                </div>
+              ) : null}
+
+              {permissions?.showHotlineSection && (
+                <div
+                  onClick={() => { setViewMode(ViewMode.Hotline); setActiveTab('newComplaint'); }}
+                  className="group relative bg-white dark:bg-slate-900/50 p-10 rounded-[40px] border border-slate-200 dark:border-white/5 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-blue-500/10 hover:-translate-y-2 overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600 opacity-[0.03] group-hover:opacity-10 transition-opacity rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                  <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 rounded-3xl flex items-center justify-center mb-8 group-hover:bg-blue-600 group-hover:scale-110 transition-all duration-500">
+                    <i className="fas fa-headset text-4xl text-blue-600 group-hover:text-white transition-colors duration-500"></i>
+                  </div>
+                  <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                    الخط الساخن
+                    <i className="fas fa-arrow-left text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all"></i>
+                  </h2>
+                  <p className="text-slate-500 dark:text-slate-400 leading-relaxed font-medium">تسجيل المكالمات، البحث، متابعة الحالات، ومركز المعرفة الشامل (FAQ)</p>
+                  <div className="mt-8 flex items-center gap-2 text-xs font-bold text-blue-600 dark:text-blue-400">
+                    <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-full">تسجيل سريع</span>
+                    <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 rounded-full">مخططات ذكية</span>
+                  </div>
+                </div>
+              )}
+
+              {permissions?.showAdminSection && (
+                <div
+                  onClick={() => { setViewMode(ViewMode.Admin); setActiveTab('adminWork'); }}
+                  className="group relative bg-white dark:bg-slate-900/50 p-10 rounded-[40px] border border-slate-200 dark:border-white/5 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-emerald-500/10 hover:-translate-y-2 overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-600 opacity-[0.03] group-hover:opacity-10 transition-opacity rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                  <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-900/20 rounded-3xl flex items-center justify-center mb-8 group-hover:bg-emerald-600 group-hover:scale-110 transition-all duration-500">
+                    <i className="fas fa-user-tie text-4xl text-emerald-600 group-hover:text-white transition-colors duration-500"></i>
+                  </div>
+                  <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                    لوحة الإدارة
+                    <i className="fas fa-arrow-left text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all"></i>
+                  </h2>
+                  <p className="text-slate-500 dark:text-slate-400 leading-relaxed font-medium">متابعة التكليفات، إدارة الشكاوى الجارية، وتصحيح التوجيه الخاطئ</p>
+                  <div className="mt-8 flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 rounded-full">تقارير متقدمة</span>
+                    <span className="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/30 rounded-full">توجيه ذكي</span>
+                  </div>
+                </div>
+              )}
+
+              {permissions?.canManageUsers && (
+                <div
+                  onClick={() => { setViewMode(ViewMode.Settings); }}
+                  className="group relative bg-white dark:bg-slate-900/50 p-10 rounded-[40px] border border-slate-200 dark:border-white/5 cursor-pointer transition-all duration-500 hover:shadow-2xl hover:shadow-amber-500/10 hover:-translate-y-2 overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-amber-600 opacity-[0.03] group-hover:opacity-10 transition-opacity rounded-full -mr-16 -mt-16 blur-2xl"></div>
+                  <div className="w-20 h-20 bg-amber-50 dark:bg-amber-900/20 rounded-3xl flex items-center justify-center mb-8 group-hover:bg-amber-600 group-hover:scale-110 transition-all duration-500">
+                    <ShieldCheck className="w-10 h-10 text-amber-600 group-hover:text-white transition-colors duration-500" />
+                  </div>
+                  <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                    الصلاحيات
+                    <i className="fas fa-arrow-left text-sm opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all"></i>
+                  </h2>
+                  <p className="text-slate-500 dark:text-slate-400 leading-relaxed font-medium">إدارة أدوار المستخدمين وتعديل صلاحيات الوصول للمنظومة</p>
+                  <div className="mt-8 flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
+                    <span className="px-3 py-1 bg-amber-50 dark:bg-amber-900/30 rounded-full">أدوار المستخدمين</span>
+                    <span className="px-3 py-1 bg-amber-50 dark:bg-amber-900/30 rounded-full">تحكم كامل</span>
+                  </div>
+                </div>
               )}
             </div>
           </div>
+        </div>
+      ) : (
+        <>
+          {/* Mobile Overlay */}
+          {isMobileMenuOpen && (
+            <div
+              className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] lg:hidden animate-fade-in transition-opacity duration-700"
+              onClick={() => setIsMobileMenuOpen(false)}
+            />
+          )}
 
-          <div className="flex items-center gap-3 md:gap-6">
-            {/* Stats & Icons */}
-            <div className="hidden sm:flex items-center gap-4 bg-slate-50 dark:bg-slate-800/40 px-5 py-2.5 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
-              <div className="flex flex-col items-end">
-                <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-1">مكالماتك اليوم</span>
-                <span className="text-base font-black text-blue-600 leading-none">42</span>
-              </div>
-              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
-                <Hash className="w-5 h-5 text-white" />
-              </div>
-            </div>
-
-            <div className="w-px h-8 bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setIsHotlineTreeOpen(true)}
-                className="nav-tool-btn group"
-                title="شجرة الخط الساخن"
-              >
-                <GitBranch className="w-4 h-4 text-slate-500 group-hover:text-blue-600 transition-colors" />
-              </button>
-              <button
-                onClick={() => setIsRankingModalOpen(true)}
-                className="nav-tool-btn group"
-                title="ترتيب الموظفين"
-              >
-                <Trophy className="w-4 h-4 text-slate-500 group-hover:text-amber-500 transition-colors" />
-              </button>
-              <button className="nav-tool-btn group" title="الإشعارات">
-                <Bell className="w-4 h-4 text-slate-500 group-hover:text-blue-600 transition-colors" />
-                <span className="absolute top-2 right-2 w-2.5 h-2.5 bg-rose-500 rounded-full border-2 border-white dark:border-slate-800 animate-pulse"></span>
-              </button>
-
-              <div className="w-px h-8 bg-slate-200 dark:bg-white/10 mx-1 hidden xs:block"></div>
-
-              <button
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/80 text-slate-950 dark:text-white flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all shadow-md border border-slate-200 dark:border-white/10 group overflow-hidden"
-              >
-                <div className="relative w-6 h-6 flex items-center justify-center">
-                  <motion.div
-                    initial={false}
-                    animate={{
-                      y: isDarkMode ? -30 : 0,
-                      opacity: isDarkMode ? 0 : 1
-                    }}
-                    className="absolute"
-                  >
-                    <Moon className="w-6 h-6 text-blue-600" />
-                  </motion.div>
-                  <motion.div
-                    initial={false}
-                    animate={{
-                      y: isDarkMode ? 0 : 30,
-                      opacity: isDarkMode ? 1 : 0
-                    }}
-                    className="absolute"
-                  >
-                    <Sun className="w-6 h-6 text-amber-500" />
-                  </motion.div>
-                </div>
-              </button>
-            </div>
-          </div>
-        </header>
-
-        {/* Content Area */}
-        <div className="p-4 md:p-6 flex-1 bg-slate-50/50 dark:bg-transparent transition-colors duration-700">
-          <div className="w-full max-w-[1700px] mx-auto flex flex-col xl:flex-row gap-6 px-4">
-            <div className="flex-1 min-w-0 bg-white dark:bg-slate-900/30 backdrop-blur-md rounded-[32px] p-6 md:p-8 transition-colors duration-700 border border-slate-200/60 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none">
-              {viewMode === ViewMode.Hotline ? renderContent() : viewMode === ViewMode.Admin ? <AdminView activeSubTab={adminSubTab} permissions={permissions} /> : <SettingsView />}
-            </div>
-
-            {viewMode === ViewMode.Hotline && (
-              <div className="w-full xl:w-[420px] flex flex-col gap-6 flex-shrink-0 sticky top-24 self-start">
-                <InquiryDatabase />
-                <CabinetTracking />
-
-                <div className="glass-card p-6 bg-linear-to-br from-indigo-600 to-blue-700 text-white shadow-blue-500/20 hover:scale-[1.02] transition-all">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-md">
-                      <i className="fas fa-life-ring text-base"></i>
-                    </div>
-                    <span className="px-2 py-0.5 bg-white/20 rounded-full text-[9px] font-bold uppercase">مساعدة</span>
-                  </div>
-                  <h4 className="text-lg font-bold mb-1">هل تحتاج مساعدة؟</h4>
-                  <p className="text-white/70 text-[10px] mb-4 leading-relaxed">فريقنا متاح دائماً لمساعدتك في حل أي مشكلات تقنية أو استفسارات حول النظام.</p>
-                  <button className="w-full py-3 bg-white text-blue-700 rounded-xl font-bold text-xs hover:bg-blue-50 transition-colors shadow-xl">اتصل بالدعم الفني</button>
-                </div>
-              </div>
+          <div className={`fixed inset-y-0 right-0 z-[70] transition-all duration-500 transform ${isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'} w-[360px] lg:w-auto`}>
+            {viewMode === ViewMode.Hotline ? (
+              <Sidebar
+                activeTab={activeTab}
+                onTabChange={(tab) => {
+                  if (tab === 'inquiryButton') setIsInquiryModalOpen(true);
+                  else if (tab === 'phonebookButton') setIsPhonebookModalOpen(true);
+                  else setActiveTab(tab);
+                  setIsMobileMenuOpen(false);
+                }}
+                permissions={permissions}
+                collapsed={isSidebarCollapsed}
+                onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                onReturnHome={() => setViewMode(ViewMode.Landing)}
+                onLogout={handleLogout}
+              />
+            ) : (
+              <AdminSidebar
+                activeSubTab={viewMode === ViewMode.Admin ? adminSubTab : 'userManagement'}
+                onSubTabChange={(t) => { setAdminSubTab(t); setIsMobileMenuOpen(false); }}
+                onReturnHome={() => setViewMode(ViewMode.Landing)}
+                onLogout={handleLogout}
+                permissions={permissions}
+                collapsed={isSidebarCollapsed}
+                onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              />
             )}
           </div>
-        </div>
 
-        <footer className="p-8 mt-auto flex flex-col md:flex-row items-center justify-between gap-4 text-slate-400 text-xs font-semibold bg-white/30 dark:bg-black/10 backdrop-blur-sm border-t border-slate-200 dark:border-white/5">
-          <div className="flex items-center gap-4">
-            <span>جميع الحقوق محفوظة &copy; {new Date().getFullYear()}</span>
-            <span className="w-1 h-1 bg-slate-300 dark:bg-slate-700 rounded-full"></span>
-            <span className="text-slate-600 dark:text-slate-200">الإدارة العامة لخدمة المواطنين - وزارة الصحة والسكان</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>تم التطوير بواسطة:</span>
-            <span className="text-blue-600 font-bold">Karim El-Zayat</span>
-          </div>
-        </footer>
-      </main>
+          <main className={`flex-1 flex flex-col min-w-0 transition-colors duration-700 bg-slate-50 dark:bg-slate-950 overflow-y-auto ${isSidebarCollapsed ? 'lg:mr-20' : 'lg:mr-[360px]'}`}>
+            <header className="h-20 flex items-center justify-between px-6 md:px-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border-b border-slate-200/60 dark:border-white/5 sticky top-0 z-40 transition-all duration-700">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                  className="lg:hidden w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/50 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-slate-200 transition-all shadow-sm"
+                >
+                  {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </button>
+
+                <div className="flex flex-col">
+                  {user ? (
+                    <div className="flex items-center gap-3 text-slate-950 dark:text-white font-black text-base md:text-lg tracking-tight">
+                      <span className="truncate max-w-[150px] md:max-w-none">{user?.email?.split('@')[0]}</span>
+                      <span className="px-3 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-wider border border-blue-100 dark:border-blue-800/30">{permissions?.role}</span>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleLogin}
+                      className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold text-sm hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
+                    >
+                      <i className="fab fa-google"></i>
+                      تسجيل الدخول
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 md:gap-6">
+                <div className="hidden sm:flex items-center gap-4 bg-slate-50 dark:bg-slate-800/40 px-5 py-2.5 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
+                  <div className="flex flex-col items-end">
+                    <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-1">مكالماتك اليوم</span>
+                    <span className="text-base font-black text-blue-600 leading-none">42</span>
+                  </div>
+                  <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
+                    <Hash className="w-5 h-5 text-white" />
+                  </div>
+                </div>
+
+                <div className="w-px h-8 bg-slate-200 dark:bg-white/10 hidden sm:block"></div>
+
+                <div className="flex items-center gap-2">
+                  <button onClick={() => setIsHotlineTreeOpen(true)} className="nav-tool-btn group" title="شجرة الخط الساخن">
+                    <GitBranch className="w-4 h-4 text-slate-500 group-hover:text-blue-600 transition-colors" />
+                  </button>
+                  <button onClick={() => setIsRankingModalOpen(true)} className="nav-tool-btn group" title="ترتيب الموظفين">
+                    <Trophy className="w-4 h-4 text-slate-500 group-hover:text-amber-500 transition-colors" />
+                  </button>
+                  <button onClick={() => setIsInquiryModalOpen(true)} className="nav-tool-btn group" title="الاستفسارات">
+                    <FileText className="w-4 h-4 text-slate-500 group-hover:text-blue-600 transition-colors" />
+                  </button>
+
+                  <div className="w-px h-8 bg-slate-200 dark:bg-white/10 mx-1 hidden xs:block"></div>
+
+                  <button
+                    onClick={() => setIsDarkMode(!isDarkMode)}
+                    className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800/80 text-slate-950 dark:text-white flex items-center justify-center hover:bg-white dark:hover:bg-slate-700 hover:scale-110 active:scale-95 transition-all shadow-md border border-slate-200 dark:border-white/10 group overflow-hidden"
+                  >
+                    <div className="relative w-6 h-6 flex items-center justify-center">
+                      <motion.div initial={false} animate={{ y: isDarkMode ? -30 : 0, opacity: isDarkMode ? 0 : 1 }} className="absolute">
+                        <Moon className="w-6 h-6 text-blue-600" />
+                      </motion.div>
+                      <motion.div initial={false} animate={{ y: isDarkMode ? 0 : 30, opacity: isDarkMode ? 1 : 0 }} className="absolute">
+                        <Sun className="w-6 h-6 text-amber-500" />
+                      </motion.div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+            </header>
+
+            <div className="p-4 md:p-6 flex-1 bg-slate-50/50 dark:bg-transparent transition-colors duration-700">
+              <div className="w-full max-w-[1700px] mx-auto flex flex-col xl:flex-row gap-6 px-4">
+                <div className="flex-1 min-w-0 bg-white dark:bg-slate-900/30 backdrop-blur-md rounded-[32px] p-6 md:p-8 transition-colors duration-700 border border-slate-200/60 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none">
+                  {viewMode === ViewMode.Hotline ? renderContent() : viewMode === ViewMode.Admin ? <AdminView activeSubTab={adminSubTab} permissions={permissions} /> : <SettingsView />}
+                </div>
+
+                {viewMode === ViewMode.Hotline && (
+                  <div className="w-full xl:w-[420px] flex flex-col gap-6 flex-shrink-0 sticky top-24 self-start">
+                    <InquiryDatabase />
+                    <CabinetTracking />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <footer className="p-8 mt-auto flex flex-col md:flex-row items-center justify-between gap-4 text-slate-400 text-xs font-semibold bg-white/30 dark:bg-black/10 backdrop-blur-sm border-t border-slate-200 dark:border-white/5">
+              <div className="flex items-center gap-4">
+                <span>جميع الحقوق محفوظة &copy; {new Date().getFullYear()}</span>
+                <span className="w-1 h-1 bg-slate-300 dark:bg-slate-700 rounded-full"></span>
+                <span className="text-slate-600 dark:text-slate-200">الإدارة العامة لخدمة المواطنين - وزارة الصحة والسكان</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span>تم التطوير بواسطة:</span>
+                <span className="text-blue-600 font-bold">Karim El-Zayat</span>
+              </div>
+            </footer>
+          </main>
+        </>
+      )}
     </div>
   );
 }
