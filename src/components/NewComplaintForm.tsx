@@ -39,10 +39,15 @@ export default function NewComplaintForm() {
     
     setIsSubmitting(true);
     try {
+      // 5% automatic selection logic for QA/Follow-up
+      const isSelectedForFollowUp = Math.random() < 0.05;
+
       const submissionData: any = {
         ...formData,
         isEmergency,
-        isCabinetComplaint: isCabinet
+        isCabinetComplaint: isCabinet,
+        needsFollowUp: isSelectedForFollowUp,
+        followUpStatus: isSelectedForFollowUp ? 'pending' : null
       };
       
       if (isEmergency) {

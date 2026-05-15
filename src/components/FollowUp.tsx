@@ -1,174 +1,420 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
-import { db } from '../lib/firebase';
+import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, Timestamp, addDoc, getDoc } from 'firebase/firestore';
+import { db, auth } from '../lib/firebase';
 import { Complaint } from '../types';
-import { Clock, CheckCircle2, Calendar, Phone, Info, Search } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Clock, CheckCircle2, ChevronDown, User, Phone, MapPin, AlertCircle, FileText, Plus, Loader2, Save, X } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 import SearchableSelect from './ui/SearchableSelect';
+import { GOVERNORATES_LIST, COMPLAINT_SUBJECTS } from '../constants';
 
 export default function FollowUp() {
-  const [activeSubTab, setActiveSubTab] = useState('ongoing');
-  const [ongoingComplaints, setOngoingComplaints] = useState<Complaint[]>([]);
+  const [activeSubTab, setActiveSubTab] = useState<'pending' | 'completed'>('pending');
+  const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(true);
+  
+  // Review Modal State
+  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
+  const [reviewData, setReviewData] = useState({
+    officer: '',
+    notes: '',
+    result: ''
+  });
+  const [isSavingReview, setIsSavingReview] = useState(false);
+
+  // Manual Add Modal State
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [manualCallData, setManualCallData] = useState({
+    callerName: '',
+    phoneNumber: '',
+    governorate: '',
+    complaintSubject: '',
+    callDetails: ''
+  });
+  const [isAddingManual, setIsAddingManual] = useState(false);
 
   useEffect(() => {
     const q = query(
       collection(db, 'complaints'),
-      where('complaintStatus', '==', 'جاري المتابعة'),
+      where('needsFollowUp', '==', true),
+      where('followUpStatus', '==', activeSubTab),
       orderBy('timestamp', 'desc')
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
-      setOngoingComplaints(data);
+      setComplaints(data);
       setLoading(false);
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [activeSubTab]);
+
+  const handleReviewClick = (complaint: Complaint) => {
+    setSelectedComplaint(complaint);
+    setReviewData({
+      officer: complaint.followUpOfficer || auth.currentUser?.displayName || '',
+      notes: complaint.followUpNotes || '',
+      result: complaint.followUpResult || ''
+    });
+    setIsReviewOpen(true);
+  };
+
+  const handleSaveReview = async () => {
+    if (!selectedComplaint?.id) return;
+    setIsSavingReview(true);
+    try {
+      const complaintRef = doc(db, 'complaints', selectedComplaint.id);
+      await updateDoc(complaintRef, {
+        followUpStatus: 'completed',
+        followUpOfficer: reviewData.officer,
+        followUpNotes: reviewData.notes,
+        followUpResult: reviewData.result,
+        followUpCompletedAt: Timestamp.now()
+      });
+      setIsReviewOpen(false);
+      setSelectedComplaint(null);
+    } catch (err: any) {
+      alert('خطأ أثناء حفظ المراجعة: ' + err.message);
+    } finally {
+      setIsSavingReview(false);
+    }
+  };
+
+  const handleManualAdd = async () => {
+    setIsAddingManual(true);
+    try {
+      await addDoc(collection(db, 'complaints'), {
+        ...manualCallData,
+        timestamp: Timestamp.now(),
+        needsFollowUp: true,
+        followUpStatus: 'pending',
+        employeeName: auth.currentUser?.displayName || 'نظام قديم',
+        employeeEmail: auth.currentUser?.email || '',
+        complaintStatus: 'تم الرد'
+      });
+      setIsAddModalOpen(false);
+      setManualCallData({
+        callerName: '',
+        phoneNumber: '',
+        governorate: '',
+        complaintSubject: '',
+        callDetails: ''
+      });
+    } catch (err: any) {
+      alert('خطأ في الإضافة: ' + err.message);
+    } finally {
+      setIsAddingManual(false);
+    }
+  };
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-           <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">متابعة المكالمات والشكاوى</h2>
-           <p className="text-slate-500 dark:text-slate-400 text-[10px] font-medium">متابعة دقيقة للحالات التي تتطلب إجراءات إضافية</p>
-        </div>
+    <div className="space-y-6 animate-fade-in pb-10">
+      {/* Header Tabs */}
+      <div className="flex flex-col items-center gap-6">
+        <h2 className="text-3xl font-black text-blue-600 dark:text-blue-400">متابعة المكالمات</h2>
         
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl border border-slate-100 dark:border-white/5 transition-all duration-700">
+        <div className="flex items-center gap-2 p-1.5 bg-slate-100 dark:bg-slate-800 rounded-2xl w-fit border border-slate-200 dark:border-white/5 transition-all duration-700">
            <button 
-             onClick={() => setActiveSubTab('ongoing')} 
-             className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-500 ${activeSubTab === 'ongoing' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
+             onClick={() => setActiveSubTab('pending')} 
+             className={`px-8 py-2.5 rounded-xl text-sm font-black transition-all duration-500 flex items-center gap-2 ${activeSubTab === 'pending' ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-md ring-1 ring-emerald-500/10' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
            >
-             <Clock className="w-3.5 h-3.5" />
+             <div className={`w-2 h-2 rounded-full ${activeSubTab === 'pending' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
              الجاري
            </button>
            <button 
              onClick={() => setActiveSubTab('completed')} 
-             className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-500 ${activeSubTab === 'completed' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'}`}
+             className={`px-8 py-2.5 rounded-xl text-sm font-black transition-all duration-500 flex items-center gap-2 ${activeSubTab === 'completed' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-md ring-1 ring-blue-500/10' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
            >
-             <CheckCircle2 className="w-3.5 h-3.5" />
              تم المتابعة
            </button>
         </div>
       </div>
 
-      <div className="min-h-[400px]">
-        {activeSubTab === 'ongoing' ? (
-          loading ? (
-            <div className="flex flex-col items-center justify-center py-32 space-y-6">
-               <div className="relative">
-                  <div className="w-16 h-16 border-4 border-emerald-100 border-t-emerald-600 dark:border-emerald-950 dark:border-t-emerald-400 rounded-full animate-spin"></div>
-                  <Clock className="absolute inset-0 m-auto w-6 h-6 text-emerald-600 dark:text-emerald-400 animate-pulse" />
-               </div>
-               <p className="text-slate-500 dark:text-slate-400 font-bold tracking-tight">جاري استرجاع المكالمات الجارية...</p>
-            </div>
-          ) : ongoingComplaints.length > 0 ? (
-            <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden transition-all duration-700">
-               <div className="overflow-x-auto">
-                 <table className="w-full text-right border-collapse">
-                   <thead>
-                     <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-white/5">
-                        <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">التوقيت</th>
-                        <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">المتصل</th>
-                        <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">التليفون</th>
-                        <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">جهة الشكوى</th>
-                        <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest text-center">الإجراء</th>
-                     </tr>
-                   </thead>
-                   <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                     {ongoingComplaints.map((c, idx) => (
-                       <motion.tr 
-                         key={c.id}
-                         initial={{ opacity: 0, scale: 0.98 }}
-                         animate={{ opacity: 1, scale: 1 }}
-                         transition={{ delay: idx * 0.05 }}
-                         className="group hover:bg-emerald-50/50 dark:hover:bg-emerald-900/10 transition-all border-r-4 border-r-transparent hover:border-r-emerald-500"
-                       >
-                         <td className="px-6 py-4">
-                            <div className="flex flex-col">
-                               <span className="text-xs font-black text-slate-900 dark:text-white mb-1">{(c.timestamp as any)?.toDate().toLocaleDateString('ar-EG')}</span>
-                               <span className="text-[9px] text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-widest">{(c.timestamp as any)?.toDate().toLocaleTimeString('ar-EG')}</span>
-                            </div>
-                         </td>
-                         <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                               <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-black text-xs border border-emerald-100 dark:border-emerald-900/20 shadow-sm">
-                                   {c.callerName.charAt(0)}
-                               </div>
-                               <span className="font-black text-sm text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors uppercase tracking-tight">{c.callerName}</span>
-                            </div>
-                         </td>
-                         <td className="px-6 py-4">
-                            <div className="flex items-center gap-2 text-xs font-mono tracking-widest dark:text-slate-300">
-                               <Phone className="w-3 h-3 text-slate-400 group-hover:text-emerald-500 transition-colors" />
-                               {c.phoneNumber}
-                            </div>
-                         </td>
-                         <td className="px-6 py-4">
-                            <div className="flex flex-col">
-                               <span className="text-xs font-black text-slate-800 dark:text-slate-200">{c.complaintEntity}</span>
-                               <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">بواسطة: {c.employeeName}</span>
-                            </div>
-                         </td>
-                         <td className="px-6 py-4 text-center">
-                            <button className="px-4 py-1.5 bg-emerald-600 text-white rounded-lg font-black text-[9px] shadow-lg shadow-emerald-600/25 hover:bg-emerald-500 hover:-translate-y-0.5 active:scale-95 transition-all uppercase tracking-widest">
-                                 متابعة الآن
-                            </button>
-                         </td>
-                       </motion.tr>
-                     ))}
-                   </tbody>
-                 </table>
-               </div>
-            </div>
-          ) : (
+      <div className="flex justify-end mb-4">
+        <button 
+          onClick={() => setIsAddModalOpen(true)}
+          className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-blue-600/20 hover:bg-blue-500 transition-all hover:scale-[1.02] active:scale-95"
+        >
+          <Plus className="w-5 h-5" />
+          إضافة مكالمة من النظام القديم
+        </button>
+      </div>
+
+      {/* Summary Bar */}
+      <div 
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="group bg-blue-50/80 dark:bg-blue-900/20 p-4 rounded-[18px] border border-blue-100 dark:border-blue-800/30 flex items-center justify-between cursor-pointer hover:bg-blue-100/80 dark:hover:bg-blue-900/40 transition-all duration-500 shadow-sm"
+      >
+        <div className="flex items-center gap-3">
+          <ChevronDown className={`w-6 h-6 text-blue-600 transition-transform duration-500 ${isExpanded ? '' : '-rotate-90'}`} />
+          <h3 className="text-lg font-black text-blue-900 dark:text-blue-200">
+            {activeSubTab === 'pending' ? 'جميع المكالمات الجارية للمتابعة' : 'جميع المكالمات التي تم متابعتها'}
+            <span className="mr-2 text-blue-600 font-bold">({complaints.length} مكالمة)</span>
+          </h3>
+        </div>
+      </div>
+
+      <AnimatePresence>
+        {isExpanded && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="space-y-6 overflow-hidden"
+          >
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
+                <p className="text-slate-500 font-bold">جاري تحميل المكالمات...</p>
+              </div>
+            ) : complaints.length > 0 ? (
+              complaints.map((c, idx) => (
+                <motion.div
+                  key={c.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.1 }}
+                  className="bg-white dark:bg-slate-900/40 rounded-[28px] border border-slate-100 dark:border-white/5 p-8 shadow-sm hover:shadow-xl hover:scale-[1.002] transition-all duration-700 relative group overflow-hidden"
+                >
+                  <div className="absolute top-0 right-0 w-2 h-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  
+                  {/* Top Meta */}
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-slate-50 dark:border-white/5 pb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                        <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                      </div>
+                      <h4 className="text-xl font-black text-emerald-600 dark:text-emerald-400">مكالمة # {complaints.length - idx}</h4>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm font-bold text-slate-400 mt-2 md:mt-0">
+                      <span>{c.timestamp instanceof Timestamp ? c.timestamp.toDate().toLocaleString('ar-EG') : 'تاريخ غير معروف'}</span>
+                    </div>
+                  </div>
+
+                  {/* Info Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-12">
+                    <InfoRow label="اسم المتصل" value={c.callerName} icon={<User className="w-4 h-4" />} />
+                    <InfoRow label="رقم التليفون" value={c.phoneNumber} icon={<Phone className="w-4 h-4" />} />
+                    <InfoRow label="المحافظة" value={c.governorate} icon={<MapPin className="w-4 h-4" />} />
+                    <InfoRow label="موضوع الشكوى" value={c.complaintSubject} icon={<AlertCircle className="w-4 h-4" />} />
+                    <div className="col-span-full">
+                      <InfoRow label="تفاصيل المكالمة" value={c.callDetails} isLong icon={<FileText className="w-4 h-4" />} />
+                    </div>
+                    <InfoRow label="حالة المتابعة النهائية" value={c.followUpResult || 'لم تحدد بعد'} status={c.followUpResult ? 'success' : 'default'} />
+                    <InfoRow label="ملاحظات المتابعة" value={c.followUpNotes || 'لا يوجد ملاحظات'} isLong />
+                  </div>
+
+                  {activeSubTab === 'pending' && (
+                    <div className="mt-8 pt-8 border-t border-slate-50 dark:border-white/5">
+                      <button 
+                        onClick={() => handleReviewClick(c)}
+                        className="px-8 py-3 bg-blue-600 text-white rounded-xl font-black text-sm shadow-xl shadow-blue-600/20 hover:bg-blue-500 transition-all active:scale-95"
+                      >
+                        مراجعة المكالمة
+                      </button>
+                    </div>
+                  )}
+                </motion.div>
+              ))
+            ) : (
+              <div className="text-center py-20 bg-slate-50 dark:bg-slate-800/30 rounded-[32px] border-2 border-dashed border-slate-100 dark:border-white/5 space-y-4">
+                <p className="text-xl font-black text-slate-400">لا توجد سجلات حالياً</p>
+                <p className="text-slate-400 text-sm">سيتم عرض جميع المكالمات التي تتطلب متابعة هنا</p>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Review Modal */}
+      <AnimatePresence>
+        {isReviewOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
             <motion.div 
-               initial={{ opacity: 0, y: 20 }}
-               animate={{ opacity: 1, y: 0 }}
-               className="flex flex-col items-center justify-center py-32 bg-white dark:bg-slate-900 rounded-[24px] border-2 border-dashed border-slate-100 dark:border-white/5 shadow-sm space-y-6 transition-all duration-700"
-             >
-                <div className="w-16 h-16 bg-emerald-50/50 dark:bg-emerald-950/20 rounded-[24px] flex items-center justify-center transition-colors duration-500">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-400 dark:text-emerald-800" />
-               </div>
-               <div className="text-center">
-                  <p className="text-xl font-black text-slate-400 dark:text-slate-600">لا توجد مكالمات جارية</p>
-                  <p className="text-slate-400 dark:text-slate-500 text-[10px]">عمل ممتاز! جميع المكالمات تم متابعتها بنجاح</p>
-               </div>
-            </motion.div>
-          )
-        ) : (
-          <div className="space-y-6 animate-fade-in">
-            <div className="glass-card p-8 flex flex-col items-center space-y-6">
-               <div className="w-20 h-20 bg-blue-50 dark:bg-blue-950/20 rounded-[32px] flex items-center justify-center">
-                  <Calendar className="w-10 h-10 text-blue-500" />
-               </div>
-               <div className="text-center space-y-1">
-                  <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">سجل المكالمات المنتهية</h3>
-                  <p className="text-slate-500 dark:text-slate-400 text-[10px] font-medium">الرجاء اختيار الفترة الزمنية لعرض الأرشيف</p>
-               </div>
-               
-               <div className="flex flex-col md:flex-row items-center gap-3 w-full max-w-md">
-                  <SearchableSelect
-                    options={['مايو 2024', 'أبريل 2024', 'مارس 2024']}
-                    value="مايو 2024"
-                    onChange={() => {}}
-                    className="flex-1"
-                  />
-                  <button className="btn-primary w-full md:w-auto px-10 h-14 flex items-center justify-center gap-2 text-xs">
-                     <Search className="w-4 h-4" />
-                     <span>عرض الأرشيف</span>
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               exit={{ opacity: 0 }}
+               onClick={() => setIsReviewOpen(false)}
+               className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
+            <motion.div 
+               initial={{ scale: 0.9, opacity: 0, y: 20 }}
+               animate={{ scale: 1, opacity: 1, y: 0 }}
+               exit={{ scale: 0.9, opacity: 0, y: 20 }}
+               className="relative bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+            >
+               <div className="p-8 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-white">مراجعة بيانات المكالمة</h3>
+                  <button onClick={() => setIsReviewOpen(false)} className="w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-white dark:hover:bg-slate-700 shadow-sm transition-all">
+                    <X className="w-6 h-6 text-slate-400" />
                   </button>
                </div>
-            </div>
-            
-            <div className="flex items-center gap-2 justify-center text-slate-400">
-               <Info className="w-3.5 h-3.5" />
-               <p className="text-[9px] font-bold uppercase tracking-widest">تتطلب هذه الوظيفة صلاحيات متابعة الحالات</p>
-            </div>
+
+               <div className="flex-1 overflow-y-auto p-10 space-y-10 custom-scrollbar">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <ReadOnlyField label="رقم التليفون" value={selectedComplaint?.phoneNumber} />
+                     <ReadOnlyField label="المحافظة" value={selectedComplaint?.governorate} />
+                     <div className="col-span-full">
+                       <ReadOnlyField label="موضوع الشكوى" value={selectedComplaint?.complaintSubject} />
+                     </div>
+                     <div className="col-span-full">
+                       <ReadOnlyField label="تفاصيل المكالمة" value={selectedComplaint?.callDetails} isLong />
+                     </div>
+                  </div>
+
+                  <div className="h-px bg-slate-100 dark:bg-white/5" />
+
+                  <div className="space-y-6">
+                    <div className="space-y-2">
+                       <label className="text-sm font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest block">الموظف المتابع</label>
+                       <input 
+                         type="text" 
+                         value={reviewData.officer} 
+                         onChange={(e) => setReviewData({...reviewData, officer: e.target.value})}
+                         className="form-input h-14 bg-blue-50/30 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800/30" 
+                         placeholder="اسم الموظف القائم بالمتابعة" 
+                       />
+                    </div>
+
+                    <div className="space-y-2">
+                       <label className="text-sm font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest block">النتيجة النهائية للمتابعة</label>
+                       <input 
+                         type="text" 
+                         value={reviewData.result} 
+                         onChange={(e) => setReviewData({...reviewData, result: e.target.value})}
+                         className="form-input h-14" 
+                         placeholder="مثلاً: تم التأكد من وصول الحالة / تم توجيه المريض..." 
+                       />
+                    </div>
+
+                    <div className="space-y-2">
+                       <label className="text-sm font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest block">ملاحظات المتابعة</label>
+                       <textarea 
+                         rows={5}
+                         value={reviewData.notes}
+                         onChange={(e) => setReviewData({...reviewData, notes: e.target.value})}
+                         className="form-input min-h-[120px] resize-none" 
+                         placeholder="اكتب أي ملاحظات إضافية ظهرت أثناء المتابعة..."
+                       />
+                    </div>
+                  </div>
+               </div>
+
+               <div className="p-8 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-white/5 flex justify-end">
+                 <button 
+                   onClick={handleSaveReview}
+                   disabled={isSavingReview}
+                   className="min-w-[200px] h-14 bg-emerald-600 text-white rounded-2xl font-black shadow-xl shadow-emerald-600/20 hover:bg-emerald-500 transition-all flex items-center justify-center gap-3 active:scale-95"
+                 >
+                   {isSavingReview ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                   حفظ المراجعة
+                 </button>
+               </div>
+            </motion.div>
           </div>
         )}
+      </AnimatePresence>
+
+      {/* Manual Add Modal */}
+      <AnimatePresence>
+        {isAddModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <motion.div 
+               initial={{ opacity: 0 }}
+               animate={{ opacity: 1 }}
+               exit={{ opacity: 0 }}
+               onClick={() => setIsAddModalOpen(false)}
+               className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+            />
+            <motion.div 
+               initial={{ scale: 0.9, opacity: 0, y: 20 }}
+               animate={{ scale: 1, opacity: 1, y: 0 }}
+               exit={{ scale: 0.9, opacity: 0, y: 20 }}
+               className="relative bg-white dark:bg-slate-900 w-full max-w-2xl rounded-[40px] shadow-2xl overflow-hidden p-10 space-y-8"
+            >
+               <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-white">إضافة مكالمة متابعة يدوياً</h3>
+                  <button onClick={() => setIsAddModalOpen(false)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800">
+                    <X className="w-5 h-5 text-slate-400" />
+                  </button>
+               </div>
+
+               <div className="space-y-4">
+                 <input 
+                    type="text" 
+                    placeholder="اسم المتصل" 
+                    className="form-input h-14"
+                    value={manualCallData.callerName}
+                    onChange={(e) => setManualCallData({...manualCallData, callerName: e.target.value})}
+                 />
+                 <input 
+                    type="tel" 
+                    placeholder="رقم التليفون" 
+                    className="form-input h-14 font-mono tracking-widest"
+                    value={manualCallData.phoneNumber}
+                    onChange={(e) => setManualCallData({...manualCallData, phoneNumber: e.target.value})}
+                 />
+                 <SearchableSelect
+                    options={GOVERNORATES_LIST}
+                    value={manualCallData.governorate}
+                    onChange={(val) => setManualCallData({...manualCallData, governorate: val})}
+                    placeholder="المحافظة"
+                 />
+                 <SearchableSelect
+                    options={COMPLAINT_SUBJECTS}
+                    value={manualCallData.complaintSubject}
+                    onChange={(val) => setManualCallData({...manualCallData, complaintSubject: val})}
+                    placeholder="موضوع الشكوى"
+                 />
+                 <textarea 
+                    rows={4} 
+                    placeholder="تفاصيل المكالمة" 
+                    className="form-input resize-none"
+                    value={manualCallData.callDetails}
+                    onChange={(e) => setManualCallData({...manualCallData, callDetails: e.target.value})}
+                 />
+               </div>
+
+               <button 
+                 onClick={handleManualAdd}
+                 disabled={isAddingManual}
+                 className="w-full h-16 bg-blue-600 text-white rounded-2xl font-black shadow-xl shadow-blue-600/20 hover:bg-blue-500 transition-all flex items-center justify-center gap-3 active:scale-95"
+               >
+                 {isAddingManual ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                 إضافة للسجلات
+               </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function InfoRow({ label, value, icon, isLong, status = 'default' }: { label: string, value: string, icon?: React.ReactNode, isLong?: boolean, status?: 'default' | 'success' }) {
+  return (
+    <div className={`space-y-2 ${isLong ? 'col-span-full' : ''}`}>
+      <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+        {icon}
+        {label}:
+      </div>
+      <div className={`text-sm font-bold transition-all duration-500 
+        ${status === 'success' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-800 dark:text-slate-200'} 
+        ${isLong ? 'leading-relaxed bg-slate-50/50 dark:bg-slate-800 p-4 rounded-xl' : ''}`}>
+        {value}
+      </div>
+    </div>
+  );
+}
+
+function ReadOnlyField({ label, value, isLong }: { label: string, value?: string, isLong?: boolean }) {
+  return (
+    <div className={`space-y-2 ${isLong ? 'col-span-full' : ''}`}>
+      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</label>
+      <div className={`form-input bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-white/5 text-slate-500 dark:text-slate-400 overflow-hidden cursor-default transition-all duration-700 ${isLong ? 'min-h-[100px] py-4' : 'h-14 flex items-center'}`}>
+        {value || 'لا يوجد بيانات'}
       </div>
     </div>
   );

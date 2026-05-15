@@ -77,8 +77,12 @@ export interface Complaint {
   complaintStatus: string;
   callDetails: string;
   status: string;
-  followUpStatus?: string;
+  needsFollowUp?: boolean;
+  followUpStatus?: 'pending' | 'completed';
+  followUpResult?: string;
   followUpNotes?: string;
+  followUpOfficer?: string;
+  followUpCompletedAt?: Date;
   employeeName: string;
   employeeEmail: string;
   attachmentUrl?: string;

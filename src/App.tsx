@@ -318,6 +318,8 @@ export default function App() {
             onReturnHome={() => setViewMode(ViewMode.Landing)}
             onLogout={handleLogout}
             permissions={permissions}
+            collapsed={isSidebarCollapsed}
+            onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           />
         </div>
       ) : (
@@ -328,6 +330,8 @@ export default function App() {
             onReturnHome={() => setViewMode(ViewMode.Landing)}
             onLogout={handleLogout}
             permissions={permissions}
+            collapsed={isSidebarCollapsed}
+            onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           />
         </div>
       )}
@@ -477,55 +481,79 @@ export default function App() {
   );
 }
 
-function AdminSidebar({ activeSubTab, onSubTabChange, onReturnHome, onLogout, permissions }: { activeSubTab: string, onSubTabChange: (t: string) => void, onReturnHome: () => void, onLogout: () => void, permissions: UserPermissions | null }) {
+function AdminSidebar({ activeSubTab, onSubTabChange, onReturnHome, onLogout, permissions, collapsed, onToggle }: { activeSubTab: string, onSubTabChange: (t: string) => void, onReturnHome: () => void, onLogout: () => void, permissions: UserPermissions | null, collapsed: boolean, onToggle: () => void }) {
   const isPermissionsMode = activeSubTab === 'userManagement';
 
   return (
-    <div className="bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 h-screen w-full lg:w-[360px] flex flex-col shadow-2xl z-50 overflow-hidden border-l border-slate-200 dark:border-white/5 font-bold transition-all duration-700">
-      <div className="h-16 flex items-center px-4 border-b border-slate-100 dark:border-white/5 bg-white dark:bg-slate-900 transition-all duration-700">
-        <div className="flex items-center gap-3">
-          <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-lg ${isPermissionsMode ? 'bg-amber-600 shadow-amber-500/20' : 'bg-red-600 shadow-red-500/20'}`}>
-            {isPermissionsMode ? <ShieldCheck className="w-5 h-5 text-white" /> : <Settings className="w-5 h-5 text-white" />}
-          </div>
-          <span className="font-black text-slate-900 dark:text-white tracking-tight text-lg">
-            {isPermissionsMode ? 'الصلاحيات' : 'لوحة الإدارة'}
-          </span>
-        </div>
+    <motion.div
+      initial={false}
+      animate={{ width: collapsed ? 80 : 360 }}
+      transition={{ duration: 0.7, ease: "easeInOut" }}
+      className="bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 h-screen w-full lg:w-[360px] flex flex-col shadow-2xl z-50 overflow-hidden border-l border-slate-200 dark:border-white/5 font-bold transition-all duration-700"
+    >
+      <div className="h-16 flex items-center justify-between px-4 border-b border-slate-100 dark:border-white/5 bg-white dark:bg-slate-900 transition-all duration-700">
+        {!collapsed && (
+          <motion.div 
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-3"
+          >
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center shadow-lg ${isPermissionsMode ? 'bg-amber-600 shadow-amber-500/20' : 'bg-red-600 shadow-red-500/20'}`}>
+              {isPermissionsMode ? <ShieldCheck className="w-5 h-5 text-white" /> : <Settings className="w-5 h-5 text-white" />}
+            </div>
+            <span className="font-black text-slate-900 dark:text-white tracking-tight text-lg">
+              {isPermissionsMode ? 'الصلاحيات' : 'لوحة الإدارة'}
+            </span>
+          </motion.div>
+        )}
+        <button
+          onClick={onToggle}
+          className="w-10 h-10 flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-all text-slate-500 dark:text-slate-400 active:scale-90"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
       </div>
 
       <div className="p-4 space-y-2 bg-white dark:bg-slate-900/50 border-b border-slate-100 dark:border-white/5">
         <button
           onClick={onReturnHome}
-          className="w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-300 bg-slate-50 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700 border border-slate-100 dark:border-white/5 hover:border-red-500/30 overflow-hidden relative shadow-sm"
+          className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-300 
+            ${collapsed ? 'justify-center bg-slate-50 dark:bg-slate-800 hover:bg-red-600/10' : 'bg-slate-50 dark:bg-slate-800 hover:bg-white dark:hover:bg-slate-700'} 
+            border border-slate-100 dark:border-white/5 hover:border-red-500/30 overflow-hidden relative shadow-sm`}
         >
-          <Home className="w-5 h-5 text-slate-400 group-hover:text-red-500" />
-          <span className="font-bold text-sm text-slate-600 dark:text-slate-300">العودة للرئيسية</span>
-          <div className="absolute right-0 top-0 h-full w-1 bg-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <Home className={`w-5 h-5 ${collapsed ? 'text-red-600' : 'text-slate-400 group-hover:text-red-500'}`} />
+          {!collapsed && <span className="font-bold text-sm text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white">العودة للرئيسية</span>}
+          {!collapsed && (
+            <div className="absolute right-0 top-0 h-full w-1 bg-red-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+          )}
         </button>
 
         <button
           onClick={onLogout}
-          className="w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-300 bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-500 hover:text-white border border-rose-100 dark:border-rose-500/20 overflow-hidden relative shadow-sm"
+          className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-300 
+            ${collapsed ? 'justify-center bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-500' : 'bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-500 hover:text-white'} 
+            border border-rose-100 dark:border-rose-500/20 overflow-hidden relative shadow-sm`}
         >
-          <LogOut className="w-5 h-5 text-rose-500 group-hover:text-white" />
-          <span className="font-bold text-sm">تسجيل الخروج</span>
+          <LogOut className={`w-5 h-5 ${collapsed ? 'text-rose-500' : 'text-rose-400 group-hover:text-white'}`} />
+          {!collapsed && <span className="font-bold text-sm">تسجيل الخروج</span>}
         </button>
       </div>
       
       {!isPermissionsMode && (
         <div className="flex-1 overflow-y-auto px-4 py-6 space-y-8">
           <div className="space-y-2">
-            <div className="px-2 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">العمليات الإدارية</div>
+            {!collapsed && <div className="px-2 mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500">العمليات الإدارية</div>}
             <ul className="space-y-1">
               {permissions?.canRegisterAdminWork && (
                 <li>
                   <button
                     onClick={() => onSubTabChange('adminWork')}
                     className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 
-                      ${activeSubTab === 'adminWork' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                      ${activeSubTab === 'adminWork' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'} 
+                      ${collapsed ? 'justify-center px-0' : ''}`}
                   >
-                    <Layers className="w-5 h-5" />
-                    <span className="font-bold text-sm">تسجيل عمل الإدارة</span>
+                    <Layers className={`w-5 h-5 ${activeSubTab === 'adminWork' ? 'text-white' : 'text-slate-400 dark:text-slate-500 group-hover:scale-110'}`} />
+                    {!collapsed && <span className="font-bold text-sm">تسجيل عمل الإدارة</span>}
                   </button>
                 </li>
               )}
@@ -534,10 +562,11 @@ function AdminSidebar({ activeSubTab, onSubTabChange, onReturnHome, onLogout, pe
                   <button
                     onClick={() => onSubTabChange('adminSearch')}
                     className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 
-                      ${activeSubTab === 'adminSearch' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                      ${activeSubTab === 'adminSearch' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'} 
+                      ${collapsed ? 'justify-center px-0' : ''}`}
                   >
-                    <Search className="w-5 h-5" />
-                    <span className="font-bold text-sm">بحث السجلات</span>
+                    <Search className={`w-5 h-5 ${activeSubTab === 'adminSearch' ? 'text-white' : 'text-slate-400 dark:text-slate-500 group-hover:scale-110'}`} />
+                    {!collapsed && <span className="font-bold text-sm">بحث السجلات</span>}
                   </button>
                 </li>
               )}
@@ -546,10 +575,11 @@ function AdminSidebar({ activeSubTab, onSubTabChange, onReturnHome, onLogout, pe
                   <button
                     onClick={() => onSubTabChange('reportsTab')}
                     className={`w-full group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 
-                      ${activeSubTab === 'reportsTab' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+                      ${activeSubTab === 'reportsTab' ? 'bg-red-600 text-white shadow-lg' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'} 
+                      ${collapsed ? 'justify-center px-0' : ''}`}
                   >
-                    <FileText className="w-5 h-5" />
-                    <span className="font-bold text-sm">التقارير</span>
+                    <FileText className={`w-5 h-5 ${activeSubTab === 'reportsTab' ? 'text-white' : 'text-slate-400 dark:text-slate-500 group-hover:scale-110'}`} />
+                    {!collapsed && <span className="font-bold text-sm">التقارير</span>}
                   </button>
                 </li>
               )}
@@ -557,6 +587,6 @@ function AdminSidebar({ activeSubTab, onSubTabChange, onReturnHome, onLogout, pe
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
