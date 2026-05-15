@@ -6,6 +6,7 @@ import { Clock, CheckCircle2, ChevronDown, User, Phone, MapPin, AlertCircle, Fil
 import { motion, AnimatePresence } from 'motion/react';
 import SearchableSelect from './ui/SearchableSelect';
 import { GOVERNORATES_LIST, COMPLAINT_SUBJECTS } from '../constants';
+import { reviewFollowUp, addFollowUpManual } from '../services/dataService';
 
 export default function FollowUp() {
   const [activeSubTab, setActiveSubTab] = useState<'pending' | 'completed'>('pending');
@@ -35,10 +36,9 @@ export default function FollowUp() {
   const [isAddingManual, setIsAddingManual] = useState(false);
 
   useEffect(() => {
+    const targetCollection = activeSubTab === 'pending' ? 'followUpPending' : 'followUpCompleted';
     const q = query(
-      collection(db, 'complaints'),
-      where('needsFollowUp', '==', true),
-      where('followUpStatus', '==', activeSubTab),
+      collection(db, targetCollection),
       orderBy('timestamp', 'desc')
     );
 
@@ -69,13 +69,10 @@ export default function FollowUp() {
 
     setIsSavingReview(true);
     try {
-      const complaintRef = doc(db, 'complaints', selectedComplaint.id);
-      await updateDoc(complaintRef, {
-        followUpStatus: 'completed',
+      await reviewFollowUp(selectedComplaint.id, {
         followUpOfficer: auth.currentUser?.displayName || 'غير معروف',
         followUpNotes: reviewData.notes,
         followUpResult: reviewData.result,
-        followUpCompletedAt: Timestamp.now()
       });
       setIsReviewOpen(false);
       setSelectedComplaint(null);
@@ -89,15 +86,7 @@ export default function FollowUp() {
   const handleManualAdd = async () => {
     setIsAddingManual(true);
     try {
-      await addDoc(collection(db, 'complaints'), {
-        ...manualCallData,
-        timestamp: Timestamp.now(),
-        needsFollowUp: true,
-        followUpStatus: 'pending',
-        employeeName: auth.currentUser?.displayName || 'نظام قديم',
-        employeeEmail: auth.currentUser?.email || '',
-        complaintStatus: 'تم الرد'
-      });
+      await addFollowUpManual(manualCallData);
       setIsAddModalOpen(false);
       setManualCallData({
         callerName: '',

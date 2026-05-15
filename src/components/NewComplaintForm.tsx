@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { GOVERNORATES_LIST, GOVERNORATES_ENTITIES, COMPLAINT_SUBJECTS, CABINET_CITIES_MAP } from '../constants';
-import { addComplaint } from '../services/dataService';
+import { addComplaint, checkAndAddFollowUp } from '../services/dataService';
 import { User, MapPin, Phone, Building2, AlertCircle, PenTool, CheckCircle2, Timer, Save, Loader2, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import SearchableSelect from './ui/SearchableSelect';
@@ -39,24 +39,26 @@ export default function NewComplaintForm() {
     
     setIsSubmitting(true);
     try {
-      // 5% automatic selection logic for QA/Follow-up
-      const isSelectedForFollowUp = Math.random() < 0.05;
-
       const submissionData: any = {
         ...formData,
         isEmergency,
         isCabinetComplaint: isCabinet,
-        needsFollowUp: isSelectedForFollowUp,
-        followUpStatus: isSelectedForFollowUp ? 'pending' : null
       };
       
       if (isEmergency) {
         submissionData.hospitalType = hospitalType;
       }
       
-      await addComplaint(submissionData);
+      // Save to main complaints collection
+      const docId = await addComplaint(submissionData);
+
+      // Trigger automatic follow-up check (5% selection)
+      if (docId) {
+        await checkAndAddFollowUp(docId, submissionData);
+      }
       
-      // Auto-reset and scroll to top as requested
+      setSuccess(true);
+      // Auto-reset and scroll to top
       resetForm();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err: any) {

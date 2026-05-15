@@ -63,5 +63,14 @@ service cloud.firestore {
       allow create: if isSignedIn();
       allow update: if isSignedIn() && resource.data.userEmail == request.auth.token.email;
     }
+
+    // Follow-up Collections
+    match /followUpPending/{id} {
+      allow read, create, update, delete: if isSignedIn();
+    }
+    match /followUpCompleted/{id} {
+      allow read, create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
   }
 }

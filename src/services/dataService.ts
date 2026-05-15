@@ -209,6 +209,61 @@ export async function addComplaint(complaint: Partial<Complaint>, file?: File) {
   }
 }
 
+export async function reviewFollowUp(pendingId: string, reviewData: any) {
+  try {
+    const pendingRef = doc(db, 'followUpPending', pendingId);
+    const pendingSnap = await getDoc(pendingRef);
+    
+    if (!pendingSnap.exists()) throw new Error("Document not found");
+    const data = pendingSnap.data();
+
+    await addDoc(collection(db, 'followUpCompleted'), sanitize({
+      ...data,
+      ...reviewData,
+      followUpStatus: 'completed',
+      followUpCompletedAt: serverTimestamp(),
+    }));
+
+    await deleteDoc(pendingRef);
+  } catch (e) {
+    handleFirestoreError(e, OperationType.UPDATE, `followUpPending/${pendingId}`);
+  }
+}
+
+export async function checkAndAddFollowUp(complaintId: string, data: any) {
+  const isExcluded = data.complaintEntity === 'عدم اختصاص' || data.complaintSubject === 'عدم اختصاص';
+  const isSelected = !isExcluded && Math.random() < 0.05;
+
+  if (isSelected) {
+    const user = auth.currentUser;
+    await addDoc(collection(db, 'followUpPending'), sanitize({
+      ...data,
+      originalDocId: complaintId,
+      followUpStatus: 'pending',
+      timestamp: serverTimestamp(),
+      employeeName: user?.displayName || 'نظام',
+      employeeEmail: user?.email || '',
+    }));
+  }
+}
+
+export async function addFollowUpManual(data: any) {
+  try {
+    const user = auth.currentUser;
+    const docData = sanitize({
+      ...data,
+      timestamp: serverTimestamp(),
+      followUpStatus: 'pending',
+      employeeName: user?.displayName || 'نظام',
+      employeeEmail: user?.email || '',
+      complaintStatus: 'تم الرد'
+    });
+    await addDoc(collection(db, 'followUpPending'), docData);
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, 'followUpPending');
+  }
+}
+
 export async function searchComplaints(params: { date?: string, phoneNumber?: string, callerName?: string }) {
   try {
     const colRef = collection(db, 'complaints');

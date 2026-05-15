@@ -161,6 +161,8 @@
     "faq": { "schema": "FAQ", "description": "FAQ database" },
     "user_permissions": { "schema": "UserPermission", "description": "User role management" },
     "phonebook": { "schema": "PhonebookEntry", "description": "Staff and entity phone directory" },
-    "hotline_tree": { "schema": "HotlineTreeEntry", "description": "Hotline routing tree" }
+    "hotline_tree": { "schema": "HotlineTreeEntry", "description": "Hotline routing tree" },
+    "followUpPending": { "schema": "Complaint", "description": "Complaints selected for follow-up review" },
+    "followUpCompleted": { "schema": "Complaint", "description": "Complaints that have completed follow-up review" }
   }
 }
