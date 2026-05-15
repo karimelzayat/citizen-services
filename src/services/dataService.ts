@@ -676,6 +676,99 @@ export async function getUserRanking() {
   }
 }
 
+export async function getDailyRanking() {
+  try {
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+
+    // Get Schedule for today to identify shift employees
+    const currentMonthYear = now.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+    const dayNum = String(now.getDate());
+    
+    const qSched = query(collection(db, 'schedules'), where('monthYear', '==', currentMonthYear), where('date', '==', dayNum));
+    const schedSnap = await getDocs(qSched);
+    
+    let shiftEmployees: string[] = [];
+    if (!schedSnap.empty) {
+      const data = schedSnap.docs[0].data();
+      const fields = ['shift24', 'shift36', 'cabinet1', 'cabinet2', 'cabinet3', 'careMorning', 'careNight'];
+      fields.forEach(f => {
+        if (data[f]) {
+          const names = data[f].split(/[-،,]/).map((s: string) => s.trim()).filter(Boolean);
+          shiftEmployees.push(...names);
+        }
+      });
+    }
+
+    // Get complaints for today
+    const q = query(
+      collection(db, 'complaints'),
+      where('timestamp', '>=', Timestamp.fromDate(startOfDay)),
+      where('timestamp', '<=', Timestamp.fromDate(endOfDay))
+    );
+    const snapshot = await getDocs(q);
+    const counts: Record<string, number> = {};
+    
+    snapshot.docs.forEach(doc => {
+      const name = doc.data().employeeName;
+      if (name) {
+        counts[name] = (counts[name] || 0) + 1;
+      }
+    });
+
+    let results = Object.entries(counts)
+      .map(([name, count]) => ({ name, calls: count }));
+
+    // Only filter if we actually have a schedule for today
+    if (shiftEmployees.length > 0) {
+       results = results.filter(r => {
+         return shiftEmployees.some(se => {
+           const n1 = r.name.replace(/[أإآ]/g, 'ا').replace(/[ة]/g, 'ه').replace(/[ى]/g, 'ي');
+           const n2 = se.replace(/[أإآ]/g, 'ا').replace(/[ة]/g, 'ه').replace(/[ى]/g, 'ي');
+           return n1.includes(n2) || n2.includes(n1);
+         });
+       });
+    }
+
+    return results
+      .sort((a, b) => b.calls - a.calls)
+      .map((user, idx) => ({ ...user, rank: idx + 1 }));
+  } catch (e) {
+    console.error("Daily ranking error:", e);
+    return [];
+  }
+}
+
+export async function getMonthlyRanking() {
+  try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    const q = query(
+      collection(db, 'complaints'),
+      where('timestamp', '>=', Timestamp.fromDate(startOfMonth))
+    );
+    const snapshot = await getDocs(q);
+    const counts: Record<string, number> = {};
+    
+    snapshot.docs.forEach(doc => {
+      const name = doc.data().employeeName;
+      if (name) {
+        counts[name] = (counts[name] || 0) + 1;
+      }
+    });
+
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, calls: count }))
+      .sort((a, b) => b.calls - a.calls)
+      .map((user, idx) => ({ ...user, rank: idx + 1 }));
+  } catch (e) {
+    console.error("Monthly ranking error:", e);
+    return [];
+  }
+}
+
 // Dashboard Stats
 // User Management
 export async function getAllUsers() {
