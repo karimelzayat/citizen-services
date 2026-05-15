@@ -22,7 +22,7 @@ export default function PhonebookModal({ isOpen, onClose }: { isOpen: boolean, o
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[10000] grid place-items-center p-4">
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -34,7 +34,7 @@ export default function PhonebookModal({ isOpen, onClose }: { isOpen: boolean, o
         initial={{ scale: 0.95, opacity: 0, y: 10 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.95, opacity: 0, y: 10 }}
-        className="relative bg-white dark:bg-slate-900 shadow-2xl rounded-[32px] border border-slate-100 dark:border-white/5 p-0 flex flex-col h-[80vh] max-h-[800px] overflow-hidden max-w-4xl w-full" 
+        className="relative bg-white dark:bg-slate-900 shadow-2xl rounded-[32px] border border-slate-100 dark:border-white/5 p-0 flex flex-col w-full max-w-4xl h-[85vh] max-h-[800px] overflow-hidden" 
         onClick={e => e.stopPropagation()}
       >
         <div className="p-6 border-b border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-900/50 flex items-center justify-between">

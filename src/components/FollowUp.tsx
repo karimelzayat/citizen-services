@@ -445,7 +445,7 @@ export default function FollowUp() {
       {/* Review Modal */}
       <AnimatePresence>
         {isReviewOpen && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[10000] grid place-items-center p-4">
             <motion.div 
                initial={{ opacity: 0 }}
                animate={{ opacity: 1 }}
@@ -457,7 +457,7 @@ export default function FollowUp() {
                initial={{ scale: 0.95, opacity: 0, y: 10 }}
                animate={{ scale: 1, opacity: 1, y: 0 }}
                exit={{ scale: 0.95, opacity: 0, y: 10 }}
-               className="relative bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col h-[80vh] max-h-[800px]"
+               className="relative bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col h-[90vh] max-h-[850px]"
             >
                <div className="p-8 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
                   <h3 className="text-2xl font-black text-slate-900 dark:text-white">مراجعة بيانات المكالمة</h3>
@@ -541,7 +541,7 @@ export default function FollowUp() {
       {/* Upload Modal */}
       <AnimatePresence>
         {isUploadModalOpen && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[10000] grid place-items-center p-4">
             <motion.div 
                initial={{ opacity: 0 }}
                animate={{ opacity: 1 }}
@@ -553,7 +553,7 @@ export default function FollowUp() {
                initial={{ scale: 0.95, opacity: 0, y: 10 }}
                animate={{ scale: 1, opacity: 1, y: 0 }}
                exit={{ scale: 0.95, opacity: 0, y: 10 }}
-               className="relative bg-white dark:bg-slate-900 w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden p-10 space-y-8 h-[70vh] max-h-[600px] flex flex-col"
+               className="relative bg-white dark:bg-slate-900 w-full max-w-xl rounded-[40px] shadow-2xl overflow-hidden p-10 space-y-8 h-[80vh] max-h-[600px] flex flex-col"
             >
                <div className="flex items-center justify-between">
                   <h3 className="text-2xl font-black text-slate-900 dark:text-white">رفع سجلات النظام القديم</h3>
