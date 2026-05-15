@@ -322,7 +322,14 @@ export default function App() {
                   else if (tab === 'phonebookButton') setIsPhonebookModalOpen(true);
                   else if (tab === 'rankingButton') setIsRankingModalOpen(true);
                   else if (tab === 'treeButton') setIsHotlineTreeOpen(true);
-                  else setActiveTab(tab);
+                  else {
+                    setActiveTab(tab);
+                    // Scroll to top smoothly when switching tabs
+                    const mainElement = document.querySelector('main');
+                    if (mainElement) {
+                      mainElement.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }
                   setIsMobileMenuOpen(false);
                 }}
                 permissions={permissions}
@@ -334,7 +341,12 @@ export default function App() {
             ) : (
               <AdminSidebar
                 activeSubTab={viewMode === ViewMode.Admin ? adminSubTab : 'userManagement'}
-                onSubTabChange={(t) => { setAdminSubTab(t); setIsMobileMenuOpen(false); }}
+                onSubTabChange={(t) => { 
+                  setAdminSubTab(t); 
+                  const mainElement = document.querySelector('main');
+                  if (mainElement) mainElement.scrollTo({ top: 0, behavior: 'smooth' });
+                  setIsMobileMenuOpen(false); 
+                }}
                 onReturnHome={() => setViewMode(ViewMode.Landing)}
                 onLogout={handleLogout}
                 permissions={permissions}

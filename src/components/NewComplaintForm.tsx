@@ -47,6 +47,14 @@ export default function NewComplaintForm({ permissions }: { permissions: UserPer
       
       toast.success('تم تسجيل المكالمة وحفظ البيانات بنجاح');
       resetForm();
+      
+      // Scroll to top smoothly
+      const mainElement = document.querySelector('main');
+      if (mainElement) {
+        mainElement.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     } catch (err: any) {
       toast.error('خطأ أثناء الحفظ: ' + err.message);
     } finally {
