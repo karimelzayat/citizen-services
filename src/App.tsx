@@ -294,7 +294,7 @@ export default function App() {
   }
 
   return (
-    <div className={`flex min-h-screen transition-all duration-700 ${isDarkMode ? 'dark bg-slate-950' : 'bg-white'}`}>
+    <div className={`flex h-screen overflow-hidden transition-all duration-700 ${isDarkMode ? 'dark bg-slate-950' : 'bg-white'}`}>
       {/* Mobile Overlay */}
       {isMobileMenuOpen && (
         <div
@@ -346,7 +346,7 @@ export default function App() {
         </div>
       )}
 
-      <main className={`flex-1 flex flex-col min-w-0 transition-all duration-700 bg-slate-50 dark:bg-slate-950 ${viewMode !== ViewMode.Landing ? (isSidebarCollapsed ? 'lg:mr-20' : 'lg:mr-[360px]') : ''}`}>
+      <main className={`flex-1 flex flex-col min-w-0 transition-all duration-700 bg-slate-50 dark:bg-slate-950 overflow-y-auto ${viewMode !== ViewMode.Landing ? (isSidebarCollapsed ? 'lg:mr-20' : 'lg:mr-[360px]') : ''}`}>
         {/* Top Header / Welcome Bar */}
         <header className="h-20 flex items-center justify-between px-6 md:px-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border-b border-slate-200/60 dark:border-white/5 sticky top-0 z-40 transition-all duration-700">
           <div className="flex items-center gap-4">
