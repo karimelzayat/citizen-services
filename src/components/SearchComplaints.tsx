@@ -182,8 +182,7 @@ export default function SearchComplaints() {
                     <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">المتصل</th>
                     <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">التليفون</th>
                     <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">المحافظة</th>
-                    <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">الحالة</th>
-                    <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest text-center">الإجراء</th>
+                    <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">الموظف</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-white/5">
@@ -223,14 +222,9 @@ export default function SearchComplaints() {
                          <span className="px-3 py-1 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-[10px] font-black border border-slate-100 dark:border-white/5 uppercase tracking-widest">{c.governorate}</span>
                       </td>
                       <td className="px-6 py-4">
-                         <span className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest transition-all duration-500 shadow-sm ${c.complaintStatus === 'تم الرد' ? 'bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30' : 'bg-amber-50 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-100 dark:border-amber-900/30'}`}>
-                           {c.complaintStatus}
+                         <span className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-tight">
+                           {c.employeeName}
                          </span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                         <div className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-300 dark:text-slate-700 bg-slate-50 dark:bg-slate-800 group-hover:bg-blue-600 group-hover:text-white group-hover:scale-110 shadow-sm transition-all mx-auto">
-                            <ChevronRight className="w-5 h-5" />
-                         </div>
                       </td>
                     </motion.tr>
                   ))}
