@@ -218,7 +218,7 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
                <button 
                   type="submit" 
                   disabled={isSubmitting || workTypes.length === 0}
-                  className="btn-primary min-w-[280px] h-14 flex items-center justify-center gap-3 shadow-blue-500/30"
+                  className="btn-primary min-w-[280px] flex items-center justify-center gap-3 shadow-blue-500/30"
                >
                   {isSubmitting ? (
                     <>
@@ -271,7 +271,7 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
                  </div>
               </div>
               <div className="mt-8">
-                 <button className="btn-primary w-full md:w-auto md:px-12 h-14 flex items-center justify-center gap-2">
+                 <button className="btn-primary w-full md:w-auto md:px-12 flex items-center justify-center gap-2">
                     <Search className="w-5 h-5" />
                     <span>البحث في السجلات</span>
                  </button>

@@ -112,7 +112,7 @@ export default function NewComplaintForm({ permissions }: { permissions: UserPer
                 <label className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest leading-none block mb-1">الاسم بالكامل</label>
                 <div className="relative">
                    <User className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                   <input type="text" name="callerName" required value={formData.callerName} onChange={handleInputChange} className="form-input pr-10 h-14" placeholder="أدخل اسم المتصل" />
+                   <input type="text" name="callerName" required value={formData.callerName} onChange={handleInputChange} className="form-input pr-10" placeholder="أدخل اسم المتصل" />
                 </div>
               </div>
 
@@ -131,7 +131,7 @@ export default function NewComplaintForm({ permissions }: { permissions: UserPer
                 <label className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest leading-none block mb-1">رقم الهاتف </label>
                 <div className="relative">
                    <Phone className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-                   <input type="tel" name="phoneNumber" required pattern="[0-9]{11}" placeholder="01xxxxxxxxx" value={formData.phoneNumber} onChange={handleInputChange} className="form-input pr-10 font-mono h-14" />
+                   <input type="tel" name="phoneNumber" required pattern="[0-9]{11}" placeholder="01xxxxxxxxx" value={formData.phoneNumber} onChange={handleInputChange} className="form-input pr-10 font-mono" />
                 </div>
               </div>
             </div>
@@ -203,7 +203,7 @@ export default function NewComplaintForm({ permissions }: { permissions: UserPer
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                        <label className="text-sm font-bold text-red-900 dark:text-red-200">الرقم القومي</label>
-                       <input type="text" name="cabinetNationalId" tabIndex={-1} maxLength={14} placeholder="14 رقم" value={formData.cabinetNationalId} onChange={handleInputChange} className="form-input border-red-100 dark:border-red-900/30 bg-white/80 dark:bg-slate-900/50 font-mono tracking-widest h-14" />
+                       <input type="text" name="cabinetNationalId" tabIndex={-1} maxLength={14} placeholder="14 رقم" value={formData.cabinetNationalId} onChange={handleInputChange} className="form-input border-red-100 dark:border-red-900/30 bg-white/80 dark:bg-slate-900/50 font-mono tracking-widest" />
                     </div>
                     <div className="space-y-2">
                        <label className="text-sm font-bold text-red-900 dark:text-red-200">المركز / المدينة</label>
@@ -218,7 +218,7 @@ export default function NewComplaintForm({ permissions }: { permissions: UserPer
                     </div>
                     <div className="space-y-2 col-span-full">
                        <label className="text-sm font-bold text-red-900 dark:text-red-200">موضوع الشكوى (موجز)</label>
-                       <input type="text" name="cabinetSubject" tabIndex={-1} value={formData.cabinetSubject} onChange={handleInputChange} className="form-input border-red-100 dark:border-red-900/30 bg-white/80 dark:bg-slate-900/50 h-14" placeholder="عنوان الشكوى في منظومة المجلس" />
+                       <input type="text" name="cabinetSubject" tabIndex={-1} value={formData.cabinetSubject} onChange={handleInputChange} className="form-input border-red-100 dark:border-red-900/30 bg-white/80 dark:bg-slate-900/50" placeholder="عنوان الشكوى في منظومة المجلس" />
                     </div>
                   </div>
                 </div>

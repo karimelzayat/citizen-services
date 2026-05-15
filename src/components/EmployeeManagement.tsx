@@ -240,7 +240,7 @@ export default function EmployeeManagement() {
             <button 
               type="submit" 
               disabled={isSaving}
-              className="btn-primary px-8 h-12 flex items-center gap-3 shadow-blue-500/30"
+              className="btn-primary px-8 flex items-center gap-3 shadow-blue-500/30"
             >
               {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
               <span>حفظ البيانات والصلاحيات</span>

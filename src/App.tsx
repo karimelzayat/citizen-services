@@ -356,7 +356,7 @@ export default function App() {
             )}
           </div>
 
-          <main className={`flex-1 flex flex-col min-w-0 transition-colors duration-700 bg-slate-50 dark:bg-slate-950 overflow-y-auto ${isSidebarCollapsed ? 'lg:mr-20' : 'lg:mr-[360px]'}`}>
+          <main className={`flex-1 flex flex-col min-w-0 transition-all duration-500 ease-in-out bg-slate-50 dark:bg-slate-950 overflow-y-auto ${isSidebarCollapsed ? 'lg:mr-20' : 'lg:mr-[360px]'}`}>
             <header className="h-20 flex items-center justify-between px-6 md:px-10 bg-white/80 dark:bg-slate-900/80 backdrop-blur-2xl border-b border-slate-200/60 dark:border-white/5 sticky top-0 z-40 transition-all duration-700">
               <div className="flex items-center gap-4">
                 <button
@@ -467,7 +467,7 @@ function AdminSidebar({ activeSubTab, onSubTabChange, onReturnHome, onLogout, pe
     <motion.div
       initial={false}
       animate={{ width: collapsed ? 80 : 360 }}
-      transition={{ duration: 0.7, ease: "easeInOut" }}
+      transition={{ duration: 0.5, ease: "easeInOut" }}
       className="bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 h-screen w-full lg:w-[360px] flex flex-col shadow-2xl z-50 overflow-hidden border-l border-slate-200 dark:border-white/5 font-bold transition-all duration-700"
     >
       <div className="h-16 flex items-center justify-between px-4 border-b border-slate-100 dark:border-white/5 bg-white dark:bg-slate-900 transition-all duration-700">
