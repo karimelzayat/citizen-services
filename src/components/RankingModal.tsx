@@ -19,7 +19,7 @@ export default function RankingModal({ isOpen, onClose }: { isOpen: boolean, onC
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4 md:p-6 sm:pt-[15vh]">
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -28,9 +28,9 @@ export default function RankingModal({ isOpen, onClose }: { isOpen: boolean, onC
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
       />
       <motion.div 
-        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        initial={{ scale: 0.95, opacity: 0, y: 10 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
-        exit={{ scale: 0.9, opacity: 0, y: 20 }}
+        exit={{ scale: 0.95, opacity: 0, y: 10 }}
         className="relative bg-white dark:bg-slate-900 shadow-2xl rounded-[32px] border border-slate-100 dark:border-white/5 max-w-md w-full flex flex-col overflow-hidden"
         onClick={e => e.stopPropagation()}
       >

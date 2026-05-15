@@ -74,7 +74,7 @@ export default function HotlineTreeModal({ isOpen, onClose }: { isOpen: boolean,
     : currentNodes;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4 md:p-6 sm:pt-[10vh]">
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -83,10 +83,10 @@ export default function HotlineTreeModal({ isOpen, onClose }: { isOpen: boolean,
         className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
       />
       <motion.div 
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="relative bg-white dark:bg-slate-900 shadow-2xl rounded-[32px] border border-slate-100 dark:border-white/5 max-w-3xl w-full h-[85vh] max-h-[800px] flex flex-col overflow-hidden"
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        className="relative bg-white dark:bg-slate-900 shadow-2xl rounded-[32px] border border-slate-100 dark:border-white/5 max-w-3xl w-full h-[80vh] max-h-[850px] flex flex-col overflow-hidden"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}

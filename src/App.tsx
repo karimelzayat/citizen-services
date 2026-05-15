@@ -483,10 +483,18 @@ export default function App() {
         </footer>
       </main>
 
-      <InquiryModal isOpen={isInquiryModalOpen} onClose={() => setIsInquiryModalOpen(false)} />
-      <PhonebookModal isOpen={isPhonebookModalOpen} onClose={() => setIsPhonebookModalOpen(false)} />
-      <HotlineTreeModal isOpen={isHotlineTreeOpen} onClose={() => setIsHotlineTreeOpen(false)} />
-      <RankingModal isOpen={isRankingModalOpen} onClose={() => setIsRankingModalOpen(false)} />
+      <AnimatePresence>
+        {isInquiryModalOpen && <InquiryModal isOpen={isInquiryModalOpen} onClose={() => setIsInquiryModalOpen(false)} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isPhonebookModalOpen && <PhonebookModal isOpen={isPhonebookModalOpen} onClose={() => setIsPhonebookModalOpen(false)} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isHotlineTreeOpen && <HotlineTreeModal isOpen={isHotlineTreeOpen} onClose={() => setIsHotlineTreeOpen(false)} />}
+      </AnimatePresence>
+      <AnimatePresence>
+        {isRankingModalOpen && <RankingModal isOpen={isRankingModalOpen} onClose={() => setIsRankingModalOpen(false)} />}
+      </AnimatePresence>
     </div>
   );
 }
