@@ -16,6 +16,11 @@ export default function FollowUp() {
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(true);
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
+
+  // Filtering & Pagination State
+  const [selectedMonth, setSelectedMonth] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
   
   // Review Modal State
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
@@ -53,6 +58,23 @@ export default function FollowUp() {
 
           // Map data based on user provided column structure
           const batchData = jsonData.slice(1).filter(row => row.length > 0).map(row => {
+            // Handle Excel date parsing
+            let timestampValue: Timestamp;
+            try {
+              if (row[0]) {
+                const date = new Date(row[0]);
+                if (!isNaN(date.getTime())) {
+                  timestampValue = Timestamp.fromDate(date);
+                } else {
+                  timestampValue = Timestamp.now();
+                }
+              } else {
+                timestampValue = Timestamp.now();
+              }
+            } catch {
+              timestampValue = Timestamp.now();
+            }
+
             return {
               callerName: String(row[1] || 'مجهول'),
               phoneNumber: String(row[2] || ''),
@@ -65,9 +87,9 @@ export default function FollowUp() {
               callDetails: String(row[9] || ''),
               followUpOfficer: String(row[19] || ''),
               followUpNotes: String(row[21] || ''),
-              followUpResult: String(row[21] || ''), // Using notes as result if not specified
+              followUpResult: String(row[18] || ''), // Mapping Review Status to followUpResult
               followUpStatus: uploadType,
-              timestamp: Timestamp.now(),
+              timestamp: timestampValue,
               isBulkUploaded: true
             };
           });
@@ -110,10 +132,34 @@ export default function FollowUp() {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
       setComplaints(data);
       setLoading(false);
+      setCurrentPage(1); // Reset to first page on tab or data change
     });
 
     return () => unsubscribe();
   }, [activeSubTab]);
+
+  // Filter complaints by month
+  const filteredComplaints = complaints.filter(c => {
+    if (selectedMonth === 'all') return true;
+    if (!(c.timestamp instanceof Timestamp)) return true;
+    const date = c.timestamp.toDate();
+    const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    return monthYear === selectedMonth;
+  });
+
+  // Unique months for filter dropdown
+  const availableMonths = Array.from(new Set(complaints.map(c => {
+    if (!(c.timestamp instanceof Timestamp)) return null;
+    const date = c.timestamp.toDate();
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  }).filter(Boolean))).sort().reverse() as string[];
+
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredComplaints.length / itemsPerPage);
+  const paginatedComplaints = filteredComplaints.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const handleReviewClick = (complaint: Complaint) => {
     setSelectedComplaint(complaint);
@@ -207,24 +253,44 @@ export default function FollowUp() {
         </div>
       </div>
 
-      <div className="flex justify-end mb-4 gap-3">
-        {complaints.some(c => (c as any).isBulkUploaded) && (
-          <button 
-            onClick={handleDeleteBulk}
-            disabled={isDeletingBulk}
-            className="flex items-center gap-2 px-6 py-3 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-2xl font-black text-sm border border-rose-100 dark:border-rose-800/30 hover:bg-rose-600 hover:text-white transition-all active:scale-95 disabled:opacity-50"
+      <div className="flex flex-col md:flex-row justify-between items-center mb-4 gap-3">
+        <div className="flex items-center gap-3">
+          <select 
+            value={selectedMonth}
+            onChange={(e) => {
+              setSelectedMonth(e.target.value);
+              setCurrentPage(1);
+            }}
+            className="px-4 py-2 bg-white dark:bg-slate-800 border-slate-200 dark:border-white/10 rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500 transition-all text-right"
           >
-            {isDeletingBulk ? <Loader2 className="w-5 h-5 animate-spin" /> : <XCircle className="w-5 h-5" />}
-            مسح البيانات المرفوعة
+            <option value="all">كل الشهور</option>
+            {availableMonths.map(m => (
+              <option key={m} value={m}>
+                {new Date(m).toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' })}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="flex gap-3">
+          {complaints.some(c => (c as any).isBulkUploaded) && (
+            <button 
+              onClick={handleDeleteBulk}
+              disabled={isDeletingBulk}
+              className="flex items-center gap-2 px-6 py-3 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-2xl font-black text-sm border border-rose-100 dark:border-rose-800/30 hover:bg-rose-600 hover:text-white transition-all active:scale-95 disabled:opacity-50"
+            >
+              {isDeletingBulk ? <Loader2 className="w-5 h-5 animate-spin" /> : <XCircle className="w-5 h-5" />}
+              مسح البيانات المرفوعة
+            </button>
+          )}
+          <button 
+            onClick={() => setIsUploadModalOpen(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-600/20 hover:bg-emerald-500 transition-all hover:scale-[1.02] active:scale-95"
+          >
+            <FileText className="w-5 h-5" />
+            رفع سجلات من النظام القديم
           </button>
-        )}
-        <button 
-          onClick={() => setIsUploadModalOpen(true)}
-          className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-600/20 hover:bg-emerald-500 transition-all hover:scale-[1.02] active:scale-95"
-        >
-          <FileText className="w-5 h-5" />
-          رفع سجلات من النظام القديم
-        </button>
+        </div>
       </div>
 
 
@@ -255,56 +321,91 @@ export default function FollowUp() {
                 <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
                 <p className="text-slate-500 font-bold">جاري تحميل المكالمات...</p>
               </div>
-            ) : complaints.length > 0 ? (
-              complaints.map((c, idx) => (
-                <motion.div
-                  key={c.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.1 }}
-                  className="bg-white dark:bg-slate-900/40 rounded-[28px] border border-slate-100 dark:border-white/5 p-8 shadow-sm hover:shadow-xl hover:scale-[1.002] transition-all duration-700 relative group overflow-hidden"
-                >
-                  <div className="absolute top-0 right-0 w-2 h-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  
-                  {/* Top Meta */}
-                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-slate-50 dark:border-white/5 pb-6">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
-                        <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+            ) : paginatedComplaints.length > 0 ? (
+              <>
+                {paginatedComplaints.map((c, idx) => (
+                  <motion.div
+                    key={c.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="bg-white dark:bg-slate-900/40 rounded-[28px] border border-slate-100 dark:border-white/5 p-8 shadow-sm hover:shadow-xl hover:scale-[1.002] transition-all duration-700 relative group overflow-hidden"
+                  >
+                    <div className="absolute top-0 right-0 w-2 h-full bg-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    
+                    {/* Top Meta */}
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-slate-50 dark:border-white/5 pb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 flex items-center justify-center">
+                          <CheckCircle2 className="w-6 h-6 text-emerald-500" />
+                        </div>
+                        <h4 className="text-xl font-black text-emerald-600 dark:text-emerald-400">مكالمة # {filteredComplaints.length - ((currentPage - 1) * itemsPerPage + idx)}</h4>
                       </div>
-                      <h4 className="text-xl font-black text-emerald-600 dark:text-emerald-400">مكالمة # {complaints.length - idx}</h4>
+                      <div className="flex items-center gap-2 text-sm font-bold text-slate-400 mt-2 md:mt-0">
+                        <span>{c.timestamp instanceof Timestamp ? c.timestamp.toDate().toLocaleString('ar-EG') : 'تاريخ غير معروف'}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2 text-sm font-bold text-slate-400 mt-2 md:mt-0">
-                      <span>{c.timestamp instanceof Timestamp ? c.timestamp.toDate().toLocaleString('ar-EG') : 'تاريخ غير معروف'}</span>
-                    </div>
-                  </div>
 
-                  {/* Info Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-12">
-                    <InfoRow label="اسم المتصل" value={c.callerName} icon={<User className="w-4 h-4" />} />
-                    <InfoRow label="رقم التليفون" value={c.phoneNumber} icon={<Phone className="w-4 h-4" />} />
-                    <InfoRow label="المحافظة" value={c.governorate} icon={<MapPin className="w-4 h-4" />} />
-                    <InfoRow label="جهة الشكوى" value={c.complaintEntity} icon={<AlertCircle className="w-4 h-4" />} />
-                    <InfoRow label="موضوع الشكوى" value={c.complaintSubject} icon={<AlertCircle className="w-4 h-4" />} />
-                    <div className="col-span-full">
-                      <InfoRow label="تفاصيل المكالمة" value={c.callDetails} isLong icon={<FileText className="w-4 h-4" />} />
+                    {/* Info Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-y-6 gap-x-12 text-right">
+                      <InfoRow label="اسم المتصل" value={c.callerName} icon={<User className="w-4 h-4" />} />
+                      <InfoRow label="رقم التليفون" value={c.phoneNumber} icon={<Phone className="w-4 h-4" />} />
+                      <InfoRow label="المحافظة" value={c.governorate} icon={<MapPin className="w-4 h-4" />} />
+                      <InfoRow label="جهة الشكوى" value={c.complaintEntity} icon={<AlertCircle className="w-4 h-4" />} />
+                      <InfoRow label="موضوع الشكوى" value={c.complaintSubject} icon={<AlertCircle className="w-4 h-4" />} />
+                      <InfoRow label="الموظف المسجل" value={c.employeeName} icon={<User className="w-4 h-4" />} />
+                      <div className="col-span-full">
+                        <InfoRow label="تفاصيل المكالمة" value={c.callDetails} isLong icon={<FileText className="w-4 h-4" />} />
+                      </div>
+                      <InfoRow label="حالة المراجعة النهائية" value={c.followUpResult || 'لم تحدد بعد'} status={c.followUpResult ? 'success' : 'default'} />
+                      <InfoRow label="الموظف المراجع" value={c.followUpOfficer || 'غير متوفر'} />
+                      <div className="col-span-full">
+                        <InfoRow label="ملاحظات المتابعة" value={c.followUpNotes || 'لا يوجد ملاحظات'} isLong />
+                      </div>
                     </div>
-                    <InfoRow label="حالة المتابعة النهائية" value={c.followUpResult || 'لم تحدد بعد'} status={c.followUpResult ? 'success' : 'default'} />
-                    <InfoRow label="ملاحظات المتابعة" value={c.followUpNotes || 'لا يوجد ملاحظات'} isLong />
-                  </div>
 
-                  {activeSubTab === 'pending' && (
-                    <div className="mt-8 pt-8 border-t border-slate-50 dark:border-white/5">
-                      <button 
-                        onClick={() => handleReviewClick(c)}
-                        className="px-8 py-3 bg-blue-600 text-white rounded-xl font-black text-sm shadow-xl shadow-blue-600/20 hover:bg-blue-500 transition-all active:scale-95"
+                    {activeSubTab === 'pending' && (
+                      <div className="mt-8 pt-8 border-t border-slate-50 dark:border-white/5">
+                        <button 
+                          onClick={() => handleReviewClick(c)}
+                          className="px-8 py-3 bg-blue-600 text-white rounded-xl font-black text-sm shadow-xl shadow-blue-600/20 hover:bg-blue-500 transition-all active:scale-95"
+                        >
+                          مراجعة المكالمة
+                        </button>
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-10">
+                    <button 
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-white/5 text-slate-600 dark:text-slate-400 font-bold disabled:opacity-50 hover:bg-slate-50 transition-all"
+                    >
+                      السابق
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`w-10 h-10 rounded-xl font-bold transition-all ${currentPage === page ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20' : 'bg-white dark:bg-slate-800 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-100 dark:border-white/5'}`}
                       >
-                        مراجعة المكالمة
+                        {page}
                       </button>
-                    </div>
-                  )}
-                </motion.div>
-              ))
+                    ))}
+                    <button 
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-100 dark:border-white/5 text-slate-600 dark:text-slate-400 font-bold disabled:opacity-50 hover:bg-slate-50 transition-all"
+                    >
+                      التالي
+                    </button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-20 bg-slate-50 dark:bg-slate-800/30 rounded-[32px] border-2 border-dashed border-slate-100 dark:border-white/5 space-y-4">
                 <p className="text-xl font-black text-slate-400">لا توجد سجلات حالياً</p>

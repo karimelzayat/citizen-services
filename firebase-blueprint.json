@@ -27,7 +27,10 @@
         "cabinetId": { "type": "string" },
         "cabinetNumber": { "type": "string" },
         "nationalId": { "type": "string" },
-        "city": { "type": "string" }
+        "city": { "type": "string" },
+        "followUpOfficer": { "type": "string" },
+        "followUpResult": { "type": "string" },
+        "isBulkUploaded": { "type": "boolean" }
       }
     },
     "AdminComplaint": {
