@@ -46,6 +46,7 @@ export default function NewComplaintForm({ permissions }: { permissions: UserPer
       }
       
       toast.success('تم تسجيل المكالمة وحفظ البيانات بنجاح');
+      window.dispatchEvent(new CustomEvent('complaintAdded'));
       resetForm();
       
       // Scroll to top smoothly

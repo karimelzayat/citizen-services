@@ -14,7 +14,8 @@ import {
   onSnapshot,
   setDoc,
   getDoc,
-  writeBatch
+  writeBatch,
+  getCountFromServer
 } from 'firebase/firestore';
 import { db, auth, storage } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -115,7 +116,7 @@ export async function getAllEmployees(): Promise<Employee[]> {
       const newSnapshot = await getDocs(collection(db, 'employees'));
       return newSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
     }
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as object) } as Employee));
   } catch (e) {
     handleFirestoreError(e, OperationType.LIST, 'employees');
     return [];
@@ -406,6 +407,27 @@ export async function searchComplaints(params: { date?: string, phoneNumber?: st
   }
 }
 
+export async function getUserMonthlyCallCount(email: string) {
+  try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    
+    const q = query(
+      collection(db, 'complaints'),
+      where('employeeEmail', '==', email),
+      where('timestamp', '>=', Timestamp.fromDate(startOfMonth)),
+      where('timestamp', '<=', Timestamp.fromDate(endOfMonth))
+    );
+    
+    const snapshot = await getCountFromServer(q);
+    return snapshot.data().count;
+  } catch (e) {
+    console.error("Error fetching monthly call count", e);
+    return 0;
+  }
+}
+
 // Admin Work
 export async function addAdminComplaint(data: Partial<AdminComplaint>) {
   const user = auth.currentUser;
@@ -440,7 +462,7 @@ export async function searchAdminComplaints(params: { date?: string }) {
       q = query(colRef, orderBy('timestamp', 'desc'), limit(100));
     }
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as object) } as any));
   } catch (e) {
     console.error('[SearchAdmin] Error', e);
     return [];
@@ -473,7 +495,7 @@ export async function addDirectorCase(data: Partial<DirectorCase>, file?: File) 
 export function listenToDirectorCases(callback: (cases: DirectorCase[]) => void) {
   const q = query(collection(db, 'director_cases'), orderBy('timestamp', 'desc'));
   return onSnapshot(q, (snapshot) => {
-    const cases = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as DirectorCase));
+    const cases = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as object) } as DirectorCase));
     callback(cases);
   }, (error) => {
     handleFirestoreError(error, OperationType.LIST, 'director_cases');

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, User, signInWithPopup, GoogleAuthProvider, signOut } from 'firebase/auth';
 import { auth, isConfigured } from './lib/firebase';
-import { getUserPermissions } from './services/dataService';
+import { getUserPermissions, getUserMonthlyCallCount } from './services/dataService';
 import { UserPermissions } from './types';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
@@ -49,9 +49,30 @@ export default function App() {
   const [isRankingModalOpen, setIsRankingModalOpen] = useState(false);
   const [adminSubTab, setAdminSubTab] = useState('register');
   const [loading, setLoading] = useState(true);
+  const [monthlyCallCount, setMonthlyCallCount] = useState(0);
 
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+
+  const fetchMonthlyCount = async (email: string) => {
+    const count = await getUserMonthlyCallCount(email);
+    setMonthlyCallCount(count);
+  };
+
+  useEffect(() => {
+    if (user?.email) {
+      fetchMonthlyCount(user.email);
+    }
+    
+    const handleComplaintAdded = () => {
+      if (user?.email) {
+        fetchMonthlyCount(user.email);
+      }
+    };
+    
+    window.addEventListener('complaintAdded', handleComplaintAdded);
+    return () => window.removeEventListener('complaintAdded', handleComplaintAdded);
+  }, [user]);
 
   useEffect(() => {
     const handleSwitchTab = (e: any) => {
@@ -387,8 +408,8 @@ export default function App() {
               <div className="flex items-center gap-3 md:gap-6">
                 <div className="hidden sm:flex items-center gap-4 bg-slate-50 dark:bg-slate-800/40 px-5 py-2.5 rounded-2xl border border-slate-100 dark:border-white/5 shadow-sm">
                   <div className="flex flex-col items-end">
-                    <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-1">مكالماتك اليوم</span>
-                    <span className="text-base font-black text-blue-600 leading-none">42</span>
+                    <span className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-none mb-1">مكالماتك الشهر الحالي</span>
+                    <span className="text-base font-black text-blue-600 leading-none">{monthlyCallCount}</span>
                   </div>
                   <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/20">
                     <Hash className="w-5 h-5 text-white" />
