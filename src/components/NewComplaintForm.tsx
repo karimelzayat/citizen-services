@@ -280,41 +280,43 @@ export default function NewComplaintForm() {
         </div>
       </form>
 
-      <AnimatePresence>
-        {showSuccessModal && createPortal(
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowSuccessModal(false)}
-              className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
-            />
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative bg-white dark:bg-slate-900 shadow-2xl rounded-[40px] border border-slate-100 dark:border-white/5 p-12 max-w-sm w-full text-center space-y-6"
-              onClick={e => e.stopPropagation()}
-            >
-              <div className="w-20 h-20 bg-emerald-500 rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20">
-                <CheckCircle2 className="w-10 h-10 text-white" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white">تم التسجيل بنجاح!</h3>
-                <p className="text-slate-500 dark:text-slate-400 font-bold">تم حفظ بيانات المكالمة في سجلات المنظومة بنجاح.</p>
-              </div>
-              <button 
+      {createPortal(
+        <AnimatePresence>
+          {showSuccessModal && (
+            <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 onClick={() => setShowSuccessModal(false)}
-                className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black shadow-xl shadow-emerald-600/20 hover:bg-emerald-500 transition-all active:scale-95"
+                className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+              />
+              <motion.div 
+                initial={{ scale: 0.9, opacity: 0, y: 20 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.9, opacity: 0, y: 20 }}
+                className="relative bg-white dark:bg-slate-900 shadow-2xl rounded-[40px] border border-slate-100 dark:border-white/5 p-12 max-w-sm w-full text-center space-y-6"
+                onClick={e => e.stopPropagation()}
               >
-                حسناً، استمرار
-              </button>
-            </motion.div>
-          </div>,
-          document.body
-        )}
-      </AnimatePresence>
+                <div className="w-20 h-20 bg-emerald-500 rounded-3xl flex items-center justify-center mx-auto shadow-lg shadow-emerald-500/20">
+                  <CheckCircle2 className="w-10 h-10 text-white" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-black text-slate-900 dark:text-white">تم التسجيل بنجاح!</h3>
+                  <p className="text-slate-500 dark:text-slate-400 font-bold">تم حفظ بيانات المكالمة في سجلات المنظومة بنجاح.</p>
+                </div>
+                <button 
+                  onClick={() => setShowSuccessModal(false)}
+                  className="w-full py-4 bg-emerald-600 text-white rounded-2xl font-black shadow-xl shadow-emerald-600/20 hover:bg-emerald-500 transition-all active:scale-95"
+                >
+                  حسناً، استمرار
+                </button>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }
