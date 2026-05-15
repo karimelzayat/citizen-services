@@ -13,7 +13,8 @@ import {
   serverTimestamp,
   onSnapshot,
   setDoc,
-  getDoc
+  getDoc,
+  writeBatch
 } from 'firebase/firestore';
 import { db, auth, storage } from '../lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
