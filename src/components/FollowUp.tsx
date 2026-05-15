@@ -7,6 +7,8 @@ import { Clock, CheckCircle2, ChevronDown, User, Phone, MapPin, AlertCircle, Fil
 import { motion, AnimatePresence } from 'motion/react';
 import { reviewFollowUp, deleteBulkFollowUpData } from '../services/dataService';
 import ReviewModal from './ReviewModal';
+import { toast } from '../lib/toast';
+
 
 import * as XLSX from 'xlsx';
 
@@ -54,9 +56,10 @@ export default function FollowUp({ permissions }: { permissions: UserPermissions
           const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
           
           if (jsonData.length <= 1) {
-            alert('الملف فارغ أو لا يحتوي على بيانات');
+            toast.error('الملف فارغ أو لا يحتوي على بيانات');
             return;
           }
+
 
           // Map data based on user provided column structure
           const batchData = jsonData.slice(1).filter(row => row.length > 0).map(row => {
@@ -140,17 +143,18 @@ export default function FollowUp({ permissions }: { permissions: UserPermissions
             await Promise.all(chunk.map(item => addDoc(collection(db, collectionName), item)));
           }
           
-          alert(`تم رفع ${batchData.length} سجل بنجاح`);
+          toast.success(`تم رفع ${batchData.length} سجل بنجاح`);
           setIsUploadModalOpen(false);
         } catch (err: any) {
           console.error('Excel processing error:', err);
-          alert('خطأ في معالجة الملف: تأكد من صحة التنسيق');
+          toast.error('خطأ في معالجة الملف: تأكد من صحة التنسيق');
         }
       };
       reader.readAsArrayBuffer(file);
     } catch (err: any) {
-      alert('خطأ في قراءة الملف');
+      toast.error('خطأ في قراءة الملف');
     } finally {
+
       setUploadLoading(false);
       // Reset input
       e.target.value = '';
@@ -209,9 +213,10 @@ export default function FollowUp({ permissions }: { permissions: UserPermissions
   const handleSaveReview = async () => {
     if (!selectedComplaint?.id) return;
     if (!reviewData.result) {
-      alert('الرجاء تحديد موقف الشكوى (النهائي)');
+      toast.error('الرجاء تحديد موقف الشكوى (النهائي)');
       return;
     }
+
 
     setIsSavingReview(true);
     try {
@@ -222,9 +227,11 @@ export default function FollowUp({ permissions }: { permissions: UserPermissions
       });
       setIsReviewOpen(false);
       setSelectedComplaint(null);
+      toast.success('تم حفظ المراجعة بنجاح');
     } catch (err: any) {
-      alert('خطأ أثناء حفظ المراجعة: ' + err.message);
+      toast.error('خطأ أثناء حفظ المراجعة: ' + err.message);
     } finally {
+
       setIsSavingReview(false);
     }
   };
@@ -238,10 +245,11 @@ export default function FollowUp({ permissions }: { permissions: UserPermissions
     setIsDeletingBulk(true);
     try {
       const count = await deleteBulkFollowUpData(collectionName);
-      alert(`تم مسح ${count} سجل مرفوع بنجاح`);
+      toast.success(`تم مسح ${count} سجل مرفوع بنجاح`);
     } catch (err: any) {
-      alert('خطأ أثناء المسح: ' + err.message);
+      toast.error('خطأ أثناء المسح: ' + err.message);
     } finally {
+
       setIsDeletingBulk(false);
     }
   };

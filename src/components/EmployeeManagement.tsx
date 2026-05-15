@@ -7,6 +7,8 @@ import {
   FileText, HelpCircle, Contact, BookOpen, Settings, Hash
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from '../lib/toast';
+
 import { getAllEmployees, saveEmployee, deleteEmployee } from '../services/dataService';
 import { Employee, UserRole, UserCapabilities } from '../types';
 import { ROLE_CAPABILITIES, DEFAULT_CAPABILITIES } from '../constants';
@@ -66,8 +68,9 @@ export default function EmployeeManagement() {
       setIsFormOpen(false);
       setEditingEmployee(null);
       await fetchEmployees();
+      toast.success('تم حفظ بيانات الموظف بنجاح');
     } catch (error: any) {
-      alert('خطأ في الحفظ: ' + error.message);
+      toast.error('خطأ في الحفظ: ' + error.message);
     } finally {
       setIsSaving(false);
     }
@@ -78,9 +81,11 @@ export default function EmployeeManagement() {
     try {
       await deleteEmployee(id);
       await fetchEmployees();
+      toast.success('تم حذف الموظف بنجاح');
     } catch (e) {
-      alert('خطأ في الحذف');
+      toast.error('خطأ في الحذف');
     }
+
   };
 
   const togglePermission = (key: keyof UserCapabilities) => {

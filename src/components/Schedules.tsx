@@ -17,6 +17,8 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from '../lib/toast';
+
 
 import { UserPermissions } from '../types';
 
@@ -172,9 +174,10 @@ export default function Schedules({ permissions }: { permissions: UserPermission
       }).filter(Boolean);
 
       await bulkUploadSchedules(schedules as any[]);
-      alert(`تم رفع ${schedules.length} سجل بنجاح لشهر ${selectedMonth}`);
+      toast.success(`تم رفع ${schedules.length} سجل بنجاح لشهر ${selectedMonth}`);
       
       const updatedMonths = await getAvailableScheduleMonths();
+
       const sorted = updatedMonths.sort((a, b) => parseArabicMonth(a) - parseArabicMonth(b));
       setAvailableMonths(sorted);
       
@@ -182,8 +185,9 @@ export default function Schedules({ permissions }: { permissions: UserPermission
       setBulkData('');
     } catch (e) {
       console.error(e);
-      alert('خطأ أثناء الرفع');
+      toast.error('خطأ أثناء الرفع');
     } finally {
+
       setIsUploading(false);
     }
   };
@@ -193,8 +197,9 @@ export default function Schedules({ permissions }: { permissions: UserPermission
     setIsDeleting(true);
     try {
       await deleteSchedulesByMonth(selectedMonth);
-      alert('تم مسح بيانات الشهر بنجاح');
+      toast.success('تم مسح بيانات الشهر بنجاح');
       const updatedMonths = await getAvailableScheduleMonths();
+
       const sorted = updatedMonths.sort((a, b) => parseArabicMonth(a) - parseArabicMonth(b));
       setAvailableMonths(sorted);
       if (sorted.length > 0) {
@@ -204,8 +209,9 @@ export default function Schedules({ permissions }: { permissions: UserPermission
         setAvailableMonths([currentMonth]);
       }
     } catch (e) {
-      alert('خطأ أثناء المسح');
+      toast.error('خطأ أثناء المسح');
     } finally {
+
       setIsDeleting(false);
     }
   };

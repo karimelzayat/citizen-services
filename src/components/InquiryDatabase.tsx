@@ -3,6 +3,7 @@ import { addInquiry, listenToInquiries } from '../services/dataService';
 import { Inquiry } from '../types';
 import { MessageSquare, Send, Search, Reply, User, CheckCircle2, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from '../lib/toast';
 
 export default function InquiryDatabase() {
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
@@ -19,8 +20,9 @@ export default function InquiryDatabase() {
     try {
       await addInquiry(question);
       setQuestion('');
+      toast.success('تم إرسال استفسارك بنجاح');
     } catch (err: any) {
-      alert(err.message);
+      toast.error('خطأ: ' + err.message);
     }
   };
 

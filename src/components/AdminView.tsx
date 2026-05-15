@@ -4,6 +4,8 @@ import { GOVERNORATES_LIST } from '../constants';
 import { LayoutGrid, AlertTriangle, FileX, FileText, MapPin, Hash, CheckCircle2, Clock, Save, Search, Calendar, Info, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import SearchableSelect from './ui/SearchableSelect';
+import { toast } from '../lib/toast';
+
 
 import SearchComplaints from './SearchComplaints';
 import Reports from './Reports';
@@ -33,10 +35,10 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
     registrant: ''
   });
 
-  if (activeSubTab === 'search' || activeSubTab === 'adminSearch') return <SearchComplaints />;
-  if (activeSubTab === 'reports' || activeSubTab === 'reportsTab') return <Reports />;
-  if (activeSubTab === 'directorTab') return <DirectorAssignments />;
-  if (activeSubTab === 'schedulesTab') return <Schedules />;
+  if (activeSubTab === 'search' || activeSubTab === 'adminSearch') return <SearchComplaints permissions={permissions} />;
+  if (activeSubTab === 'reports' || activeSubTab === 'reportsTab') return <Reports permissions={permissions} />;
+  if (activeSubTab === 'directorTab') return <DirectorAssignments permissions={permissions} />;
+  if (activeSubTab === 'schedulesTab') return <Schedules permissions={permissions} />;
   if (activeSubTab === 'userManagement') return <SettingsView />;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -58,10 +60,11 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
         registrant: ''
       });
       window.scrollTo({ top: 0, behavior: 'smooth' });
-      
+      toast.success('تم حفظ البيانات بنجاح');
     } catch (err: any) {
-      alert('خطأ: ' + err.message);
+      toast.error('خطأ: ' + err.message);
     } finally {
+
       setIsSubmitting(false);
     }
   };

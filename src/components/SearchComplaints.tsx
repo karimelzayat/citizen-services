@@ -5,6 +5,7 @@ import { Complaint } from '../types';
 import { Search, Calendar as CalendarIcon, Phone, User, MapPin, Database, Filter, Layers, ChevronRight, Loader2, Info, X, Clock, FileText, Download, UserCheck, AlertCircle, Save } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ComplaintDetailsModal from './ComplaintDetailsModal';
+import { toast } from '../lib/toast';
 
 import { UserPermissions } from '../types';
 
@@ -45,7 +46,7 @@ export default function SearchComplaints({ permissions }: { permissions: UserPer
         setCallerName('');
       }
     } catch (err: any) {
-      alert('حدث خطأ أثناء البحث: ' + err.message);
+      toast.error('حدث خطأ أثناء البحث: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -70,9 +71,9 @@ export default function SearchComplaints({ permissions }: { permissions: UserPer
       setResults(prev => prev.map(c => c.id === selectedComplaint.id ? { ...c, ...editFormData } as Complaint : c));
       setSelectedComplaint(null);
       setIsEditing(false);
-      alert('تم تعديل البيانات بنجاح');
+      toast.success('تم تعديل البيانات بنجاح');
     } catch (err: any) {
-      alert('خطأ أثناء التعديل: ' + err.message);
+      toast.error('خطأ أثناء التعديل: ' + err.message);
     } finally {
       setLoading(false);
     }

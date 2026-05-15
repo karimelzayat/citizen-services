@@ -20,6 +20,8 @@ import PhonebookModal from './components/PhonebookModal';
 import InquiryModal from './components/InquiryModal';
 import HotlineTreeModal from './components/HotlineTreeModal';
 import RankingModal from './components/RankingModal';
+import { ToastContainer } from './components/ui/Toast';
+import { toast } from './lib/toast';
 import { Home, PlusCircle, Search, Settings, FileText, Bell, GitBranch, Trophy, Menu, X, LogOut, ChevronRight, Hash, Sun, Moon, Layers, Briefcase, Calendar, Users, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DEFAULT_CAPABILITIES } from './constants';
@@ -69,9 +71,10 @@ export default function App() {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
+      toast.success('تم تسجيل الدخول بنجاح');
     } catch (error: any) {
       console.error("Login failed", error);
-      alert("فشل تسجيل الدخول: " + error.message);
+      toast.error("فشل تسجيل الدخول: " + error.message);
     }
   };
 
@@ -170,6 +173,9 @@ export default function App() {
 
   return (
     <div className={`flex h-screen overflow-hidden transition-colors duration-700 ${isDarkMode ? 'dark bg-slate-950' : 'bg-white'}`} dir="rtl">
+      {/* Toast Messages */}
+      <ToastContainer />
+      
       {/* Portals for Modals */}
       <InquiryModal isOpen={isInquiryModalOpen} onClose={() => setIsInquiryModalOpen(false)} />
       <PhonebookModal isOpen={isPhonebookModalOpen} onClose={() => setIsPhonebookModalOpen(false)} />

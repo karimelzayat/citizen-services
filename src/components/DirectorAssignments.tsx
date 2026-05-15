@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { addDirectorCase, listenToDirectorCases } from '../services/dataService';
 import { DirectorCase } from '../types';
 import SearchableSelect from './ui/SearchableSelect';
+import { toast } from '../lib/toast';
+
 
 import { UserPermissions } from '../types';
 
@@ -23,11 +25,13 @@ export default function DirectorAssignments({ permissions }: { permissions: User
     e.preventDefault();
     try {
       await addDirectorCase(formData);
-      alert('تم التسجيل بنجاح!');
+      toast.success('تم التسجيل بنجاح!');
       setFormData({ source: 'واتساب المدير', caseName: '', phone: '', details: '' });
+
     } catch (err: any) {
-      alert('خطأ: ' + err.message);
+      toast.error('خطأ: ' + err.message);
     }
+
   };
 
   return (
