@@ -19,7 +19,7 @@ import SettingsView from './components/SettingsView';
 import PhonebookModal from './components/PhonebookModal';
 import InquiryModal from './components/InquiryModal';
 import HotlineTreeModal from './components/HotlineTreeModal';
-import RankingModal from './components/RankingModal';
+import RankingPopover from './components/RankingModal';
 import { ToastContainer } from './components/ui/Toast';
 import { toast } from './lib/toast';
 import { Home, PlusCircle, Search, Settings, FileText, Bell, GitBranch, Trophy, Menu, X, LogOut, ChevronRight, Hash, Sun, Moon, Layers, Briefcase, Calendar, Users, ShieldCheck } from 'lucide-react';
@@ -201,7 +201,6 @@ export default function App() {
       <InquiryModal isOpen={isInquiryModalOpen} onClose={() => setIsInquiryModalOpen(false)} />
       <PhonebookModal isOpen={isPhonebookModalOpen} onClose={() => setIsPhonebookModalOpen(false)} />
       <HotlineTreeModal isOpen={isHotlineTreeOpen} onClose={() => setIsHotlineTreeOpen(false)} />
-      <RankingModal isOpen={isRankingModalOpen} onClose={() => setIsRankingModalOpen(false)} />
 
       {viewMode === ViewMode.Landing ? (
         <div className="min-h-screen w-full bg-white dark:bg-slate-950 transition-colors duration-700 flex items-center justify-center p-6 relative overflow-hidden">
@@ -341,7 +340,7 @@ export default function App() {
                 onTabChange={(tab) => {
                   if (tab === 'inquiryButton') setIsInquiryModalOpen(true);
                   else if (tab === 'phonebookButton') setIsPhonebookModalOpen(true);
-                  else if (tab === 'rankingButton') setIsRankingModalOpen(true);
+                  else if (tab === 'rankingButton') {} // Hover handled in header
                   else if (tab === 'treeButton') setIsHotlineTreeOpen(true);
                   else {
                     setActiveTab(tab);
@@ -422,9 +421,16 @@ export default function App() {
                   <button onClick={() => setIsHotlineTreeOpen(true)} className="nav-tool-btn group" title="شجرة الخط الساخن">
                     <GitBranch className="w-4 h-4 text-slate-500 group-hover:text-blue-600 transition-colors" />
                   </button>
-                  <button onClick={() => setIsRankingModalOpen(true)} className="nav-tool-btn group" title="ترتيب الموظفين">
-                    <Trophy className="w-4 h-4 text-slate-500 group-hover:text-amber-500 transition-colors" />
-                  </button>
+                  <div 
+                    className="relative"
+                    onMouseEnter={() => setIsRankingModalOpen(true)}
+                    onMouseLeave={() => setIsRankingModalOpen(false)}
+                  >
+                    <button className="nav-tool-btn group" title="ترتيب الموظفين">
+                      <Trophy className="w-4 h-4 text-slate-500 group-hover:text-amber-500 transition-colors" />
+                    </button>
+                    <RankingPopover isOpen={isRankingModalOpen} />
+                  </div>
                   <button onClick={() => setIsInquiryModalOpen(true)} className="nav-tool-btn group" title="الاستفسارات">
                     <FileText className="w-4 h-4 text-slate-500 group-hover:text-blue-600 transition-colors" />
                   </button>
