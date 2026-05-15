@@ -19,7 +19,7 @@ export default function RankingModal({ isOpen, onClose }: { isOpen: boolean, onC
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-start justify-center p-4 md:p-6 sm:pt-[15vh]">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
       <motion.div 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
