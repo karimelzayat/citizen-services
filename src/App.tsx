@@ -127,6 +127,47 @@ export default function App() {
     return () => { document.body.style.overflow = 'unset'; };
   }, [isHotlineTreeOpen, isRankingModalOpen, isInquiryModalOpen, isPhonebookModalOpen]);
 
+  if (loading) {
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-white dark:bg-slate-950 text-blue-600 transition-colors duration-300">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-8 h-8 bg-blue-600/10 rounded-full animate-pulse"></div>
+          </div>
+        </div>
+        <span className="mt-6 font-bold text-lg tracking-wider animate-pulse">جاري التحقق من الصلاحيات...</span>
+        <button
+          onClick={handleLogin}
+          className="mt-8 px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all font-bold shadow-lg"
+        >
+          تسجيل الدخول يدوياً
+        </button>
+      </div>
+    );
+  }
+
+  const renderContent = () => {
+    return (
+      <div className="animate-fade-in">
+        {(() => {
+          switch (activeTab) {
+            case 'dashboard': return <Dashboard />;
+            case 'newComplaint': return <NewComplaintForm />;
+            case 'directorTab': return <DirectorAssignments />;
+            case 'searchComplaint': return <SearchComplaints />;
+            case 'followUp': return <FollowUp />;
+            case 'schedulesTab': return <Schedules />;
+            case 'reportsTab': return <Reports />;
+            case 'faqTab': return <FAQ />;
+            case 'settingsTab': return <SettingsView />;
+            default: return <Dashboard />;
+          }
+        })()}
+      </div>
+    );
+  };
+
   return (
     <div className={`flex h-screen overflow-hidden transition-colors duration-700 ${isDarkMode ? 'dark bg-slate-950' : 'bg-white'}`} dir="rtl">
       {/* Portals for Modals */}
