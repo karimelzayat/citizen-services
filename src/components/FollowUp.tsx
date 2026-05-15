@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { collection, query, where, orderBy, onSnapshot, doc, updateDoc, Timestamp, addDoc, getDoc } from 'firebase/firestore';
 import { db, auth } from '../lib/firebase';
 import { Complaint } from '../types';
@@ -444,7 +445,7 @@ export default function FollowUp() {
 
       {/* Review Modal */}
       <AnimatePresence>
-        {isReviewOpen && (
+        {isReviewOpen && createPortal(
           <div className="fixed inset-0 z-[10000] grid place-items-center p-4">
             <motion.div 
                initial={{ opacity: 0 }}
@@ -534,13 +535,14 @@ export default function FollowUp() {
                  </button>
                </div>
             </motion.div>
-          </div>
+          </div>,
+          document.body
         )}
       </AnimatePresence>
 
       {/* Upload Modal */}
       <AnimatePresence>
-        {isUploadModalOpen && (
+        {isUploadModalOpen && createPortal(
           <div className="fixed inset-0 z-[10000] grid place-items-center p-4">
             <motion.div 
                initial={{ opacity: 0 }}
@@ -602,7 +604,8 @@ export default function FollowUp() {
                  </div>
                )}
             </motion.div>
-          </div>
+          </div>,
+          document.body
         )}
       </AnimatePresence>
 

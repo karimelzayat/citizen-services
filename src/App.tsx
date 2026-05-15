@@ -445,7 +445,7 @@ export default function App() {
         {/* Content Area */}
         <div className="p-4 md:p-6 flex-1 bg-slate-50/50 dark:bg-transparent transition-colors duration-700">
           <div className="w-full max-w-[1700px] mx-auto flex flex-col xl:flex-row gap-6 px-4">
-            <div className="flex-1 min-w-0 bg-white dark:bg-slate-900/30 backdrop-blur-md rounded-[32px] p-6 md:p-8 transition-all duration-700 border border-slate-200/60 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none">
+            <div className="flex-1 min-w-0 bg-white dark:bg-slate-900/30 backdrop-blur-md rounded-[32px] p-6 md:p-8 transition-colors duration-700 border border-slate-200/60 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none">
               {viewMode === ViewMode.Hotline ? renderContent() : viewMode === ViewMode.Admin ? <AdminView activeSubTab={adminSubTab} permissions={permissions} /> : <SettingsView />}
             </div>
 

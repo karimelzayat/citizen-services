@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Trophy, Medal, Star, User, X, Hash } from 'lucide-react';
 import { motion } from 'motion/react';
 import { getUserRanking } from '../services/dataService';
@@ -18,7 +19,7 @@ export default function RankingModal({ isOpen, onClose }: { isOpen: boolean, onC
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[10000] grid place-items-center p-4">
       <motion.div 
         initial={{ opacity: 0 }}
@@ -63,7 +64,7 @@ export default function RankingModal({ isOpen, onClose }: { isOpen: boolean, onC
             >
               <div className="flex items-center gap-4">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center font-black text-sm shadow-sm ${idx === 0 ? 'bg-yellow-500 text-white' : idx === 1 ? 'bg-slate-400 text-white' : idx === 2 ? 'bg-orange-400 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'}`}>
-                  {user.rank}
+                   {user.rank}
                 </div>
                 <div>
                    <span className="text-sm font-black text-slate-900 dark:text-white block">{user.name}</span>
@@ -100,6 +101,7 @@ export default function RankingModal({ isOpen, onClose }: { isOpen: boolean, onC
            </div>
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 }

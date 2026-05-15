@@ -1,10 +1,11 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
 
 export default function InquiryModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[10000] grid place-items-center p-4">
       <motion.div 
         initial={{ opacity: 0 }}
@@ -52,6 +53,7 @@ export default function InquiryModal({ isOpen, onClose }: { isOpen: boolean, onC
            <p className="text-slate-500 dark:text-slate-400 font-bold text-lg">الرجاء اختيار فئة أو كتابة كلمة بحث لبدء التصفح</p>
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 }

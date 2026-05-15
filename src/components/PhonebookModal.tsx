@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'motion/react';
 import { searchPhonebook } from '../services/dataService';
 import { Phone, Search, Building2, MapPin } from 'lucide-react';
@@ -21,7 +22,7 @@ export default function PhonebookModal({ isOpen, onClose }: { isOpen: boolean, o
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[10000] grid place-items-center p-4">
       <motion.div 
         initial={{ opacity: 0 }}
@@ -116,6 +117,7 @@ export default function PhonebookModal({ isOpen, onClose }: { isOpen: boolean, o
            )}
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 }

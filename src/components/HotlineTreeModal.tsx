@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Search, ChevronRight, Hash, Phone, Building2, MapPin, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { getHotlineTree } from '../services/dataService';
@@ -46,9 +47,6 @@ export default function HotlineTreeModal({ isOpen, onClose }: { isOpen: boolean,
     if (isOpen) {
       getHotlineTree().then(data => {
         if (data && data.length > 0) {
-          // Reconstruct tree from flat data if parentId is used, 
-          // or just use as is if stored as nested objects. 
-          // For simplicity, we assume we might get some flat data or nested.
           setDbTree(data as any);
         }
         setLoading(false);
@@ -73,7 +71,7 @@ export default function HotlineTreeModal({ isOpen, onClose }: { isOpen: boolean,
       }, [])
     : currentNodes;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-[10000] grid place-items-center p-4">
       <motion.div 
         initial={{ opacity: 0 }}
@@ -198,6 +196,7 @@ export default function HotlineTreeModal({ isOpen, onClose }: { isOpen: boolean,
            <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-[0.2em]">Data Synchronized with Central Registry</p>
         </div>
       </motion.div>
-    </div>
+    </div>,
+    document.body
   );
 }

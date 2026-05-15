@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { GOVERNORATES_LIST, GOVERNORATES_ENTITIES, COMPLAINT_SUBJECTS, CABINET_CITIES_MAP } from '../constants';
 import { addComplaint, checkAndAddFollowUp } from '../services/dataService';
 import { User, MapPin, Phone, Building2, AlertCircle, PenTool, CheckCircle2, Timer, Save, Loader2, Info } from 'lucide-react';
@@ -308,8 +309,8 @@ export default function NewComplaintForm() {
       </form>
 
       <AnimatePresence>
-        {showSuccessModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        {showSuccessModal && createPortal(
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -338,7 +339,8 @@ export default function NewComplaintForm() {
                 حسناً، استمرار
               </button>
             </motion.div>
-          </div>
+          </div>,
+          document.body
         )}
       </AnimatePresence>
     </div>
