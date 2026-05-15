@@ -1,26 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { searchComplaints } from '../services/dataService';
+import { searchComplaints, searchAdminComplaints } from '../services/dataService';
 import { Complaint } from '../types';
-import { Search, Calendar as CalendarIcon, Phone, User, MapPin, Database, Filter, Layers, ChevronRight, Loader2, Info, X, Clock, FileText, Download, UserCheck, AlertCircle, Save } from 'lucide-react';
+import { Search, Calendar as CalendarIcon, Phone, User, MapPin, Database, Filter, Layers, ChevronRight, Loader2, Info, X, Clock, FileText, Download, UserCheck, AlertCircle, Save, Hash } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import ComplaintDetailsModal from './ComplaintDetailsModal';
 import { toast } from '../lib/toast';
 
 import { UserPermissions } from '../types';
 
-export default function SearchComplaints({ permissions }: { permissions: UserPermissions | null }) {
+export default function SearchComplaints({ permissions, mode = 'hotline' }: { permissions: UserPermissions | null, mode?: 'hotline' | 'admin' }) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [phone, setPhone] = useState('');
   const [callerName, setCallerName] = useState('');
-  const [results, setResults] = useState<Complaint[]>([]);
+  const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'duplicates'>('all');
-  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+  const [selectedComplaint, setSelectedComplaint] = useState<any | null>(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [editFormData, setEditFormData] = useState<Partial<Complaint>>({});
+  const [editFormData, setEditFormData] = useState<any>({});
 
-  const handleEditClick = (complaint: Complaint) => {
+  const handleEditClick = (complaint: any) => {
     setSelectedComplaint(complaint);
     setEditFormData({ ...complaint });
     setIsEditing(true);
@@ -28,17 +28,22 @@ export default function SearchComplaints({ permissions }: { permissions: UserPer
 
   useEffect(() => {
     handleSearch();
-  }, []);
+  }, [mode]);
 
   const handleSearch = async (overrideDate?: string) => {
     setLoading(true);
     try {
       const searchDate = overrideDate !== undefined ? overrideDate : date;
-      const data = await searchComplaints({ 
-        date: searchDate, 
-        phoneNumber: phone,
-        callerName: callerName 
-      });
+      let data;
+      if (mode === 'admin') {
+        data = await searchAdminComplaints({ date: searchDate });
+      } else {
+        data = await searchComplaints({ 
+          date: searchDate, 
+          phoneNumber: phone,
+          callerName: callerName 
+        });
+      }
       setResults(data);
       if (overrideDate !== undefined) {
         setDate(overrideDate);
@@ -117,21 +122,25 @@ export default function SearchComplaints({ permissions }: { permissions: UserPer
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="form-input" />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-2 uppercase tracking-widest leading-none block mb-1">
-               <Phone className="w-3.5 h-3.5 text-blue-600" />
-               رقم التليفون
-            </label>
-            <input type="tel" placeholder="01xxxxxxxxx" value={phone} onChange={(e) => setPhone(e.target.value)} className="form-input font-mono" />
-          </div>
+          {mode === 'hotline' && (
+            <>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-2 uppercase tracking-widest leading-none block mb-1">
+                   <Phone className="w-3.5 h-3.5 text-blue-600" />
+                   رقم التليفون
+                </label>
+                <input type="tel" placeholder="01xxxxxxxxx" value={phone} onChange={(e) => setPhone(e.target.value)} className="form-input font-mono" />
+              </div>
 
-          <div className="space-y-2">
-            <label className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-2 uppercase tracking-widest leading-none block mb-1">
-               <User className="w-3.5 h-3.5 text-blue-600" />
-               اسم المتصل
-            </label>
-            <input type="text" placeholder="اسم المتصل..." value={callerName} onChange={(e) => setCallerName(e.target.value)} className="form-input" />
-          </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-2 uppercase tracking-widest leading-none block mb-1">
+                   <User className="w-3.5 h-3.5 text-blue-600" />
+                   اسم المتصل
+                </label>
+                <input type="text" placeholder="اسم المتصل..." value={callerName} onChange={(e) => setCallerName(e.target.value)} className="form-input" />
+              </div>
+            </>
+          )}
 
          <button 
             onClick={() => handleSearch()} 
@@ -182,8 +191,17 @@ export default function SearchComplaints({ permissions }: { permissions: UserPer
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-white/5">
                     <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">التوقيت</th>
-                    <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">المتصل</th>
-                    <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">التليفون</th>
+                    {mode === 'hotline' ? (
+                      <>
+                        <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">المتصل</th>
+                        <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">التليفون</th>
+                      </>
+                    ) : (
+                      <>
+                        <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">رقم الشكوى</th>
+                        <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">نوع العمل</th>
+                      </>
+                    )}
                     <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">المحافظة</th>
                     <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">الموظف</th>
                   </tr>
@@ -212,15 +230,33 @@ export default function SearchComplaints({ permissions }: { permissions: UserPer
                             </span>
                          </div>
                       </td>
-                      <td className="px-6 py-4">
-                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-slate-800 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-xs shadow-sm border border-blue-100 dark:border-white/5">
-                               {c.callerName.charAt(0)}
+                      {mode === 'hotline' ? (
+                        <>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-slate-800 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-xs shadow-sm border border-blue-100 dark:border-white/5">
+                                  {c.callerName.charAt(0)}
+                                </div>
+                                <span className="font-black text-sm text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition-colors">{c.callerName}</span>
                             </div>
-                            <span className="font-black text-sm text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition-colors">{c.callerName}</span>
-                         </div>
-                      </td>
-                      <td className="px-6 py-4 text-xs font-mono tracking-widest text-slate-500 dark:text-slate-400">{c.phoneNumber}</td>
+                          </td>
+                          <td className="px-6 py-4 text-xs font-mono tracking-widest text-slate-500 dark:text-slate-400">{c.phoneNumber}</td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-amber-600 dark:text-amber-400 font-black text-xs shadow-sm border border-amber-100 dark:border-white/5">
+                                  <Hash className="w-4 h-4" />
+                                </div>
+                                <span className="font-black text-sm text-slate-900 dark:text-slate-100 group-hover:text-amber-600 transition-colors">{c.complaintNo}</span>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{c.workType}</span>
+                          </td>
+                        </>
+                      )}
                       <td className="px-6 py-4">
                          <span className="px-3 py-1 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-[10px] font-black border border-slate-100 dark:border-white/5 uppercase tracking-widest">{c.governorate}</span>
                       </td>

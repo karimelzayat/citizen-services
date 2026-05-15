@@ -424,6 +424,29 @@ export async function addAdminComplaint(data: Partial<AdminComplaint>) {
   }
 }
 
+export async function searchAdminComplaints(params: { date?: string }) {
+  try {
+    const colRef = collection(db, 'admin_complaints');
+    let q;
+    if (params.date) {
+      const start = new Date(params.date + 'T00:00:00');
+      const end = new Date(params.date + 'T23:59:59');
+      q = query(colRef, 
+        where('timestamp', '>=', Timestamp.fromDate(start)),
+        where('timestamp', '<=', Timestamp.fromDate(end)),
+        orderBy('timestamp', 'desc')
+      );
+    } else {
+      q = query(colRef, orderBy('timestamp', 'desc'), limit(100));
+    }
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+  } catch (e) {
+    console.error('[SearchAdmin] Error', e);
+    return [];
+  }
+}
+
 // Director Office
 export async function addDirectorCase(data: Partial<DirectorCase>, file?: File) {
   let attachmentUrl = "";

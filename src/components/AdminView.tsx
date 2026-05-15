@@ -35,7 +35,7 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
     registrant: ''
   });
 
-  if (activeSubTab === 'search' || activeSubTab === 'adminSearch') return <SearchComplaints permissions={permissions} />;
+  if (activeSubTab === 'search' || activeSubTab === 'adminSearch') return <SearchComplaints permissions={permissions} mode="admin" />;
   if (activeSubTab === 'reports' || activeSubTab === 'reportsTab') return <Reports permissions={permissions} />;
   if (activeSubTab === 'directorTab') return <DirectorAssignments permissions={permissions} />;
   if (activeSubTab === 'schedulesTab') return <Schedules permissions={permissions} />;
