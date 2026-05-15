@@ -6,7 +6,7 @@ import { Clock, CheckCircle2, ChevronDown, User, Phone, MapPin, AlertCircle, Fil
 import { motion, AnimatePresence } from 'motion/react';
 import SearchableSelect from './ui/SearchableSelect';
 import { GOVERNORATES_LIST, COMPLAINT_SUBJECTS } from '../constants';
-import { reviewFollowUp, addFollowUpManual } from '../services/dataService';
+import { reviewFollowUp, addFollowUpManual, deleteBulkFollowUpData } from '../services/dataService';
 
 import * as XLSX from 'xlsx';
 
@@ -15,6 +15,7 @@ export default function FollowUp() {
   const [complaints, setComplaints] = useState<Complaint[]>([]);
   const [loading, setLoading] = useState(true);
   const [isExpanded, setIsExpanded] = useState(true);
+  const [isDeletingBulk, setIsDeletingBulk] = useState(false);
   
   // Review Modal State
   const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
@@ -166,6 +167,23 @@ export default function FollowUp() {
     }
   };
 
+  const handleDeleteBulk = async () => {
+    const collectionName = activeSubTab === 'pending' ? 'followUpPending' : 'followUpCompleted';
+    const confirmMsg = activeSubTab === 'pending' ? 'هل أنت متأكد من مسح جميع السجلات المرفوعة (الجاري)؟ لا يمكن التراجع عن هذه الخطوة.' : 'هل أنت متأكد من مسح جميع السجلات المرفوعة (تم المتابعة)؟ لا يمكن التراجع عن هذه الخطوة.';
+    
+    if (!window.confirm(confirmMsg)) return;
+
+    setIsDeletingBulk(true);
+    try {
+      const count = await deleteBulkFollowUpData(collectionName);
+      alert(`تم مسح ${count} سجل مرفوع بنجاح`);
+    } catch (err: any) {
+      alert('خطأ أثناء المسح: ' + err.message);
+    } finally {
+      setIsDeletingBulk(false);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in pb-10">
       {/* Header Tabs */}
@@ -190,6 +208,16 @@ export default function FollowUp() {
       </div>
 
       <div className="flex justify-end mb-4 gap-3">
+        {complaints.some(c => (c as any).isBulkUploaded) && (
+          <button 
+            onClick={handleDeleteBulk}
+            disabled={isDeletingBulk}
+            className="flex items-center gap-2 px-6 py-3 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 rounded-2xl font-black text-sm border border-rose-100 dark:border-rose-800/30 hover:bg-rose-600 hover:text-white transition-all active:scale-95 disabled:opacity-50"
+          >
+            {isDeletingBulk ? <Loader2 className="w-5 h-5 animate-spin" /> : <XCircle className="w-5 h-5" />}
+            مسح البيانات المرفوعة
+          </button>
+        )}
         <button 
           onClick={() => setIsUploadModalOpen(true)}
           className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-600/20 hover:bg-emerald-500 transition-all hover:scale-[1.02] active:scale-95"

@@ -264,6 +264,24 @@ export async function addFollowUpManual(data: any) {
   }
 }
 
+export async function deleteBulkFollowUpData(collectionName: 'followUpPending' | 'followUpCompleted') {
+  try {
+    const q = query(collection(db, collectionName), where('isBulkUploaded', '==', true));
+    const snapshot = await getDocs(q);
+    
+    const batch = writeBatch(db);
+    snapshot.docs.forEach((d) => {
+      batch.delete(d.ref);
+    });
+    
+    await batch.commit();
+    return snapshot.size;
+  } catch (e) {
+    handleFirestoreError(e, OperationType.DELETE, collectionName);
+    throw e;
+  }
+}
+
 export async function searchComplaints(params: { date?: string, phoneNumber?: string, callerName?: string }) {
   try {
     const colRef = collection(db, 'complaints');
