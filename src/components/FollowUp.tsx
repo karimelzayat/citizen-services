@@ -434,7 +434,7 @@ export default function FollowUp() {
       {/* Review Modal */}
       <AnimatePresence>
         {isReviewOpen && createPortal(
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 md:p-8 overflow-hidden">
+          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 md:p-8 overflow-hidden RTL" dir="rtl">
             <motion.div 
                initial={{ opacity: 0 }}
                animate={{ opacity: 1 }}
@@ -447,10 +447,19 @@ export default function FollowUp() {
                animate={{ scale: 1, opacity: 1, y: 0 }}
                exit={{ scale: 0.95, opacity: 0, y: 20 }}
                className="relative bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[40px] shadow-2xl overflow-hidden flex flex-col h-full max-h-[85vh]"
+               onClick={e => e.stopPropagation()}
             >
-               <div className="p-8 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
-                  <h3 className="text-2xl font-black text-slate-900 dark:text-white">مراجعة بيانات المكالمة</h3>
-                  <button onClick={() => setIsReviewOpen(false)} className="w-12 h-12 flex items-center justify-center rounded-2xl hover:bg-white dark:hover:bg-slate-700 shadow-sm transition-all font-bold">
+               <div className="p-6 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/50 dark:bg-slate-800/50">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
+                      <Clock className="w-6 h-6" />
+                    </div>
+                    <div className="text-right">
+                      <h3 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight">مراجعة بيانات المكالمة</h3>
+                      <p className="text-[10px] text-slate-400 font-bold tracking-widest uppercase mt-0.5">ضمان جودة الخدمة المقدمة للمواطن</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setIsReviewOpen(false)} className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-all font-black">
                     <X className="w-6 h-6 text-slate-400" />
                   </button>
                </div>
@@ -476,7 +485,7 @@ export default function FollowUp() {
 
                   <div className="space-y-8">
                     <div className="space-y-4">
-                       <label className="text-sm font-black text-slate-700 dark:text-slate-300 block text-right">تحديد موقف الشكوى (النهائي):</label>
+                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block text-right pr-1">تحديد موقف الشكوى (النهائي):</label>
                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           {[
                             { id: 'مقبول', label: 'مقبول', icon: <CheckCircle2 className="w-5 h-5" />, active: 'bg-emerald-50 dark:bg-emerald-900/20 border-emerald-500 text-emerald-600 dark:text-emerald-400 shadow-lg shadow-emerald-500/10' },
@@ -500,12 +509,12 @@ export default function FollowUp() {
                     </div>
 
                     <div className="space-y-2">
-                       <label className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest block">ملاحظات المتابعة</label>
+                       <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest block pr-1">ملاحظات المتابعة والمراجعة</label>
                        <textarea 
                          rows={5}
                          value={reviewData.notes}
                          onChange={(e) => setReviewData({...reviewData, notes: e.target.value})}
-                         className="form-input min-h-[120px] resize-none text-slate-700 dark:text-slate-200" 
+                         className="form-input min-h-[120px] resize-none text-slate-700 dark:text-slate-200 bg-slate-50 dark:bg-slate-800/50" 
                          placeholder="اكتب أي ملاحظات إضافية ظهرت أثناء المتابعة..."
                        />
                     </div>
@@ -513,14 +522,14 @@ export default function FollowUp() {
                </div>
 
                <div className="p-8 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-white/5 flex justify-end">
-                 <button 
-                   onClick={handleSaveReview}
-                   disabled={isSavingReview}
-                   className="min-w-[200px] h-14 bg-emerald-600 text-white rounded-2xl font-black shadow-xl shadow-emerald-600/20 hover:bg-emerald-500 transition-all flex items-center justify-center gap-3 active:scale-95"
-                 >
-                   {isSavingReview ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                   حفظ المراجعة
-                 </button>
+                  <button 
+                    onClick={handleSaveReview}
+                    disabled={isSavingReview}
+                    className="min-w-[240px] h-14 bg-emerald-600 text-white rounded-2xl font-black shadow-xl shadow-emerald-600/20 hover:bg-emerald-500 transition-all flex items-center justify-center gap-3 active:scale-95 disabled:opacity-50"
+                  >
+                    {isSavingReview ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                    حفظ نتائج المراجعة
+                  </button>
                </div>
             </motion.div>
           </div>,
