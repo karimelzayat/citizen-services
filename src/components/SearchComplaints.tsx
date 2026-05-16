@@ -13,6 +13,7 @@ export default function SearchComplaints({ permissions, mode = 'hotline' }: { pe
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [phone, setPhone] = useState('');
   const [callerName, setCallerName] = useState('');
+  const [complaintNo, setComplaintNo] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'duplicates'>('all');
@@ -36,7 +37,9 @@ export default function SearchComplaints({ permissions, mode = 'hotline' }: { pe
       const searchDate = overrideDate !== undefined ? overrideDate : date;
       let data;
       if (mode === 'admin') {
-        data = await searchAdminComplaints({ date: searchDate });
+        data = await searchAdminComplaints({ date: searchDate, complaintNo: complaintNo });
+        // Filter for 'الجاري' if requested by user implicitly
+        data = data.filter((c: any) => c.workType === 'الجاري');
       } else {
         data = await searchComplaints({ 
           date: searchDate, 
@@ -49,6 +52,7 @@ export default function SearchComplaints({ permissions, mode = 'hotline' }: { pe
         setDate(overrideDate);
         setPhone('');
         setCallerName('');
+        setComplaintNo('');
       }
     } catch (err: any) {
       toast.error('حدث خطأ أثناء البحث: ' + err.message);
@@ -122,6 +126,16 @@ export default function SearchComplaints({ permissions, mode = 'hotline' }: { pe
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="form-input" />
           </div>
 
+          {mode === 'admin' && (
+            <div className="space-y-2">
+              <label className="text-xs font-black text-slate-700 dark:text-slate-200 flex items-center gap-2 uppercase tracking-widest leading-none block mb-1">
+                 <Hash className="w-3.5 h-3.5 text-blue-600" />
+                 رقم الشكوى
+              </label>
+              <input type="text" placeholder="0000000" value={complaintNo} onChange={(e) => setComplaintNo(e.target.value)} className="form-input font-mono" />
+            </div>
+          )}
+
           {mode === 'hotline' && (
             <>
               <div className="space-y-2">
@@ -148,7 +162,9 @@ export default function SearchComplaints({ permissions, mode = 'hotline' }: { pe
             className="btn-primary flex items-center justify-center gap-2"
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-            <span className="font-black uppercase tracking-widest">{phone || date || callerName ? 'بدأ البحث المتقدم' : 'تحديث البيانات'}</span>
+            <span className="font-black uppercase tracking-widest">
+              {phone || date || callerName || complaintNo ? 'بدأ البحث المتقدم' : 'تحديث البيانات'}
+            </span>
           </button>
         </div>
       </div>

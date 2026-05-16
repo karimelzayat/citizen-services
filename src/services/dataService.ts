@@ -510,11 +510,13 @@ export async function addAdminComplaint(data: Partial<AdminComplaint>) {
   }
 }
 
-export async function searchAdminComplaints(params: { date?: string }) {
+export async function searchAdminComplaints(params: { date?: string, complaintNo?: string }) {
   try {
     const colRef = collection(db, 'admin_complaints');
     let q;
-    if (params.date) {
+    if (params.complaintNo) {
+      q = query(colRef, where('complaintNo', '==', params.complaintNo.trim()));
+    } else if (params.date) {
       const start = new Date(params.date + 'T00:00:00');
       const end = new Date(params.date + 'T23:59:59');
       q = query(colRef, 
