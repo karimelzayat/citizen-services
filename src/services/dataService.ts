@@ -301,6 +301,64 @@ export async function deleteBulkFollowUpData(collectionName: 'followUpPending' |
   }
 }
 
+export async function bulkUploadInquiries(data: any[]) {
+  try {
+    const batch = writeBatch(db);
+    data.forEach(item => {
+      const docRef = doc(collection(db, 'inquiries'));
+      batch.set(docRef, sanitize({
+        ...item,
+        timestamp: serverTimestamp()
+      }));
+    });
+    await batch.commit();
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, 'inquiries');
+  }
+}
+
+export async function bulkUploadPhonebook(data: any[]) {
+  try {
+    const batch = writeBatch(db);
+    data.forEach(item => {
+      const docRef = doc(collection(db, 'phonebook'));
+      batch.set(docRef, sanitize(item));
+    });
+    await batch.commit();
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, 'phonebook');
+  }
+}
+
+export async function bulkUploadFAQs(data: any[]) {
+  try {
+    const batch = writeBatch(db);
+    data.forEach(item => {
+      const docRef = doc(collection(db, 'faq'));
+      batch.set(docRef, sanitize(item));
+    });
+    await batch.commit();
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, 'faq');
+  }
+}
+
+export async function bulkUploadAdminWork(data: any[]) {
+  try {
+    const batch = writeBatch(db);
+    data.forEach(item => {
+      const docRef = doc(collection(db, 'admin_complaints'));
+      batch.set(docRef, sanitize({
+        ...item,
+        timestamp: serverTimestamp()
+      }));
+    });
+    await batch.commit();
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, 'admin_complaints');
+  }
+}
+
 export async function searchComplaints(params: { date?: string, phoneNumber?: string, callerName?: string }) {
   try {
     const colRef = collection(db, 'complaints');

@@ -13,8 +13,59 @@ import SettingsView from './SettingsView';
 import DirectorAssignments from './DirectorAssignments';
 import Schedules from './Schedules';
 import { UserPermissions } from '../types';
+import * as XLSX from 'xlsx';
+import { bulkUploadAdminWork } from '../services/dataService';
 
 export default function AdminView({ activeSubTab, permissions }: { activeSubTab: string, permissions: UserPermissions | null }) {
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadWorkType, setUploadWorkType] = useState('الجاري');
+  const isAdmin = permissions?.role === 'Admin';
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadLoading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const data = new Uint8Array(event.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+          
+          if (jsonData.length <= 1) {
+            toast.error('الملف فارغ أو لا يحتوي على بيانات');
+            return;
+          }
+
+          const batchData = jsonData.slice(1).filter(row => row[0]).map(row => ({
+            complaintNo: String(row[0] || ''),
+            governorate: String(row[1] || ''),
+            status: String(row[2] || 'تم الرد'),
+            notes: String(row[3] || ''),
+            registrant: String(row[4] || ''),
+            workType: uploadWorkType,
+            employeeName: permissions?.employeeData?.name || 'نظام'
+          }));
+
+          await bulkUploadAdminWork(batchData);
+          toast.success(`تم رفع ${batchData.length} سجل (${uploadWorkType}) بنجاح`);
+          setIsUploadModalOpen(false);
+        } catch (err: any) {
+          toast.error('خطأ في معالجة الملف');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } catch (err: any) {
+      toast.error('خطأ في قراءة الملف');
+    } finally {
+      setUploadLoading(false);
+      e.target.value = '';
+    }
+  };
   const allWorkTypes = [
     { id: 'الجاري', icon: LayoutGrid, color: 'blue', label: 'الجاري', show: permissions?.canRegisterOngoing },
     { id: 'توجية خطأ', icon: AlertTriangle, color: 'amber', label: 'توجية خطأ', show: permissions?.canRegisterWrongDirection },
@@ -79,7 +130,77 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
               <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">تسجيل عمل الإدارة</h2>
               <p className="text-slate-500 dark:text-slate-400 text-[10px] font-medium">توثيق العمل اليومي ومتابعة الشكاوى الجارية</p>
             </div>
+            
+            {isAdmin && (
+              <button 
+                onClick={() => setIsUploadModalOpen(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-600/20 hover:bg-emerald-500 transition-all active:scale-95"
+              >
+                <FileText className="w-5 h-5" />
+                رفع داتا قديمة
+              </button>
+            )}
           </div>
+
+          <AnimatePresence>
+            {isUploadModalOpen && (
+              <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setIsUploadModalOpen(false)}
+                  className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+                />
+                <motion.div 
+                  initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                  className="relative bg-white dark:bg-slate-900 w-full max-w-xl rounded-[40px] shadow-2xl p-10 space-y-8"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">رفع داتا الإدارة</h3>
+                    <button onClick={() => setIsUploadModalOpen(false)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800 font-bold">
+                      <X className="w-5 h-5 text-slate-400" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300">1. اختر نوع العمل المراد رفعه:</label>
+                    <div className="grid grid-cols-1 gap-2">
+                      {['الجاري', 'توجية خطأ', 'شكاوي غير مسجلة'].map(type => (
+                        <button
+                          key={type}
+                          onClick={() => setUploadWorkType(type)}
+                          className={`p-4 rounded-2xl border-2 font-black transition-all text-right ${uploadWorkType === type ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-slate-50 border-transparent text-slate-400'}`}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-8 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-[32px] text-center space-y-4 hover:border-blue-500/50 transition-colors relative cursor-pointer group">
+                    <input 
+                      type="file" 
+                      accept=".xlsx,.xls"
+                      onChange={handleFileUpload}
+                      className="absolute inset-0 opacity-0 cursor-pointer"
+                      disabled={uploadLoading}
+                    />
+                    <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                      {uploadLoading ? <Loader2 className="w-8 h-8 text-blue-600 animate-spin" /> : <Plus className="w-8 h-8 text-blue-600" />}
+                    </div>
+                    <div className="space-y-1">
+                      <p className="font-black text-slate-700 dark:text-slate-200">اضغط لرفع ملف (Excel)</p>
+                      <p className="text-[10px] text-slate-400">ترتيب الأعمدة: رقم الشكوى، المحافظة، الحالة، الملاحظات، المسجل (للتوجيه الخطأ)</p>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/40 dark:shadow-none p-6 rounded-[24px] transition-all duration-700">

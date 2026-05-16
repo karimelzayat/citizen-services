@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'motion/react';
-import { searchPhonebook } from '../services/dataService';
-import { Phone, Search, Building2 } from 'lucide-react';
+import { searchPhonebook, bulkUploadPhonebook } from '../services/dataService';
+import { Phone, Search, Building2, FileText, Loader2 } from 'lucide-react';
 import SearchableSelect from './ui/SearchableSelect';
 import { GOVERNORATES_LIST } from '../constants';
+import * as XLSX from 'xlsx';
+import { toast } from '../lib/toast';
 
-export default function PhonebookModal({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) {
+export default function PhonebookModal({ isOpen, onClose, isAdmin }: { isOpen: boolean, onClose: () => void, isAdmin: boolean }) {
   const [entity, setEntity] = useState('');
   const [governorate, setGovernorate] = useState('');
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [uploadLoading, setUploadLoading] = useState(false);
 
   const handleSearch = async () => {
     if (!entity || !governorate) return;
@@ -18,6 +21,47 @@ export default function PhonebookModal({ isOpen, onClose }: { isOpen: boolean, o
     const data = await searchPhonebook(entity, governorate);
     setResults(data);
     setLoading(false);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadLoading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const data = new Uint8Array(event.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+          
+          if (jsonData.length <= 1) {
+            toast.error('الملف فارغ أو لا يحتوي على بيانات');
+            return;
+          }
+
+          const batchData = jsonData.slice(1).filter(row => row[0]).map(row => ({
+            name: String(row[0] || ''),
+            phone: String(row[1] || ''),
+            entity: String(row[2] || ''),
+            governorate: String(row[3] || '')
+          }));
+
+          await bulkUploadPhonebook(batchData);
+          toast.success(`تم رفع ${batchData.length} رقم بنجاح`);
+        } catch (err: any) {
+          toast.error('خطأ في معالجة الملف');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } catch (err: any) {
+      toast.error('خطأ في قراءة الملف');
+    } finally {
+      setUploadLoading(false);
+      e.target.value = '';
+    }
   };
 
   return createPortal(
@@ -48,9 +92,27 @@ export default function PhonebookModal({ isOpen, onClose }: { isOpen: boolean, o
                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">قاعدة بيانات التواصل مع المديريات والجهات</p>
                  </div>
               </div>
-              <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-all font-black" onClick={onClose}>
-                 <i className="fas fa-times text-xl"></i>
-              </button>
+              
+              <div className="flex items-center gap-2">
+                {isAdmin && (
+                  <div className="relative">
+                    <input 
+                      type="file" 
+                      accept=".xlsx,.xls" 
+                      onChange={handleFileUpload} 
+                      className="absolute inset-0 opacity-0 cursor-pointer" 
+                      disabled={uploadLoading}
+                    />
+                    <button className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold text-xs shadow-lg shadow-emerald-600/20 hover:bg-emerald-500 transition-all active:scale-95 disabled:opacity-50">
+                      {uploadLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                      رفع داتا
+                    </button>
+                  </div>
+                )}
+                <button className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 transition-all font-black" onClick={onClose}>
+                   <i className="fas fa-times text-xl"></i>
+                </button>
+              </div>
             </div>
             
             <div className="p-6 bg-white dark:bg-slate-900 border-b border-slate-50 dark:border-white/5">
