@@ -31,7 +31,7 @@ export default function Schedules({ permissions }: { permissions: UserPermission
   const [dbSchedules, setDbSchedules] = useState<any[]>([]);
   const [availableMonths, setAvailableMonths] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(permissions?.role === 'Admin');
   const [currentUserName, setCurrentUserName] = useState<string | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [bulkData, setBulkData] = useState('');
@@ -511,76 +511,78 @@ export default function Schedules({ permissions }: { permissions: UserPermission
       </div>
 
       {/* Upload Modal - High priority viewport centering */}
-      <AnimatePresence>
-        {showUploadModal && createPortal(
-          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 md:p-8 RTL" dir="rtl">
-            <motion.div 
-               initial={{ opacity: 0 }}
-               animate={{ opacity: 1 }}
-               exit={{ opacity: 0 }}
-               onClick={() => setShowUploadModal(false)}
-               className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
-            />
-            <motion.div 
-              initial={{ scale: 0.95, opacity: 0, y: 30 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 30 }}
-              className="relative bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[48px] border border-white/10 shadow-2xl overflow-hidden p-10 flex flex-col h-full max-h-[85vh] text-right"
-            >
-              <div className="flex items-center justify-between mb-8">
-                <div>
-                  <h3 className="text-3xl font-black text-slate-900 dark:text-white flex items-center gap-4">
-                    <FileSpreadsheet className="w-8 h-8 text-blue-600" />
-                    رفع الجدول الشهري
-                  </h3>
-                  <p className="text-slate-500 dark:text-slate-400 font-medium mt-2 text-right">انسخ البيانات من Excel والصقها هنا مباشرة لشهر {selectedMonth}</p>
-                </div>
-                <button 
-                  onClick={() => setShowUploadModal(false)}
-                  className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:rotate-90 transition-all text-slate-500 font-bold"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-
-              <div className="mb-6 p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/20 rounded-[32px] flex items-start gap-4">
-                 <Info className="w-6 h-6 text-blue-600 shrink-0 mt-1" />
-                 <div className="space-y-2 text-right w-full">
-                    <p className="text-sm font-black text-blue-900 dark:text-blue-100">تعليمات التنسيق (12 عمود):</p>
-                    <p className="text-xs text-blue-700/80 dark:text-blue-300 font-medium leading-relaxed italic">
-                      التاريخ | اليوم | الشهر والسنة | شفت 24 | شفت 36 | عطلة م | عطلة ظ | 2:30 - 5 | 5 - 7:30 | 7:30 - 10 | رعاية م | رعاية ل
-                    </p>
-                 </div>
-              </div>
-
-              <textarea
-                value={bulkData}
-                onChange={(e) => setBulkData(e.target.value)}
-                placeholder="الصق البيانات هنا..."
-                className="flex-1 w-full bg-slate-50 dark:bg-slate-850 p-6 rounded-[32px] border-2 border-transparent focus:border-blue-600 outline-none font-mono text-sm dark:text-white transition-all resize-none text-right"
+      {createPortal(
+        <AnimatePresence mode="wait">
+          {showUploadModal && (
+            <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 md:p-8 RTL" dir="rtl">
+              <motion.div 
+                 initial={{ opacity: 0 }}
+                 animate={{ opacity: 1 }}
+                 exit={{ opacity: 0 }}
+                 onClick={() => setShowUploadModal(false)}
+                 className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
               />
+              <motion.div 
+                initial={{ scale: 0.95, opacity: 0, y: 30 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 30 }}
+                className="relative bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[48px] border border-white/10 shadow-2xl overflow-hidden p-10 flex flex-col h-full max-h-[85vh] text-right"
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h3 className="text-3xl font-black text-slate-900 dark:text-white flex items-center gap-4">
+                      <FileSpreadsheet className="w-8 h-8 text-blue-600" />
+                      رفع الجدول الشهري
+                    </h3>
+                    <p className="text-slate-500 dark:text-slate-400 font-medium mt-2 text-right">انسخ البيانات من Excel والصقها هنا مباشرة لشهر {selectedMonth}</p>
+                  </div>
+                  <button 
+                    onClick={() => setShowUploadModal(false)}
+                    className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center hover:rotate-90 transition-all text-slate-500 font-bold"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
 
-              <div className="mt-10 flex items-center gap-4">
-                <button
-                  onClick={handleBulkUpload}
-                  disabled={isUploading || !bulkData.trim()}
-                  className="flex-1 py-5 bg-blue-600 text-white rounded-[24px] font-black shadow-xl shadow-blue-500/30 hover:bg-blue-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
-                >
-                  {isUploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <CheckCircle2 className="w-6 h-6" />}
-                  معالجة ورفع البيانات {isUploading ? '...' : ''}
-                </button>
-                <button
-                  onClick={() => setShowUploadModal(false)}
-                  className="px-10 py-5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-[24px] font-black hover:bg-slate-200 dark:hover:bg-slate-750 transition-all"
-                >
-                  إلغاء
-                </button>
-              </div>
-            </motion.div>
-          </div>,
-          document.body
-        )}
-      </AnimatePresence>
+                <div className="mb-6 p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/20 rounded-[32px] flex items-start gap-4">
+                   <Info className="w-6 h-6 text-blue-600 shrink-0 mt-1" />
+                   <div className="space-y-2 text-right w-full">
+                      <p className="text-sm font-black text-blue-900 dark:text-blue-100">تعليمات التنسيق (12 عمود):</p>
+                      <p className="text-xs text-blue-700/80 dark:text-blue-300 font-medium leading-relaxed italic">
+                        التاريخ | اليوم | الشهر والسنة | شفت 24 | شفت 36 | عطلة م | عطلة ظ | 2:30 - 5 | 5 - 7:30 | 7:30 - 10 | رعاية م | رعاية ل
+                      </p>
+                   </div>
+                </div>
+
+                <textarea
+                  value={bulkData}
+                  onChange={(e) => setBulkData(e.target.value)}
+                  placeholder="الصق البيانات هنا..."
+                  className="flex-1 w-full bg-slate-50 dark:bg-slate-850 p-6 rounded-[32px] border-2 border-transparent focus:border-blue-600 outline-none font-mono text-sm dark:text-white transition-all resize-none text-right"
+                />
+
+                <div className="mt-10 flex items-center gap-4">
+                  <button
+                    onClick={handleBulkUpload}
+                    disabled={isUploading || !bulkData.trim()}
+                    className="flex-1 py-5 bg-blue-600 text-white rounded-[24px] font-black shadow-xl shadow-blue-500/30 hover:bg-blue-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                  >
+                    {isUploading ? <Loader2 className="w-6 h-6 animate-spin" /> : <CheckCircle2 className="w-6 h-6" />}
+                    معالجة ورفع البيانات {isUploading ? '...' : ''}
+                  </button>
+                  <button
+                    onClick={() => setShowUploadModal(false)}
+                    className="px-10 py-5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-[24px] font-black hover:bg-slate-200 dark:hover:bg-slate-750 transition-all"
+                  >
+                    إلغاء
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
       {/* Name Selection Modal - Using Portal for perfect viewport centering */}
       {pickingSelection && createPortal(
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 RTL" dir="rtl">
