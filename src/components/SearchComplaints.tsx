@@ -170,10 +170,12 @@ export default function SearchComplaints({ permissions, mode = 'hotline' }: { pe
       </div>
 
       {results.length > 0 && (() => {
-        const duplicatePhoneNumbers = results
-          .map(r => r.phoneNumber)
-          .filter((phone, index, self) => phone && self.filter(p => p === phone).length > 1);
-        const uniqueDuplicatePhones = Array.from(new Set(duplicatePhoneNumbers));
+        const phoneCounts = results.reduce((acc, r) => {
+          if (r.phoneNumber) acc[r.phoneNumber] = (acc[r.phoneNumber] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        
+        const uniqueDuplicatePhones = Object.keys(phoneCounts).filter(p => phoneCounts[p] > 1);
         const hasDuplicates = uniqueDuplicatePhones.length > 0;
 
         const getDuplicateColor = (phone: string) => {
@@ -258,10 +260,12 @@ export default function SearchComplaints({ permissions, mode = 'hotline' }: { pe
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                   {(() => {
-                    const duplicatePhoneNumbers = results
-                      .map(r => r.phoneNumber)
-                      .filter((phone, index, self) => phone && self.filter(p => p === phone).length > 1);
-                    const uniqueDuplicatePhones = Array.from(new Set(duplicatePhoneNumbers));
+                    const phoneCounts = results.reduce((acc, r) => {
+                      if (r.phoneNumber) acc[r.phoneNumber] = (acc[r.phoneNumber] || 0) + 1;
+                      return acc;
+                    }, {} as Record<string, number>);
+                    
+                    const uniqueDuplicatePhones = Object.keys(phoneCounts).filter(p => phoneCounts[p] > 1);
 
                     const getDuplicateColor = (phone: string) => {
                       const index = uniqueDuplicatePhones.indexOf(phone);
