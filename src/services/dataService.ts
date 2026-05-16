@@ -1,483 +1,672 @@
-import React, { useState } from 'react';
-import { addAdminComplaint } from '../services/dataService';
-import { GOVERNORATES_LIST } from '../constants';
-import { LayoutGrid, AlertTriangle, FileX, FileText, MapPin, Hash, CheckCircle2, Clock, Save, Search, Calendar, Info, Loader2, X, Plus, Upload } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import SearchableSelect from './ui/SearchableSelect';
-import { toast } from '../lib/toast';
+import { 
+  collection, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  doc, 
+  query, 
+  where, 
+  getDocs, 
+  orderBy, 
+  limit, 
+  Timestamp, 
+  serverTimestamp,
+  onSnapshot,
+  setDoc,
+  getDoc,
+  writeBatch,
+  queryEqual
+} from 'firebase/firestore';
+import { db, auth } from '../lib/firebase';
+import { Complaint, AdminComplaint, DirectorCase, Inquiry, UserPermissions, Employee, FAQ, PhonebookEntry, Schedule, AppNotification } from '../types';
+import { ROLE_CAPABILITIES, DEFAULT_CAPABILITIES, EMPLOYEE_MAP, INITIAL_EMPLOYEES } from '../constants';
 
+const CHUNK_SIZE = 400;
 
-import SearchComplaints from './SearchComplaints';
-import Reports from './Reports';
-import SettingsView from './SettingsView';
-import DirectorAssignments from './DirectorAssignments';
-import Schedules from './Schedules';
-import { UserPermissions } from '../types';
-import * as XLSX from 'xlsx';
-import { bulkUploadAdminWork, deleteBulkAdminWork } from '../services/dataService';
-import { Timestamp } from 'firebase/firestore';
+export enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
 
-export default function AdminView({ activeSubTab, permissions }: { activeSubTab: string, permissions: UserPermissions | null }) {
-  const [uploadLoading, setUploadLoading] = useState(false);
-  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [uploadWorkType, setUploadWorkType] = useState('الجاري');
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const isAdmin = permissions?.role === 'Admin';
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+  }
+}
 
-  const parseArabicTimestamp = (val: any) => {
-    if (!val) return null;
-    if (val instanceof Date) return val;
-    const s = String(val);
-    const dateMatch = s.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
-    const timeMatch = s.match(/(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
-    const isPM = s.includes('م');
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
+// User Permissions & Presence
+export async function getUserPermissions(email?: string): Promise<UserPermissions> {
+  if (!email) return { ...DEFAULT_CAPABILITIES, role: 'Guest' };
+  
+  try {
+    // Check if employee exists in our system
+    const employeesRef = collection(db, 'employees');
+    const q = query(employeesRef, where('email', '==', email.toLowerCase()));
+    const snapshot = await getDocs(q);
     
-    if (dateMatch && timeMatch) {
-      let hours = parseInt(timeMatch[1]);
-      const minutes = parseInt(timeMatch[2]);
-      const seconds = timeMatch[3] ? parseInt(timeMatch[3]) : 0;
-      const year = parseInt(dateMatch[1]);
-      const month = parseInt(dateMatch[2]) - 1;
-      const day = parseInt(dateMatch[3]);
-      
-      if (isPM && hours < 12) hours += 12;
-      if (!isPM && hours === 12) hours = 0;
-      
-      const date = new Date(year, month, day, hours, minutes, seconds);
-      return isNaN(date.getTime()) ? null : date;
-    }
-    return null;
-  };
-
-  const handleDeleteBulk = async () => {
-    if (!window.confirm('هل أنت متأكد من حذف جميع البيانات التي تم رفعها بنظام الرفع الجماعي؟ لا يمكن التراجع عن هذه الخطوة.')) return;
-    setDeleteLoading(true);
-    try {
-      const count = await deleteBulkAdminWork();
-      toast.success(`تم حذف ${count} سجل بنجاح`);
-    } catch (err: any) {
-      toast.error('خطأ في الحذف: ' + err.message);
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploadLoading(true);
-    try {
-      const reader = new FileReader();
-      reader.onload = async (event) => {
-        try {
-          const data = new Uint8Array(event.target?.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
-          
-          if (jsonData.length <= 1) {
-            toast.error('الملف فارغ أو لا يحتوي على بيانات');
-            return;
-          }
-
-          const batchData = jsonData.slice(1).filter(row => row[2]).map(row => {
-            const rawTs = row[0];
-            const parsedDate = parseArabicTimestamp(rawTs);
-            const ts = parsedDate ? Timestamp.fromDate(parsedDate) : null;
-
-            return {
-              complaintNo: String(row[2] || '').replace(/"/g, '').trim(),
-              governorate: String(row[3] || '').replace(/"/g, '').trim(),
-              status: String(row[4] || 'تم الرد').replace(/"/g, '').trim(),
-              notes: String(row[5] || '').replace(/"/g, '').trim(),
-              registrant: String(row[6] || '').replace(/"/g, '').trim(),
-              workType: uploadWorkType,
-              employeeName: String(row[6] || permissions?.employeeData?.name || 'نظام').replace(/"/g, '').trim(),
-              timestamp: ts
-            };
-          });
-
-          await bulkUploadAdminWork(batchData);
-          toast.success(`تم رفع ${batchData.length} سجل (${uploadWorkType}) بنجاح`);
-          setIsUploadModalOpen(false);
-        } catch (err: any) {
-          toast.error('خطأ في معالجة الملف');
-        }
+    if (!snapshot.empty) {
+      const empData = snapshot.docs[0].data() as Employee;
+      return {
+        ...empData.permissions,
+        role: empData.role,
+        employeeData: { ...empData, id: snapshot.docs[0].id }
       };
-      reader.readAsArrayBuffer(file);
-    } catch (err: any) {
-      toast.error('خطأ في قراءة الملف');
-    } finally {
-      setUploadLoading(false);
-      e.target.value = '';
     }
-  };
-  const allWorkTypes = [
-    { id: 'الجاري', icon: LayoutGrid, color: 'blue', label: 'الجاري', show: permissions?.canRegisterOngoing },
-    { id: 'توجية خطأ', icon: AlertTriangle, color: 'amber', label: 'توجية خطأ', show: permissions?.canRegisterWrongDirection },
-    { id: 'شكاوي غير مسجلة', icon: FileX, color: 'rose', label: 'شكاوي غير مسجلة', show: permissions?.canRegisterUnregistered }
-  ];
 
-  const workTypes = allWorkTypes.filter(t => t.show);
-  
-  // Use the first available work type as initial state
-  const [workType, setWorkType] = useState(() => workTypes[0]?.id || 'الجاري');
-  
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    complaintNo: '',
-    governorate: '',
-    status: 'تم الرد',
-    notes: '',
-    registrant: ''
-  });
+    // Default mapping for predefined employees if not in Firestore yet
+    const role: any = email === 'omarkhaledfadel@gmail.com' ? 'Admin' : 'Employee';
+    return {
+      ...(ROLE_CAPABILITIES[role as keyof typeof ROLE_CAPABILITIES] || DEFAULT_CAPABILITIES),
+      role
+    };
+  } catch (error) {
+    console.error('Error fetching permissions:', error);
+    return { ...DEFAULT_CAPABILITIES, role: 'Guest' };
+  }
+}
 
-  if (activeSubTab === 'search' || activeSubTab === 'adminSearch') return <SearchComplaints permissions={permissions} mode="admin" />;
-  if (activeSubTab === 'reports' || activeSubTab === 'reportsTab') return <Reports permissions={permissions} />;
-  if (activeSubTab === 'directorTab') return <DirectorAssignments permissions={permissions} />;
-  if (activeSubTab === 'schedulesTab') return <Schedules permissions={permissions} />;
-  if (activeSubTab === 'userManagement') return <SettingsView />;
+// Subscriptions
+export function subscribeToComplaints(callback: (data: Complaint[]) => void) {
+  const q = query(collection(db, 'complaints'), orderBy('timestamp', 'desc'), limit(100));
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map(doc => ({ 
+      ...doc.data(), 
+      id: doc.id,
+      timestamp: doc.data().timestamp?.toDate() || new Date()
+    })) as Complaint[];
+    callback(data);
+  }, (error) => handleFirestoreError(error, OperationType.LIST, 'complaints'));
+}
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      await addAdminComplaint({ 
-        ...formData, 
-        workType: workType as any,
-        employeeName: permissions?.employeeData?.name || ''
-      });
-      
-      // Auto-reset and scroll to top
-      setFormData({
-        complaintNo: '',
-        governorate: '',
-        status: 'تم الرد',
-        notes: '',
-        registrant: ''
-      });
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-      toast.success('تم حفظ البيانات بنجاح');
-    } catch (err: any) {
-      toast.error('خطأ: ' + err.message);
-    } finally {
+export function subscribeToAdminComplaints(callback: (data: AdminComplaint[]) => void) {
+  const q = query(collection(db, 'adminComplaints'), orderBy('timestamp', 'desc'), limit(100));
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map(doc => ({ 
+      ...doc.data(), 
+      id: doc.id,
+      timestamp: doc.data().timestamp?.toDate() || new Date()
+    })) as AdminComplaint[];
+    callback(data);
+  }, (error) => handleFirestoreError(error, OperationType.LIST, 'adminComplaints'));
+}
 
-      setIsSubmitting(false);
-    }
-  };
+export function subscribeToInquiries(callback: (data: Inquiry[]) => void) {
+  const q = query(collection(db, 'inquiries'), orderBy('timestamp', 'desc'));
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map(doc => ({ 
+      ...doc.data(), 
+      id: doc.id,
+      timestamp: doc.data().timestamp?.toDate() || new Date()
+    })) as Inquiry[];
+    callback(data);
+  }, (error) => handleFirestoreError(error, OperationType.LIST, 'inquiries'));
+}
 
-  return (
-    <div className="space-y-6 animate-fade-in">
-      {activeSubTab === 'adminWork' || activeSubTab === 'register' ? (
-        <div className="space-y-6">
-           {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">تسجيل عمل الإدارة</h2>
-              <p className="text-slate-500 dark:text-slate-400 text-[10px] font-medium">توثيق العمل اليومي ومتابعة الشكاوى الجارية</p>
-            </div>
-            
-            {isAdmin && (
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={handleDeleteBulk}
-                  disabled={deleteLoading}
-                  className="flex items-center gap-2 px-6 py-3 bg-rose-500 text-white rounded-2xl font-black text-sm shadow-xl shadow-rose-500/20 hover:bg-rose-400 transition-all active:scale-95 disabled:opacity-50"
-                >
-                  {deleteLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <X className="w-5 h-5" />}
-                  حذف الداتا القديمة
-                </button>
-                <button 
-                  onClick={() => setIsUploadModalOpen(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-600/20 hover:bg-emerald-500 transition-all active:scale-95"
-                >
-                  <FileText className="w-5 h-5" />
-                  رفع داتا قديمة
-                </button>
-              </div>
-            )}
-          </div>
+export function subscribeToFAQs(callback: (data: FAQ[]) => void) {
+  return onSnapshot(collection(db, 'faqs'), (snapshot) => {
+    const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as FAQ[];
+    callback(data);
+  }, (error) => handleFirestoreError(error, OperationType.LIST, 'faqs'));
+}
 
-          <AnimatePresence>
-            {isUploadModalOpen && (
-              <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onClick={() => setIsUploadModalOpen(false)}
-                  className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
-                />
-                <motion.div 
-                  initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                  animate={{ scale: 1, opacity: 1, y: 0 }}
-                  exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                  className="relative bg-white dark:bg-slate-900 w-full max-w-xl rounded-[40px] shadow-2xl p-10 space-y-8"
-                  onClick={e => e.stopPropagation()}
-                >
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">رفع داتا الإدارة</h3>
-                    <button onClick={() => setIsUploadModalOpen(false)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800 font-bold">
-                      <X className="w-5 h-5 text-slate-400" />
-                    </button>
-                  </div>
+export function subscribeToEmployees(callback: (data: Employee[]) => void) {
+  return onSnapshot(collection(db, 'employees'), (snapshot) => {
+    const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Employee[];
+    callback(data);
+  }, (error) => handleFirestoreError(error, OperationType.LIST, 'employees'));
+}
 
-                  <div className="grid grid-cols-1 gap-4">
-                    {[
-                      { id: 'الجاري', icon: LayoutGrid, color: 'blue', desc: 'رفع شكاوى الجاري المتابعة' },
-                      { id: 'توجية خطأ', icon: AlertTriangle, color: 'amber', desc: 'رفع سجلات التوجيه الخاطئ' },
-                      { id: 'شكاوي غير مسجلة', icon: FileX, color: 'rose', desc: 'رفع الشكاوى غير المسجلة بالنظام' }
-                    ].map(type => (
-                      <div key={type.id} className="relative group">
-                        <input 
-                          type="file" 
-                          accept=".xlsx,.xls"
-                          onChange={(e) => {
-                            setUploadWorkType(type.id);
-                            handleFileUpload(e);
-                          }}
-                          className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                          disabled={uploadLoading}
-                        />
-                        <div className={`flex items-center justify-between p-5 rounded-2xl border-2 border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-800/50 transition-all group-hover:border-${type.color}-500/50 group-hover:shadow-lg group-hover:shadow-${type.color}-500/5`}>
-                          <div className="flex items-center gap-4">
-                            <div className={`w-12 h-12 bg-${type.color}-100 dark:bg-${type.color}-900/30 text-${type.color}-600 dark:text-${type.color}-400 rounded-xl flex items-center justify-center`}>
-                              <type.icon className="w-6 h-6" />
-                            </div>
-                            <div className="text-right">
-                              <p className="font-black text-slate-900 dark:text-white leading-none mb-1">{type.id}</p>
-                              <p className="text-[10px] text-slate-400 font-bold">{type.desc}</p>
-                            </div>
-                          </div>
-                          <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center text-slate-400 group-hover:text-blue-600 transition-colors">
-                            {uploadLoading && uploadWorkType === type.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+export function subscribeToDirectorCases(callback: (data: DirectorCase[]) => void) {
+  const q = query(collection(db, 'directorCases'), orderBy('timestamp', 'desc'));
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map(doc => ({ 
+      ...doc.data(), 
+      id: doc.id,
+      timestamp: doc.data().timestamp?.toDate() || new Date(),
+      updatedAt: doc.data().updatedAt?.toDate() || new Date()
+    })) as DirectorCase[];
+    callback(data);
+  }, (error) => handleFirestoreError(error, OperationType.LIST, 'directorCases'));
+}
 
-                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-800/30">
-                    <p className="text-[10px] text-blue-600 dark:text-blue-400 font-black leading-relaxed">
-                      * ملاحظة: يجب أن يحتوي ملف Excel على الأعمدة التالية بالترتيب:
-                      (رقم الشكوى، المحافظة، الحالة، الملاحظات، المسجل)
-                    </p>
-                  </div>
+// CRUD Operations
+export async function addComplaint(data: Omit<Complaint, 'id'>) {
+  try {
+    return await addDoc(collection(db, 'complaints'), {
+      ...data,
+      timestamp: serverTimestamp(),
+      employeeEmail: auth.currentUser?.email || ''
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, 'complaints');
+  }
+}
 
-                </motion.div>
-              </div>
-            )}
-          </AnimatePresence>
+export async function updateComplaint(id: string, data: Partial<Complaint>) {
+  try {
+    await updateDoc(doc(db, 'complaints', id), data);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `complaints/${id}`);
+  }
+}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/40 dark:shadow-none p-6 rounded-[24px] transition-all duration-700">
-              <div className="space-y-6">
-                {/* Work Type Selection - Only show if more than 1 type is available */}
-                {workTypes.length > 1 && (
-                  <div className="space-y-4">
-                    <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
-                       <Info className="w-3.5 h-3.5 text-blue-600" />
-                       تصنيف العمل
-                    </label>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      {workTypes.map(type => {
-                        const Icon = type.icon;
-                        const isActive = workType === type.id;
-                        return (
-                          <button 
-                            key={type.id}
-                            type="button"
-                            onClick={() => setWorkType(type.id)}
-                            className={`flex items-center gap-4 p-4 rounded-[16px] border-2 transition-all duration-700 text-right ${
-                              isActive 
-                                ? `bg-${type.color}-500 border-${type.color}-500 text-white shadow-xl shadow-${type.color}-500/20 font-black`
-                                : 'bg-slate-50 dark:bg-slate-800/40 border-transparent dark:border-white/5 text-slate-500 hover:border-slate-300 dark:hover:border-white/10 font-bold'
-                            }`}
-                          >
-                            <div className={`p-3 rounded-xl transition-all duration-500 shadow-sm ${isActive ? 'bg-white/20' : `bg-white dark:bg-slate-900 text-${type.color}-600 dark:text-${type.color}-400`}`}>
-                              <Icon className="w-5 h-5" />
-                            </div>
-                            <span className="text-base">{type.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+export async function deleteComplaint(id: string) {
+  try {
+    await deleteDoc(doc(db, 'complaints', id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `complaints/${id}`);
+  }
+}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <label className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2 uppercase tracking-widest leading-none">
-                       <Hash className="w-4 h-4 text-blue-600" />
-                       رقم الشكوى بالنظام
-                    </label>
-                    <input 
-                      type="text" 
-                      value={formData.complaintNo} 
-                      onChange={(e) => setFormData({...formData, complaintNo: e.target.value})} 
-                      required 
-                      className="form-input font-mono tracking-widest" 
-                      placeholder="0000-0000"
-                    />
-                  </div>
+export async function addAdminComplaint(data: Omit<AdminComplaint, 'id' | 'timestamp' | 'employeeEmail'>) {
+  try {
+    return await addDoc(collection(db, 'adminComplaints'), {
+      ...data,
+      timestamp: serverTimestamp(),
+      employeeEmail: auth.currentUser?.email || ''
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, 'adminComplaints');
+  }
+}
 
-                  {workType === 'الجاري' && (
-                    <div className="space-y-3">
-                      <label className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2 uppercase tracking-widest leading-none">
-                         <MapPin className="w-4 h-4 text-blue-600" />
-                         المحافظة
-                      </label>
-                      <SearchableSelect
-                        options={GOVERNORATES_LIST}
-                        value={formData.governorate}
-                        onChange={(val) => setFormData({...formData, governorate: val})}
-                        placeholder="اختر المحافظة..."
-                        required
-                      />
-                    </div>
-                  )}
+export async function addInquiry(data: { question: string, qUser: string }) {
+  try {
+    return await addDoc(collection(db, 'inquiries'), {
+      ...data,
+      timestamp: serverTimestamp()
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, 'inquiries');
+  }
+}
 
-                  {workType === 'توجية خطأ' && (
-                    <div className="space-y-3">
-                      <label className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2 uppercase tracking-widest leading-none">
-                         <FileText className="w-4 h-4 text-amber-600" />
-                         مسجل الشكوى الحالي
-                      </label>
-                      <input 
-                        type="text" 
-                        value={formData.registrant} 
-                        onChange={(e) => setFormData({...formData, registrant: e.target.value})} 
-                        required 
-                        className="form-input"
-                        placeholder="اسم الموظف"
-                      />
-                    </div>
-                  )}
-                </div>
+export async function updateInquiry(id: string, data: Partial<Inquiry>) {
+  try {
+    await updateDoc(doc(db, 'inquiries', id), data);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `inquiries/${id}`);
+  }
+}
 
-                <AnimatePresence mode="wait">
-                  {workType === 'الجاري' && (
-                    <motion.div 
-                      key="status-section"
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      className="space-y-6 pt-4 border-t border-slate-100 dark:border-white/5"
-                    >
-                      <div className="space-y-4">
-                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">موقف الشكوى الحالي</label>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <button 
-                              type="button" 
-                              onClick={() => setFormData({...formData, status: 'تم الرد'})}
-                              className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all duration-500 shadow-sm ${formData.status === 'تم الرد' ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20 font-black' : 'bg-slate-50 dark:bg-slate-900 border-transparent dark:border-white/5 text-slate-500 font-bold'}`}
-                            >
-                              <CheckCircle2 className="w-5 h-5" />
-                              <span>تم الرد</span>
-                            </button>
-                            <button 
-                              type="button" 
-                              onClick={() => setFormData({...formData, status: 'جاري المتابعة'})}
-                              className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all duration-500 shadow-sm ${formData.status === 'جاري المتابعة' ? 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-500/20 font-black' : 'bg-slate-50 dark:bg-slate-900 border-transparent dark:border-white/5 text-slate-500 font-bold'}`}
-                            >
-                             <Clock className="w-5 h-5" />
-                             <span>جاري المتابعة / استعجال</span>
-                           </button>
-                        </div>
-                      </div>
+export async function deleteInquiry(id: string) {
+  try {
+    await deleteDoc(doc(db, 'inquiries', id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `inquiries/${id}`);
+  }
+}
 
-                      <div className="space-y-2">
-                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">ملاحظات إدراية</label>
-                        <textarea 
-                          rows={4} 
-                          value={formData.notes} 
-                          onChange={(e) => setFormData({...formData, notes: e.target.value})}
-                          className="form-input min-h-[120px] resize-none bg-slate-50 dark:bg-slate-800 border-transparent transition-all text-sm"
-                          placeholder="اكتب أي ملاحظات أو تفاصيل إضافية هنا..."
-                        ></textarea>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </div>
+export async function addFAQ(data: Omit<FAQ, 'id'>) {
+  try {
+    return await addDoc(collection(db, 'faqs'), data);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, 'faqs');
+  }
+}
 
-            <div className="flex justify-center py-6">
-               <button 
-                  type="submit" 
-                  disabled={isSubmitting || workTypes.length === 0}
-                  className="btn-primary min-w-[280px] flex items-center justify-center gap-3 shadow-blue-500/30"
-               >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      <span>جاري الحفظ...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-5 h-5" />
-                      <span>حفظ البيانات</span>
-                    </>
-                  )}
-               </button>
-            </div>
-          </form>
-        </div>
-      ) : (
-        <div className="space-y-8 animate-fade-in">
-           <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">سجل شكاوى الإدارة</h2>
-              <p className="text-slate-500 dark:text-slate-400 font-medium">مراجعة والبحث في الشكاوى المسجلة بنظام الإدارة</p>
-            </div>
-          </div>
+export async function updateFAQ(id: string, data: Partial<FAQ>) {
+  try {
+    await updateDoc(doc(db, 'faqs', id), data);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `faqs/${id}`);
+  }
+}
 
-           <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/40 dark:shadow-none p-8 rounded-[32px] transition-all duration-700">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
-                 <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                       <Calendar className="w-4 h-4 text-blue-600" />
-                       الفترة الزمنية
-                    </label>
-                    <SearchableSelect
-                      options={[
-                        { value: 'today', label: 'اليوم' },
-                        { value: 'month', label: 'هذا الشهر' },
-                        { value: 'custom', label: 'فترة مخصصة...' }
-                      ]}
-                      value="today"
-                      onChange={() => {}}
-                    />
-                 </div>
-                 <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300">من تاريخ</label>
-                    <input type="date" className="form-input bg-slate-50 dark:bg-slate-800 border-transparent transition-all" />
-                 </div>
-                 <div className="space-y-2">
-                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300">إلى تاريخ</label>
-                    <input type="date" className="form-input bg-slate-50 dark:bg-slate-800 border-transparent transition-all" />
-                 </div>
-              </div>
-              <div className="mt-8">
-                 <button className="btn-primary w-full md:w-auto md:px-12 flex items-center justify-center gap-2">
-                    <Search className="w-5 h-5" />
-                    <span>البحث في السجلات</span>
-                 </button>
-              </div>
-           </div>
+export async function deleteFAQ(id: string) {
+  try {
+    await deleteDoc(doc(db, 'faqs', id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `faqs/${id}`);
+  }
+}
 
-           <div className="flex flex-col items-center justify-center py-32 bg-white dark:bg-slate-900/50 rounded-[40px] border-2 border-dashed border-slate-200 dark:border-white/5 space-y-4 transition-all duration-700">
-              <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-3xl flex items-center justify-center transition-colors duration-500">
-                 <FileText className="w-10 h-10 text-slate-200 dark:text-slate-700" />
-              </div>
-              <div className="text-center">
-                 <p className="text-xl text-slate-400 font-black tracking-tight">لا توجد شكاوى مسجلة للعرض</p>
-                 <p className="text-slate-400 text-sm">حدد الفترة الزمنية واضغط على زر البحث</p>
-              </div>
-           </div>
-        </div>
-      )}
-    </div>
+export async function addDirectorCase(data: Omit<DirectorCase, 'id'>) {
+  try {
+    return await addDoc(collection(db, 'directorCases'), {
+      ...data,
+      timestamp: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, 'directorCases');
+  }
+}
+
+export async function updateDirectorCase(id: string, data: Partial<DirectorCase>) {
+  try {
+    await updateDoc(doc(db, 'directorCases', id), {
+      ...data,
+      updatedAt: serverTimestamp()
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `directorCases/${id}`);
+  }
+}
+
+export async function deleteDirectorCase(id: string) {
+  try {
+    await deleteDoc(doc(db, 'directorCases', id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `directorCases/${id}`);
+  }
+}
+
+export async function addEmployee(data: Omit<Employee, 'id'>) {
+  try {
+    return await addDoc(collection(db, 'employees'), {
+      ...data,
+      createdAt: serverTimestamp()
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, 'employees');
+  }
+}
+
+export async function updateEmployee(id: string, data: Partial<Employee>) {
+  try {
+    await updateDoc(doc(db, 'employees', id), data);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `employees/${id}`);
+  }
+}
+
+export async function deleteEmployee(id: string) {
+  try {
+    await deleteDoc(doc(db, 'employees', id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `employees/${id}`);
+  }
+}
+
+// Bulk Uploads with Chunking
+async function runInChunks(data: any[], collectionName: string, transform?: (item: any) => any, idGenerator?: (item: any) => string) {
+  const chunks = [];
+  for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+    chunks.push(data.slice(i, i + CHUNK_SIZE));
+  }
+
+  for (const chunk of chunks) {
+    const batch = writeBatch(db);
+    chunk.forEach(item => {
+      const finalData = transform ? transform(item) : item;
+      const docRef = idGenerator 
+        ? doc(db, collectionName, idGenerator(item))
+        : doc(collection(db, collectionName));
+      batch.set(docRef, finalData);
+    });
+    await batch.commit();
+  }
+}
+
+export async function bulkUploadFAQs(data: Omit<FAQ, 'id'>[]) {
+  return runInChunks(data, 'faqs');
+}
+
+export async function bulkUploadInquiries(data: Omit<Inquiry, 'id' | 'timestamp'>[]) {
+  return runInChunks(data, 'inquiries', (item) => ({
+    ...item,
+    timestamp: serverTimestamp()
+  }));
+}
+
+export async function bulkUploadPhonebook(data: Omit<PhonebookEntry, 'id'>[]) {
+  return runInChunks(data, 'phonebook');
+}
+
+export async function bulkUploadAdminWork(data: any[]) {
+  const userEmail = auth.currentUser?.email || '';
+  return runInChunks(data, 'adminComplaints', (item) => ({
+    ...item,
+    employeeEmail: userEmail,
+    isBulkUploaded: true,
+    timestamp: item.timestamp || serverTimestamp()
+  }));
+}
+
+export async function bulkUploadSchedules(data: Omit<Schedule, 'id'>[]) {
+  return runInChunks(data, 'schedules', 
+    (item) => ({ ...item, updatedAt: serverTimestamp() }),
+    (item) => `${item.date}_${item.monthYear}`.replace(/\//g, '-')
   );
+}
+
+export async function deleteBulkAdminWork() {
+  try {
+    const q = query(collection(db, 'adminComplaints'), where('isBulkUploaded', '==', true));
+    const snapshot = await getDocs(q);
+    
+    const chunks = [];
+    for (let i = 0; i < snapshot.docs.length; i += CHUNK_SIZE) {
+      chunks.push(snapshot.docs.slice(i, i + CHUNK_SIZE));
+    }
+
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      chunk.forEach(d => batch.delete(d.ref));
+      await batch.commit();
+    }
+    
+    return snapshot.size;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, 'adminComplaints (bulk)');
+  }
+}
+
+export async function deleteSchedulesByMonth(monthYear: string) {
+  try {
+    const q = query(collection(db, 'schedules'), where('monthYear', '==', monthYear));
+    const snapshot = await getDocs(q);
+    const batch = writeBatch(db);
+    snapshot.docs.forEach(d => batch.delete(d.ref));
+    await batch.commit();
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `schedules/${monthYear}`);
+  }
+}
+
+export async function getAvailableScheduleMonths(): Promise<string[]> {
+  try {
+    const snapshot = await getDocs(collection(db, 'schedules'));
+    const months = new Set<string>();
+    snapshot.docs.forEach(d => {
+      const data = d.data();
+      if (data.monthYear) months.add(data.monthYear);
+    });
+    return Array.from(months);
+  } catch (error) {
+    return [];
+  }
+}
+
+export async function updateSchedule(date: string, monthYear: string, data: Partial<Schedule>) {
+  try {
+    const id = `${date}_${monthYear}`.replace(/\//g, '-');
+    await setDoc(doc(db, 'schedules', id), { ...data, updatedAt: serverTimestamp() }, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `schedules/${date}_${monthYear}`);
+  }
+}
+
+export function listenToSchedules(monthYear: string, callback: (data: Schedule[]) => void) {
+  const q = query(collection(db, 'schedules'), where('monthYear', '==', monthYear));
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Schedule[];
+    callback(data);
+  }, (error) => handleFirestoreError(error, OperationType.LIST, 'schedules'));
+}
+
+export function subscribeToPhonebook(callback: (data: PhonebookEntry[]) => void) {
+  return onSnapshot(collection(db, 'phonebook'), (snapshot) => {
+    const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as PhonebookEntry[];
+    callback(data);
+  }, (error) => handleFirestoreError(error, OperationType.LIST, 'phonebook'));
+}
+
+export async function searchPhonebook(entity: string, governorate: string): Promise<PhonebookEntry[]> {
+  try {
+    const q = query(
+      collection(db, 'phonebook'), 
+      where('entity', '==', entity),
+      where('governorate', '==', governorate)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(d => ({ ...d.data(), id: d.id })) as PhonebookEntry[];
+  } catch (error) {
+    return [];
+  }
+}
+
+export async function searchComplaints(filters: { date?: string, phoneNumber?: string, callerName?: string }): Promise<Complaint[]> {
+  try {
+    let q = query(collection(db, 'complaints'), orderBy('timestamp', 'desc'));
+    
+    if (filters.date) {
+      const start = new Date(filters.date);
+      start.setHours(0, 0, 0, 0);
+      const end = new Date(filters.date);
+      end.setHours(23, 59, 59, 999);
+      q = query(q, where('timestamp', '>=', Timestamp.fromDate(start)), where('timestamp', '<=', Timestamp.fromDate(end)));
+    }
+    
+    const snapshot = await getDocs(q);
+    let results = snapshot.docs.map(d => ({ 
+      ...d.data(), 
+      id: d.id,
+      timestamp: d.data().timestamp?.toDate() || new Date()
+    })) as Complaint[];
+
+    if (filters.phoneNumber) {
+      results = results.filter(r => r.phoneNumber.includes(filters.phoneNumber!));
+    }
+    if (filters.callerName) {
+      results = results.filter(r => r.callerName.includes(filters.callerName!));
+    }
+
+    return results;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.LIST, 'complaints (search)');
+    return [];
+  }
+}
+
+export async function searchAdminComplaints(filters: { date?: string, complaintNo?: string }): Promise<AdminComplaint[]> {
+  try {
+    let q = query(collection(db, 'adminComplaints'), orderBy('timestamp', 'desc'));
+    const snapshot = await getDocs(q);
+    let results = snapshot.docs.map(d => ({ 
+      ...d.data(), 
+      id: d.id,
+      timestamp: d.data().timestamp?.toDate() || new Date()
+    })) as AdminComplaint[];
+
+    if (filters.date) {
+      const searchDate = new Date(filters.date).toLocaleDateString('ar-EG');
+      results = results.filter(r => r.timestamp.toLocaleDateString('ar-EG') === searchDate);
+    }
+    if (filters.complaintNo) {
+      results = results.filter(r => r.complaintNo.includes(filters.complaintNo!));
+    }
+    return results;
+  } catch (error) {
+    return [];
+  }
+}
+
+export async function getDashboardStats() {
+  try {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const complaintsRef = collection(db, 'complaints');
+    const todayQ = query(complaintsRef, where('timestamp', '>=', Timestamp.fromDate(today)));
+    const monthQ = query(complaintsRef, where('timestamp', '>=', Timestamp.fromDate(firstDayOfMonth)));
+    
+    const [todaySnap, monthSnap, ongoingSnap, directorSnap] = await Promise.all([
+      getDocs(todayQ),
+      getDocs(monthQ),
+      getDocs(query(collection(db, 'adminComplaints'), where('workType', '==', 'الجاري'))),
+      getDocs(query(collection(db, 'directorCases'), where('status', '==', 'نشط')))
+    ]);
+
+    const topGovs: Record<string, number> = {};
+    const topEntities: Record<string, number> = {};
+    const topSubjects: Record<string, number> = {};
+
+    todaySnap.docs.forEach(doc => {
+      const d = doc.data() as Complaint;
+      if (d.governorate) topGovs[d.governorate] = (topGovs[d.governorate] || 0) + 1;
+      if (d.responsibleEntity) topEntities[d.responsibleEntity] = (topEntities[d.responsibleEntity] || 0) + 1;
+      if (d.complaintSubject) topSubjects[d.complaintSubject] = (topSubjects[d.complaintSubject] || 0) + 1;
+    });
+
+    return {
+      todayCount: todaySnap.size,
+      monthCount: monthSnap.size,
+      ongoingCount: ongoingSnap.size,
+      directorActive: directorSnap.size,
+      topGovs,
+      topEntities,
+      topSubjects
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+export async function getUserMonthlyCallCount(email: string): Promise<number> {
+  try {
+    const now = new Date();
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const q = query(
+      collection(db, 'complaints'), 
+      where('employeeEmail', '==', email),
+      where('timestamp', '>=', Timestamp.fromDate(start))
+    );
+    const snap = await getDocs(q);
+    return snap.size;
+  } catch (error) {
+    return 0;
+  }
+}
+
+export function listenToNotifications(email: string, callback: (data: AppNotification[]) => void) {
+  const q = query(collection(db, 'notifications'), where('userEmail', '==', email), orderBy('timestamp', 'desc'), limit(50));
+  return onSnapshot(q, (snapshot) => {
+    const data = snapshot.docs.map(doc => ({ 
+      ...doc.data(), 
+      id: doc.id,
+      timestamp: doc.data().timestamp?.toDate() || new Date()
+    })) as AppNotification[];
+    callback(data);
+  });
+}
+
+export async function markNotificationAsRead(id: string) {
+  await updateDoc(doc(db, 'notifications', id), { status: 'read' });
+}
+
+export function listenToCabinetComplaints(callback: (data: Complaint[]) => void) {
+  const q = query(collection(db, 'complaints'), where('isCabinetComplaint', '==', true), orderBy('timestamp', 'desc'));
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map(d => ({ ...d.data(), id: d.id, timestamp: d.data().timestamp?.toDate() })) as Complaint[]);
+  });
+}
+
+export const listenToInquiries = subscribeToInquiries;
+export const listenToDirectorCases = subscribeToDirectorCases;
+
+export async function getAllEmployees(): Promise<Employee[]> {
+  const snap = await getDocs(collection(db, 'employees'));
+  return snap.docs.map(d => ({ ...d.data(), id: d.id })) as Employee[];
+}
+
+export async function saveEmployee(data: Employee) {
+  if (data.id) {
+    const { id, ...rest } = data;
+    await updateDoc(doc(db, 'employees', id), rest);
+  } else {
+    await addDoc(collection(db, 'employees'), { ...data, createdAt: serverTimestamp() });
+  }
+}
+
+export const getFAQs = async (): Promise<FAQ[]> => {
+  const snap = await getDocs(collection(db, 'faqs'));
+  return snap.docs.map(d => ({ ...d.data(), id: d.id })) as FAQ[];
+};
+
+export async function reviewFollowUp(id: string, data: Partial<Complaint>) {
+  await updateDoc(doc(db, 'complaints', id), data);
+}
+
+export async function deleteBulkFollowUpData(collectionName: string = 'complaints') {
+  const q = query(collection(db, collectionName), where('isBulkUploaded', '==', true));
+  const snap = await getDocs(q);
+  const batch = writeBatch(db);
+  snap.docs.forEach(d => batch.delete(d.ref));
+  await batch.commit();
+  return snap.size;
+}
+
+export async function checkAndAddFollowUp(docId: any, complaint: any) {
+  if (complaint.needsFollowUp) {
+    // Logic could go here to create a notification or special follow-up record
+  }
+}
+
+export async function getDailyRanking(): Promise<any[]> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const q = query(collection(db, 'complaints'), where('timestamp', '>=', Timestamp.fromDate(today)));
+  const snap = await getDocs(q);
+  const counts: Record<string, number> = {};
+  snap.docs.forEach(d => {
+    const name = d.data().employeeName;
+    if (name) counts[name] = (counts[name] || 0) + 1;
+  });
+  return Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+}
+
+export async function getMonthlyRanking(): Promise<any[]> {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), 1);
+  const q = query(collection(db, 'complaints'), where('timestamp', '>=', Timestamp.fromDate(start)));
+  const snap = await getDocs(q);
+  const counts: Record<string, number> = {};
+  snap.docs.forEach(d => {
+    const name = d.data().employeeName;
+    if (name) counts[name] = (counts[name] || 0) + 1;
+  });
+  return Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
+}
+
+export async function addPhonebookEntry(data: Omit<PhonebookEntry, 'id'>) {
+  try {
+    return await addDoc(collection(db, 'phonebook'), data);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, 'phonebook');
+  }
+}
+
+export async function updatePhonebookEntry(id: string, data: Partial<PhonebookEntry>) {
+  try {
+    await updateDoc(doc(db, 'phonebook', id), data);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `phonebook/${id}`);
+  }
+}
+
+export async function deletePhonebookEntry(id: string) {
+  try {
+    await deleteDoc(doc(db, 'phonebook', id));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `phonebook/${id}`);
+  }
 }

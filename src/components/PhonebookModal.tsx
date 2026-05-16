@@ -44,7 +44,7 @@ export default function PhonebookModal({ isOpen, onClose, isAdmin }: { isOpen: b
 
           const batchData = jsonData.slice(1).filter(row => row[0]).map(row => ({
             name: String(row[0] || ''),
-            phone: String(row[1] || ''),
+            number: String(row[1] || ''),
             entity: String(row[2] || ''),
             governorate: String(row[3] || '')
           }));
@@ -167,9 +167,9 @@ export default function PhonebookModal({ isOpen, onClose, isAdmin }: { isOpen: b
                          <p className="text-xs text-slate-400 font-bold">{res.entity} - {res.governorate}</p>
                        </div>
                      </div>
-                     <a href={`tel:${res.phone}`} className="flex items-center gap-2 px-8 py-3.5 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-2xl text-sm font-black border border-emerald-100 dark:border-emerald-900/30 hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
+                     <a href={`tel:${res.number}`} className="flex items-center gap-2 px-8 py-3.5 bg-emerald-50 dark:bg-emerald-950 text-emerald-600 dark:text-emerald-400 rounded-2xl text-sm font-black border border-emerald-100 dark:border-emerald-900/30 hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
                         <Phone className="w-4 h-4" />
-                        {res.phone}
+                        {res.number}
                      </a>
                    </motion.div>
                  ))
