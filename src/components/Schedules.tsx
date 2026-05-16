@@ -14,7 +14,10 @@ import {
   Trash2,
   ChevronDown,
   User,
-  X
+  X,
+  ArrowRightLeft,
+  RefreshCw,
+  ArrowLeftRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from '../lib/toast';
@@ -35,6 +38,9 @@ export default function Schedules({ permissions }: { permissions: UserPermission
   const [isUploading, setIsUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showMonthDropdown, setShowMonthDropdown] = useState(false);
+  const [isSwapMode, setIsSwapMode] = useState(false);
+  const [swapSource, setSwapSource] = useState<{ row: any, field: string, value: string } | null>(null);
+  const [isSwapping, setIsSwapping] = useState(false);
 
   const parseArabicMonth = (str: string) => {
     const months = ["يناير", "فبراير", "مارس", "أبريل", "إبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
@@ -216,6 +222,46 @@ export default function Schedules({ permissions }: { permissions: UserPermission
     }
   };
 
+  const handleSwap = async (targetRow: any, targetField: string, targetValue: string) => {
+    if (!swapSource) {
+      setSwapSource({ row: targetRow, field: targetField, value: targetValue });
+      toast.info(`تم اختيار ${targetValue || 'خانة فارغة'}. الآن اختر الموظف البديل.`);
+      return;
+    }
+
+    if (swapSource.row.id === targetRow.id && swapSource.field === targetField) {
+      setSwapSource(null);
+      toast.info('تم إلغاء الاختيار');
+      return;
+    }
+
+    if (!window.confirm(`هل أنت متأكد من تبديل (${swapSource.value || 'فراغ'}) بـ (${targetValue || 'فراغ'})؟`)) {
+      setSwapSource(null);
+      return;
+    }
+
+    setIsSwapping(true);
+    try {
+      const { updateSchedule } = await import('../services/dataService');
+      
+      // Update first record
+      const updatedSourceRow = { ...swapSource.row, [swapSource.field]: targetValue };
+      await updateSchedule(swapSource.row.date, selectedMonth, updatedSourceRow);
+      
+      // Update second record
+      const updatedTargetRow = { ...targetRow, [targetField]: swapSource.value };
+      await updateSchedule(targetRow.date, selectedMonth, updatedTargetRow);
+
+      toast.success('تم التبديل بنجاح');
+      setSwapSource(null);
+    } catch (e) {
+      console.error(e);
+      toast.error('خطأ أثناء التبديل');
+    } finally {
+      setIsSwapping(false);
+    }
+  };
+
   return (
     <div className="tab-content block pb-10 RTL">
       <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-6">
@@ -229,6 +275,18 @@ export default function Schedules({ permissions }: { permissions: UserPermission
 
         {isAdmin && (
           <div className="flex items-center gap-3">
+            {dbSchedules.length > 0 && (
+              <button 
+                onClick={() => {
+                  setIsSwapMode(!isSwapMode);
+                  setSwapSource(null);
+                }}
+                className={`px-6 py-4 rounded-[24px] font-black transition-all flex items-center gap-2 border ${isSwapMode ? 'bg-amber-500 text-white shadow-lg border-transparent animate-pulse' : 'bg-white dark:bg-slate-800 text-amber-600 border-amber-100 dark:border-amber-500/20 hover:bg-amber-50'}`}
+              >
+                <ArrowLeftRight className="w-5 h-5" />
+                {isSwapMode ? 'إلغاء وضع التبديل' : 'نظام التبديل السريع'}
+              </button>
+            )}
             {dbSchedules.length > 0 && (
               <button 
                 onClick={handleClearMonth}
@@ -346,7 +404,7 @@ export default function Schedules({ permissions }: { permissions: UserPermission
 
                   return (
                     <tr 
-                      key={i} 
+                      key={row.id || i} 
                       className={`hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors group ${hasMe ? 'bg-blue-50/50 dark:bg-blue-500/10' : ''}`}
                     >
                       <td className="p-6 text-xs font-mono text-slate-400 whitespace-nowrap">
@@ -356,15 +414,36 @@ export default function Schedules({ permissions }: { permissions: UserPermission
                         </div>
                       </td>
                       <td className="p-6 text-[13px] font-black text-blue-600 dark:text-blue-400 whitespace-nowrap">{row.day}</td>
-                      <td className={`p-6 text-[11px] font-bold transition-colors ${isMe(row.shift24) ? 'bg-blue-600 text-white shadow-inner scale-105 rounded-lg' : 'text-slate-700 dark:text-slate-300 group-hover:text-blue-600'}`}>{row.shift24 || '-'}</td>
-                      <td className={`p-6 text-[11px] font-bold transition-colors ${isMe(row.shift36) ? 'bg-blue-600 text-white shadow-inner scale-105 rounded-lg' : 'text-slate-700 dark:text-slate-300'}`}>{row.shift36 || '-'}</td>
-                      <td className={`p-6 text-[11px] font-bold transition-colors ${isMe(row.holidayMorning) ? 'bg-blue-600 text-white shadow-inner scale-105 rounded-lg' : 'text-slate-700 dark:text-slate-300'}`}>{row.holidayMorning || '-'}</td>
-                      <td className={`p-6 text-[11px] font-bold transition-colors ${isMe(row.holidayNoon) ? 'bg-blue-600 text-white shadow-inner scale-105 rounded-lg' : 'text-slate-700 dark:text-slate-300'}`}>{row.holidayNoon || '-'}</td>
-                      <td className={`p-6 text-[11px] font-black transition-colors ${isMe(row.cabinet1) ? 'bg-white text-emerald-600 shadow-md scale-105 rounded-lg border-2 border-emerald-500' : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10'}`}>{row.cabinet1 || '-'}</td>
-                      <td className={`p-6 text-[11px] font-black transition-colors ${isMe(row.cabinet2) ? 'bg-white text-emerald-600 shadow-md scale-105 rounded-lg border-2 border-emerald-500' : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10'}`}>{row.cabinet2 || '-'}</td>
-                      <td className={`p-6 text-[11px] font-black transition-colors ${isMe(row.cabinet3) ? 'bg-white text-emerald-600 shadow-md scale-105 rounded-lg border-2 border-emerald-500' : 'text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10'}`}>{row.cabinet3 || '-'}</td>
-                      <td className={`p-6 text-[11px] font-bold transition-colors ${isMe(row.careMorning) ? 'bg-white text-amber-600 shadow-md scale-105 rounded-lg border-2 border-amber-500' : 'text-amber-600 dark:text-amber-400 bg-amber-50/30 dark:bg-amber-900/10'}`}>{row.careMorning || '-'}</td>
-                      <td className={`p-6 text-[11px] font-bold transition-colors ${isMe(row.careNight) ? 'bg-white text-amber-600 shadow-md scale-105 rounded-lg border-2 border-amber-500' : 'text-amber-600 dark:text-amber-400 bg-amber-50/30 dark:bg-amber-900/10'}`}>{row.careNight || '-'}</td>
+                      
+                      {[
+                        { field: 'shift24', color: 'blue' },
+                        { field: 'shift36', color: 'blue' },
+                        { field: 'holidayMorning', color: 'blue' },
+                        { field: 'holidayNoon', color: 'blue' },
+                        { field: 'cabinet1', color: 'emerald' },
+                        { field: 'cabinet2', color: 'emerald' },
+                        { field: 'cabinet3', color: 'emerald' },
+                        { field: 'careMorning', color: 'amber' },
+                        { field: 'careNight', color: 'amber' }
+                      ].map((col) => {
+                        const val = (row as any)[col.field];
+                        const isSelected = swapSource?.row.id === row.id && swapSource?.field === col.field;
+                        const isHighlighted = isMe(val);
+                        
+                        let baseStyle = "p-6 text-[11px] font-bold transition-all";
+                        if (col.color === 'emerald') baseStyle = "p-6 text-[11px] font-black transition-all text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10";
+                        if (col.color === 'amber') baseStyle = "p-6 text-[11px] font-bold transition-all text-amber-600 dark:text-amber-400 bg-amber-50/30 dark:bg-amber-900/10";
+
+                        return (
+                          <td 
+                            key={col.field}
+                            onClick={() => isSwapMode && handleSwap(row, col.field, val)}
+                            className={`${baseStyle} ${isSwapMode ? 'cursor-pointer hover:ring-2 hover:ring-amber-500 hover:scale-105 rounded-lg' : ''} ${isSelected ? 'bg-amber-500 text-white ring-4 ring-amber-500/20 z-10 relative !rounded-lg' : isHighlighted ? 'bg-blue-600 text-white shadow-inner scale-105 rounded-lg' : ''}`}
+                          >
+                            {val || '-'}
+                          </td>
+                        );
+                      })}
                     </tr>
                   );
                 })}
