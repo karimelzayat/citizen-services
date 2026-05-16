@@ -1,11 +1,6 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Default deny
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
     // Helper functions
     function isSignedIn() {
       return request.auth != null;
@@ -14,10 +9,13 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (
         request.auth.token.email == 'karimelzayat3@gmail.com' || 
-        request.auth.token.email == 'karimelzayat.1997@gmail.com' ||
-        exists(/databases/$(database)/documents/employees/$(request.auth.uid)) && 
-        get(/databases/$(database)/documents/employees/$(request.auth.uid)).data.role == 'Admin'
+        request.auth.token.email == 'karimelzayat.1997@gmail.com'
       );
+    }
+
+    // Default deny for safety
+    match /{document=**} {
+      allow read, write: if isAdmin();
     }
 
     // Employees & Permissions
@@ -38,9 +36,9 @@ service cloud.firestore {
 
     // Complaints
     match /complaints/{complaintId} {
-      allow read: if isSignedIn() || request.query.limit <= 10;
+      allow read: if isSignedIn();
       allow create: if true; 
-      allow update: if isAdmin() || (isSignedIn() && resource.data.employeeEmail == request.auth.token.email);
+      allow update: if isSignedIn();
       allow delete: if isAdmin();
     }
 
@@ -71,9 +69,9 @@ service cloud.firestore {
     match /hotline_tree/{id} { allow read: if true; allow write: if isAdmin(); }
     
     match /notifications/{id} { 
-      allow read: if isSignedIn() && (resource.data.userEmail == request.auth.token.email || isAdmin());
+      allow read: if isSignedIn();
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (resource.data.userEmail == request.auth.token.email || isAdmin());
+      allow update: if isSignedIn();
       allow delete: if isAdmin();
     }
 
