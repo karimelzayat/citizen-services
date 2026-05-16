@@ -55,6 +55,15 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
         { id: 'newComplaint', label: 'تسجيل مكالمة', icon: PlusCircle, show: permissions?.canRegisterHotline },
         { id: 'searchComplaint', label: 'البحث', icon: Search, show: permissions?.canSearchHotline },
         { id: 'followUp', label: 'متابعة المكالمات', icon: CheckSquare, show: permissions?.canFollowUpHotline },
+      ]
+    },
+    {
+      title: 'الأعمال الإدارية',
+      showSection: permissions?.showAdminSection,
+      items: [
+        { id: 'ongoingTab', label: 'الجاري', icon: Briefcase, show: permissions?.canRegisterOngoing },
+        { id: 'unregisteredTab', label: 'شكاوي غير مسجلة', icon: FileText, show: permissions?.canRegisterUnregistered },
+        { id: 'wrongDirectionTab', label: 'توجية خطأ', icon: GitBranch, show: permissions?.canRegisterWrongDirection },
         { id: 'directorTab', label: 'تكليفات المدير', icon: Briefcase, show: permissions?.canViewDirectorAssignments },
         { id: 'schedulesTab', label: 'الجداول والتبديلات', icon: Calendar, show: permissions?.canViewSchedules },
         { id: 'reportsTab', label: 'التقارير', icon: FileText, show: permissions?.canViewReports },
@@ -67,6 +76,13 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
         { id: 'inquiryButton', label: 'الاستفسار عن', icon: HelpCircle, show: permissions?.canViewInquiry },
         { id: 'phonebookButton', label: 'دليل الهاتف', icon: Contact, show: permissions?.canViewPhonebook },
         { id: 'faqTab', label: 'دليل الأسئلة (FAQ)', icon: BookOpen, show: permissions?.canViewFAQ },
+      ]
+    },
+    {
+      title: 'النظام',
+      showSection: permissions?.showSettingsSection,
+      items: [
+        { id: 'employeeManagement', label: 'إدارة الموظفين', icon: Settings, show: permissions?.canManageUsers },
       ]
     }
   ];

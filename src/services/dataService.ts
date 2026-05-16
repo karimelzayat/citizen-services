@@ -15,13 +15,12 @@ import {
   setDoc,
   getDoc,
   writeBatch,
-  queryEqual
+  getCountFromServer
 } from 'firebase/firestore';
-import { db, auth } from '../lib/firebase';
-import { Complaint, AdminComplaint, DirectorCase, Inquiry, UserPermissions, Employee, FAQ, PhonebookEntry, Schedule, AppNotification } from '../types';
+import { db, auth, storage } from '../lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { Complaint, AdminComplaint, DirectorCase, Inquiry, UserPermissions, Employee } from '../types';
 import { ROLE_CAPABILITIES, DEFAULT_CAPABILITIES, EMPLOYEE_MAP, INITIAL_EMPLOYEES } from '../constants';
-
-const CHUNK_SIZE = 400;
 
 export enum OperationType {
   CREATE = 'create',
@@ -41,6 +40,11 @@ interface FirestoreErrorInfo {
     email?: string | null;
     emailVerified?: boolean | null;
     isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
   }
 }
 
@@ -52,330 +56,637 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
       email: auth.currentUser?.email,
       emailVerified: auth.currentUser?.emailVerified,
       isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || []
     },
     operationType,
     path
-  };
+  }
   console.error('Firestore Error: ', JSON.stringify(errInfo));
   throw new Error(JSON.stringify(errInfo));
 }
 
-// User Permissions & Presence
-export async function getUserPermissions(email?: string): Promise<UserPermissions> {
-  if (!email) return { ...DEFAULT_CAPABILITIES, role: 'Guest' };
+// Employee & Permission Management
+export async function getUserPermissions(email: string | null | undefined): Promise<UserPermissions> {
+  const normalizedEmail = (email || "").trim().toLowerCase();
   
+  // 1. High Priority Hardcoded Admins
+  const hardcodedAdmins = ['karimelzayat3@gmail.com', 'karimelzayat.1997@gmail.com'];
+  let hardcodedPerms: UserPermissions | null = null;
+  if (hardcodedAdmins.includes(normalizedEmail)) {
+    hardcodedPerms = { role: "Admin", ...ROLE_CAPABILITIES["Admin"] };
+  }
+
+  // 2. Try to get permissions from Employees collection
   try {
-    // Check if employee exists in our system
-    const employeesRef = collection(db, 'employees');
-    const q = query(employeesRef, where('email', '==', email.toLowerCase()));
+    const q = query(collection(db, 'employees'), where('email', '==', normalizedEmail));
     const snapshot = await getDocs(q);
     
     if (!snapshot.empty) {
-      const empData = snapshot.docs[0].data() as Employee;
-      return {
-        ...empData.permissions,
-        role: empData.role,
-        employeeData: { ...empData, id: snapshot.docs[0].id }
-      };
+      const data = snapshot.docs[0].data() as Employee;
+      const basePermissions = hardcodedPerms || { role: data.role, ...data.permissions };
+      return { 
+        ...basePermissions,
+        employeeData: { id: snapshot.docs[0].id, ...data }
+      } as UserPermissions;
     }
+  } catch (e) {
+    console.error("Firebase error checking employee permissions:", e);
+  }
+  
+  if (hardcodedPerms) return hardcodedPerms;
+  return { role: "Guest", ...DEFAULT_CAPABILITIES };
+}
 
-    // Default mapping for predefined employees if not in Firestore yet
-    const role: any = email === 'omarkhaledfadel@gmail.com' ? 'Admin' : 'Employee';
-    return {
-      ...(ROLE_CAPABILITIES[role as keyof typeof ROLE_CAPABILITIES] || DEFAULT_CAPABILITIES),
-      role
-    };
-  } catch (error) {
-    console.error('Error fetching permissions:', error);
-    return { ...DEFAULT_CAPABILITIES, role: 'Guest' };
+export async function getAllEmployees(): Promise<Employee[]> {
+  try {
+    const snapshot = await getDocs(collection(db, 'employees'));
+    if (snapshot.empty && INITIAL_EMPLOYEES.length > 0) {
+      console.log("Seeding employees...");
+      for (const emp of INITIAL_EMPLOYEES) {
+        await saveEmployee({
+          ...emp,
+          role: 'Employee',
+          permissions: { ...ROLE_CAPABILITIES['Employee'] }
+        });
+      }
+      const newSnapshot = await getDocs(collection(db, 'employees'));
+      return newSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
+    }
+    return snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as object) } as Employee));
+  } catch (e) {
+    handleFirestoreError(e, OperationType.LIST, 'employees');
+    return [];
   }
 }
 
-// Subscriptions
-export function subscribeToComplaints(callback: (data: Complaint[]) => void) {
-  const q = query(collection(db, 'complaints'), orderBy('timestamp', 'desc'), limit(100));
-  return onSnapshot(q, (snapshot) => {
-    const data = snapshot.docs.map(doc => ({ 
-      ...doc.data(), 
-      id: doc.id,
-      timestamp: doc.data().timestamp?.toDate() || new Date()
-    })) as Complaint[];
-    callback(data);
-  }, (error) => handleFirestoreError(error, OperationType.LIST, 'complaints'));
-}
-
-export function subscribeToAdminComplaints(callback: (data: AdminComplaint[]) => void) {
-  const q = query(collection(db, 'adminComplaints'), orderBy('timestamp', 'desc'), limit(100));
-  return onSnapshot(q, (snapshot) => {
-    const data = snapshot.docs.map(doc => ({ 
-      ...doc.data(), 
-      id: doc.id,
-      timestamp: doc.data().timestamp?.toDate() || new Date()
-    })) as AdminComplaint[];
-    callback(data);
-  }, (error) => handleFirestoreError(error, OperationType.LIST, 'adminComplaints'));
-}
-
-export function subscribeToInquiries(callback: (data: Inquiry[]) => void) {
-  const q = query(collection(db, 'inquiries'), orderBy('timestamp', 'desc'));
-  return onSnapshot(q, (snapshot) => {
-    const data = snapshot.docs.map(doc => ({ 
-      ...doc.data(), 
-      id: doc.id,
-      timestamp: doc.data().timestamp?.toDate() || new Date()
-    })) as Inquiry[];
-    callback(data);
-  }, (error) => handleFirestoreError(error, OperationType.LIST, 'inquiries'));
-}
-
-export function subscribeToFAQs(callback: (data: FAQ[]) => void) {
-  return onSnapshot(collection(db, 'faqs'), (snapshot) => {
-    const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as FAQ[];
-    callback(data);
-  }, (error) => handleFirestoreError(error, OperationType.LIST, 'faqs'));
-}
-
-export function subscribeToEmployees(callback: (data: Employee[]) => void) {
-  return onSnapshot(collection(db, 'employees'), (snapshot) => {
-    const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Employee[];
-    callback(data);
-  }, (error) => handleFirestoreError(error, OperationType.LIST, 'employees'));
-}
-
-export function subscribeToDirectorCases(callback: (data: DirectorCase[]) => void) {
-  const q = query(collection(db, 'directorCases'), orderBy('timestamp', 'desc'));
-  return onSnapshot(q, (snapshot) => {
-    const data = snapshot.docs.map(doc => ({ 
-      ...doc.data(), 
-      id: doc.id,
-      timestamp: doc.data().timestamp?.toDate() || new Date(),
-      updatedAt: doc.data().updatedAt?.toDate() || new Date()
-    })) as DirectorCase[];
-    callback(data);
-  }, (error) => handleFirestoreError(error, OperationType.LIST, 'directorCases'));
-}
-
-// CRUD Operations
-export async function addComplaint(data: Omit<Complaint, 'id'>) {
+export async function saveEmployee(employee: Partial<Employee>) {
   try {
-    return await addDoc(collection(db, 'complaints'), {
-      ...data,
-      timestamp: serverTimestamp(),
-      employeeEmail: auth.currentUser?.email || ''
+    const docData = sanitize({
+      ...employee,
+      updatedAt: serverTimestamp(),
+      createdAt: employee.id ? undefined : serverTimestamp()
     });
-  } catch (error) {
-    handleFirestoreError(error, OperationType.CREATE, 'complaints');
-  }
-}
 
-export async function updateComplaint(id: string, data: Partial<Complaint>) {
-  try {
-    await updateDoc(doc(db, 'complaints', id), data);
-  } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `complaints/${id}`);
-  }
-}
-
-export async function deleteComplaint(id: string) {
-  try {
-    await deleteDoc(doc(db, 'complaints', id));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, `complaints/${id}`);
-  }
-}
-
-export async function addAdminComplaint(data: Omit<AdminComplaint, 'id' | 'timestamp' | 'employeeEmail'>) {
-  try {
-    return await addDoc(collection(db, 'adminComplaints'), {
-      ...data,
-      timestamp: serverTimestamp(),
-      employeeEmail: auth.currentUser?.email || ''
-    });
-  } catch (error) {
-    handleFirestoreError(error, OperationType.CREATE, 'adminComplaints');
-  }
-}
-
-export async function addInquiry(data: { question: string, qUser: string }) {
-  try {
-    return await addDoc(collection(db, 'inquiries'), {
-      ...data,
-      timestamp: serverTimestamp()
-    });
-  } catch (error) {
-    handleFirestoreError(error, OperationType.CREATE, 'inquiries');
-  }
-}
-
-export async function updateInquiry(id: string, data: Partial<Inquiry>) {
-  try {
-    await updateDoc(doc(db, 'inquiries', id), data);
-  } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `inquiries/${id}`);
-  }
-}
-
-export async function deleteInquiry(id: string) {
-  try {
-    await deleteDoc(doc(db, 'inquiries', id));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, `inquiries/${id}`);
-  }
-}
-
-export async function addFAQ(data: Omit<FAQ, 'id'>) {
-  try {
-    return await addDoc(collection(db, 'faqs'), data);
-  } catch (error) {
-    handleFirestoreError(error, OperationType.CREATE, 'faqs');
-  }
-}
-
-export async function updateFAQ(id: string, data: Partial<FAQ>) {
-  try {
-    await updateDoc(doc(db, 'faqs', id), data);
-  } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `faqs/${id}`);
-  }
-}
-
-export async function deleteFAQ(id: string) {
-  try {
-    await deleteDoc(doc(db, 'faqs', id));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, `faqs/${id}`);
-  }
-}
-
-export async function addDirectorCase(data: Omit<DirectorCase, 'id'>) {
-  try {
-    return await addDoc(collection(db, 'directorCases'), {
-      ...data,
-      timestamp: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-  } catch (error) {
-    handleFirestoreError(error, OperationType.CREATE, 'directorCases');
-  }
-}
-
-export async function updateDirectorCase(id: string, data: Partial<DirectorCase>) {
-  try {
-    await updateDoc(doc(db, 'directorCases', id), {
-      ...data,
-      updatedAt: serverTimestamp()
-    });
-  } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `directorCases/${id}`);
-  }
-}
-
-export async function deleteDirectorCase(id: string) {
-  try {
-    await deleteDoc(doc(db, 'directorCases', id));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, `directorCases/${id}`);
-  }
-}
-
-export async function addEmployee(data: Omit<Employee, 'id'>) {
-  try {
-    return await addDoc(collection(db, 'employees'), {
-      ...data,
-      createdAt: serverTimestamp()
-    });
-  } catch (error) {
-    handleFirestoreError(error, OperationType.CREATE, 'employees');
-  }
-}
-
-export async function updateEmployee(id: string, data: Partial<Employee>) {
-  try {
-    await updateDoc(doc(db, 'employees', id), data);
-  } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `employees/${id}`);
+    if (employee.id) {
+      await updateDoc(doc(db, 'employees', employee.id), docData);
+      return employee.id;
+    } else {
+      const docRef = await addDoc(collection(db, 'employees'), docData);
+      return docRef.id;
+    }
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, 'employees');
   }
 }
 
 export async function deleteEmployee(id: string) {
   try {
     await deleteDoc(doc(db, 'employees', id));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, `employees/${id}`);
+  } catch (e) {
+    handleFirestoreError(e, OperationType.DELETE, `employees/${id}`);
   }
 }
 
-// Bulk Uploads with Chunking
-async function runInChunks(data: any[], collectionName: string, transform?: (item: any) => any, idGenerator?: (item: any) => string) {
-  const chunks = [];
-  for (let i = 0; i < data.length; i += CHUNK_SIZE) {
-    chunks.push(data.slice(i, i + CHUNK_SIZE));
+// Helper to recursively remove undefined values before sending to Firestore
+function sanitize(data: any): any {
+  if (data === undefined) return null;
+  if (data === null || typeof data !== 'object') return data;
+  
+  // Preserve special types that Firestore handles natively
+  if (data instanceof Date || data instanceof Timestamp) return data;
+  
+  // Preserve Firestore sentinels (like FieldValue from serverTimestamp)
+  // These are objects but have custom constructors
+  if (data.constructor && 
+      data.constructor.name !== 'Object' && 
+      data.constructor.name !== 'Array') {
+    return data;
+  }
+  
+  const cleaned: any = Array.isArray(data) ? [] : {};
+  Object.keys(data).forEach(key => {
+    const val = data[key];
+    if (val !== undefined) {
+      cleaned[key] = sanitize(val);
+    }
+  });
+  return cleaned;
+}
+
+// Complaints
+export async function addComplaint(complaint: Partial<Complaint>, file?: File) {
+  const user = auth.currentUser;
+  
+  let attachmentUrl = "";
+  if (file) {
+    const fileName = `${Date.now()}_${file.name}`;
+    const storageRef = ref(storage, `complaints/${fileName}`);
+    try {
+      await uploadBytes(storageRef, file);
+      attachmentUrl = await getDownloadURL(storageRef);
+    } catch (err) {
+      console.error("Storage upload failed", err);
+    }
   }
 
-  for (const chunk of chunks) {
-    const batch = writeBatch(db);
-    chunk.forEach(item => {
-      const finalData = transform ? transform(item) : item;
-      const docRef = idGenerator 
-        ? doc(db, collectionName, idGenerator(item))
-        : doc(collection(db, collectionName));
-      batch.set(docRef, finalData);
+  // Use provided employeeName or try to look it up
+  let employeeName = complaint.employeeName;
+  if (!employeeName && user) {
+    employeeName = EMPLOYEE_MAP[user.email || ""] || user.displayName || user.email || "Unknown";
+  }
+  if (!employeeName && !user) {
+    employeeName = "مواطن (ضيف)";
+  }
+
+  try {
+    const docData = sanitize({
+      ...complaint,
+      timestamp: serverTimestamp(),
+      employeeName,
+      employeeEmail: user?.email || "guest@citizen.service",
+      attachmentUrl: attachmentUrl || "",
+      status: complaint.status || "جديد"
     });
-    await batch.commit();
+    const docRef = await addDoc(collection(db, 'complaints'), docData);
+    return docRef.id;
+  } catch (err) {
+    handleFirestoreError(err, OperationType.WRITE, 'complaints');
   }
 }
 
-export async function bulkUploadFAQs(data: Omit<FAQ, 'id'>[]) {
-  return runInChunks(data, 'faqs');
+export async function reviewFollowUp(pendingId: string, reviewData: any) {
+  try {
+    const pendingRef = doc(db, 'followUpPending', pendingId);
+    const pendingSnap = await getDoc(pendingRef);
+    
+    if (!pendingSnap.exists()) throw new Error("Document not found");
+    const data = pendingSnap.data();
+
+    await addDoc(collection(db, 'followUpCompleted'), sanitize({
+      ...data,
+      ...reviewData,
+      followUpStatus: 'completed',
+      followUpCompletedAt: serverTimestamp(),
+    }));
+
+    await deleteDoc(pendingRef);
+  } catch (e) {
+    handleFirestoreError(e, OperationType.UPDATE, `followUpPending/${pendingId}`);
+  }
 }
 
-export async function bulkUploadInquiries(data: Omit<Inquiry, 'id' | 'timestamp'>[]) {
-  return runInChunks(data, 'inquiries', (item) => ({
-    ...item,
-    timestamp: serverTimestamp()
-  }));
+export async function checkAndAddFollowUp(complaintId: string, data: any) {
+  // استبعاد المكالمات التي جهتها أو موضوعها "عدم اختصاص"
+  const entityStr = String(data.complaintEntity || '');
+  const subjectStr = String(data.complaintSubject || '');
+  
+  const isExcluded = entityStr.includes('عدم اختصاص') || subjectStr.includes('عدم اختصاص');
+  
+  // اختيار عشوائي بنسبة 5% من المكالمات غير المستبعدة
+  const isSelected = !isExcluded && Math.random() < 0.05;
+
+  if (isSelected) {
+    const user = auth.currentUser;
+    const employeeName = data.employeeName || (user ? (EMPLOYEE_MAP[user.email || ""] || user.displayName || user.email || 'نظام') : 'نظام');
+    
+    await addDoc(collection(db, 'followUpPending'), sanitize({
+      ...data,
+      originalDocId: complaintId,
+      followUpStatus: 'pending',
+      timestamp: serverTimestamp(),
+      employeeName,
+      employeeEmail: user?.email || '',
+    }));
+  }
 }
 
-export async function bulkUploadPhonebook(data: Omit<PhonebookEntry, 'id'>[]) {
-  return runInChunks(data, 'phonebook');
+export async function addFollowUpManual(data: any) {
+  try {
+    const user = auth.currentUser;
+    const employeeName = data.employeeName || (user ? (EMPLOYEE_MAP[user.email || ""] || user.displayName || user.email || 'نظام') : 'نظام');
+    
+    const docData = sanitize({
+      ...data,
+      timestamp: serverTimestamp(),
+      followUpStatus: 'pending',
+      employeeName,
+      employeeEmail: user?.email || '',
+      complaintStatus: 'تم الرد'
+    });
+    await addDoc(collection(db, 'followUpPending'), docData);
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, 'followUpPending');
+  }
 }
 
-export async function bulkUploadAdminWork(data: any[]) {
-  const userEmail = auth.currentUser?.email || '';
-  return runInChunks(data, 'adminComplaints', (item) => ({
-    ...item,
-    employeeEmail: userEmail,
-    isBulkUploaded: true,
-    timestamp: item.timestamp || serverTimestamp()
-  }));
-}
-
-export async function bulkUploadSchedules(data: Omit<Schedule, 'id'>[]) {
-  return runInChunks(data, 'schedules', 
-    (item) => ({ ...item, updatedAt: serverTimestamp() }),
-    (item) => `${item.date}_${item.monthYear}`.replace(/\//g, '-')
-  );
+export async function deleteBulkFollowUpData(collectionName: 'followUpPending' | 'followUpCompleted') {
+  try {
+    const q = query(collection(db, collectionName), where('isBulkUploaded', '==', true));
+    const snapshot = await getDocs(q);
+    
+    const batch = writeBatch(db);
+    snapshot.docs.forEach((d) => {
+      batch.delete(d.ref);
+    });
+    
+    await batch.commit();
+    return snapshot.size;
+  } catch (e) {
+    handleFirestoreError(e, OperationType.DELETE, collectionName);
+    throw e;
+  }
 }
 
 export async function deleteBulkAdminWork() {
   try {
-    const q = query(collection(db, 'adminComplaints'), where('isBulkUploaded', '==', true));
+    const q = query(collection(db, 'admin_complaints'), where('isBulkUploaded', '==', true));
     const snapshot = await getDocs(q);
-    
-    const chunks = [];
-    for (let i = 0; i < snapshot.docs.length; i += CHUNK_SIZE) {
-      chunks.push(snapshot.docs.slice(i, i + CHUNK_SIZE));
+    const batch = writeBatch(db);
+    snapshot.docs.forEach((d) => {
+      batch.delete(d.ref);
+    });
+    await batch.commit();
+    return snapshot.size;
+  } catch (e) {
+    handleFirestoreError(e, OperationType.DELETE, 'admin_complaints');
+    throw e;
+  }
+}
+
+export async function bulkUploadInquiries(data: any[]) {
+  const CHUNK_SIZE = 400;
+  for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+    const chunk = data.slice(i, i + CHUNK_SIZE);
+    try {
+      const batch = writeBatch(db);
+      chunk.forEach(item => {
+        const docRef = doc(collection(db, 'inquiries'));
+        batch.set(docRef, sanitize({
+          ...item,
+          timestamp: serverTimestamp()
+        }));
+      });
+      await batch.commit();
+    } catch (e) {
+      handleFirestoreError(e, OperationType.WRITE, 'inquiries');
+      throw e;
+    }
+  }
+}
+
+export async function bulkUploadPhonebook(data: any[]) {
+  const CHUNK_SIZE = 400;
+  for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+    const chunk = data.slice(i, i + CHUNK_SIZE);
+    try {
+      const batch = writeBatch(db);
+      chunk.forEach(item => {
+        const docRef = doc(collection(db, 'phonebook'));
+        batch.set(docRef, sanitize(item));
+      });
+      await batch.commit();
+    } catch (e) {
+      handleFirestoreError(e, OperationType.WRITE, 'phonebook');
+      throw e;
+    }
+  }
+}
+
+export async function bulkUploadFAQs(data: any[]) {
+  const CHUNK_SIZE = 400;
+  for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+    const chunk = data.slice(i, i + CHUNK_SIZE);
+    try {
+      const batch = writeBatch(db);
+      chunk.forEach(item => {
+        const docRef = doc(collection(db, 'faq'));
+        batch.set(docRef, sanitize(item));
+      });
+      await batch.commit();
+    } catch (e) {
+      handleFirestoreError(e, OperationType.WRITE, 'faq');
+      throw e;
+    }
+  }
+}
+
+export async function bulkUploadAdminWork(data: any[]) {
+  const CHUNK_SIZE = 400;
+  for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+    const chunk = data.slice(i, i + CHUNK_SIZE);
+    try {
+      const batch = writeBatch(db);
+      chunk.forEach(item => {
+        const docRef = doc(collection(db, 'admin_complaints'));
+        batch.set(docRef, sanitize({
+          ...item,
+          isBulkUploaded: true,
+          timestamp: item.timestamp || serverTimestamp()
+        }));
+      });
+      await batch.commit();
+    } catch (e) {
+      handleFirestoreError(e, OperationType.WRITE, 'admin_complaints');
+      throw e;
+    }
+  }
+}
+
+export async function searchComplaints(params: { date?: string, phoneNumber?: string, callerName?: string }) {
+  try {
+    const colRef = collection(db, 'complaints');
+    let results: Complaint[] = [];
+
+    // Prioritize search by Phone or Name directly in Firestore
+    if (params.phoneNumber) {
+      const p = params.phoneNumber.trim();
+      console.log(`[Search] Searching by phone: ${p}`);
+      const q = query(colRef, where('phoneNumber', '==', p));
+      const snapshot = await getDocs(q);
+      results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
+    } 
+    else if (params.callerName) {
+      const name = params.callerName.trim();
+      console.log(`[Search] Searching by name: ${name}`);
+      // Try exact match first
+      const q = query(colRef, where('callerName', '==', name));
+      const snapshot = await getDocs(q);
+      results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
+      
+      // If no exact match and name is long enough, try prefix search? 
+      // Firestore query(where('name', '>=', name), where('name', '<=', name + '\uf8ff'))
+      if (results.length === 0 && name.length >= 3) {
+         const qPrefix = query(colRef, 
+           where('callerName', '>=', name), 
+           where('callerName', '<=', name + '\uf8ff'), 
+           limit(100)
+         );
+         const snapPrefix = await getDocs(qPrefix);
+         results = snapPrefix.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
+      }
+    }
+    // If only date is provided, use a range query
+    else if (params.date) {
+      console.log(`[Search] Searching by date range: ${params.date}`);
+      const start = new Date(params.date + 'T00:00:00');
+      const end = new Date(params.date + 'T23:59:59');
+      const q = query(colRef, 
+        where('timestamp', '>=', Timestamp.fromDate(start)),
+        where('timestamp', '<=', Timestamp.fromDate(end)),
+        orderBy('timestamp', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
+    }
+    // Default: Get 100 most recent
+    else {
+      console.log(`[Search] No params provided, fetching recent complaints`);
+      const q = query(colRef, orderBy('timestamp', 'desc'), limit(100));
+      const snapshot = await getDocs(q);
+      results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
     }
 
-    for (const chunk of chunks) {
-      const batch = writeBatch(db);
-      chunk.forEach(d => batch.delete(d.ref));
-      await batch.commit();
+    // In-memory multi-filter for secondary parameters
+    if (results.length > 0) {
+      results = results.filter(c => {
+        // Filter by Date
+        if (params.date) {
+           if (!c.timestamp) return false;
+           try {
+             const ts = (c.timestamp as any).toDate ? (c.timestamp as any).toDate() : new Date(c.timestamp as any);
+             if (isNaN(ts.getTime())) {
+               // Handle corrupted data: if it's a map with _methodName it was corrupted by sanitize
+               // We can't know the exact time, but we know it's recent. 
+               // For now, if it's corrupted, we can't reliably filter by date, so we return false
+               // Unless we want to be generous? Local users might prefer seeing their data.
+               return false;
+             }
+             
+             // Compare in local date format (YYYY-MM-DD) to match params.date
+             // toISOString() is UTC, which can be off by a day for local users
+             const year = ts.getFullYear();
+             const month = String(ts.getMonth() + 1).padStart(2, '0');
+             const day = String(ts.getDate()).padStart(2, '0');
+             const localDate = `${year}-${month}-${day}`;
+             
+             if (localDate !== params.date) return false;
+           } catch (e) { return false; }
+        }
+
+        // Filter by Phone
+        if (params.phoneNumber) {
+          const p = params.phoneNumber.trim();
+          if (!c.phoneNumber || !c.phoneNumber.includes(p)) return false;
+        }
+
+        // Filter by Name
+        if (params.callerName) {
+          const n = params.callerName.trim();
+          if (!c.callerName || !c.callerName.includes(n)) return false;
+        }
+
+        return true;
+      });
     }
+
+    // Sort result by timestamp
+    results.sort((a, b) => {
+      const tsA = (a.timestamp as any)?.toDate?.() || new Date(a.timestamp as any);
+      const tsB = (b.timestamp as any)?.toDate?.() || new Date(b.timestamp as any);
+      return tsB.getTime() - tsA.getTime();
+    });
+
+    console.log(`[Search] Final filtered count: ${results.length}`);
+    return results;
+  } catch (e) {
+    console.error('[Search] Error in searchComplaints', e);
+    return [];
+  }
+}
+
+export async function getUserMonthlyCallCount(email: string) {
+  try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
     
-    return snapshot.size;
-  } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, 'adminComplaints (bulk)');
+    const q = query(
+      collection(db, 'complaints'),
+      where('employeeEmail', '==', email),
+      where('timestamp', '>=', Timestamp.fromDate(startOfMonth)),
+      where('timestamp', '<=', Timestamp.fromDate(endOfMonth))
+    );
+    
+    const snapshot = await getCountFromServer(q);
+    return snapshot.data().count;
+  } catch (e) {
+    console.error("Error fetching monthly call count", e);
+    return 0;
+  }
+}
+
+// Admin Work
+export async function addAdminComplaint(data: Partial<AdminComplaint>) {
+  const user = auth.currentUser;
+  const employeeName = data.employeeName || (user ? (EMPLOYEE_MAP[user.email || ""] || user.displayName || user.email || "Unknown") : "ضيف");
+
+  try {
+    const docData = sanitize({
+      ...data,
+      timestamp: serverTimestamp(),
+      employeeName,
+      employeeEmail: user?.email || "guest@admin.service"
+    });
+    await addDoc(collection(db, 'admin_complaints'), docData);
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, 'admin_complaints');
+  }
+}
+
+export async function searchAdminComplaints(params: { date?: string, complaintNo?: string }) {
+  try {
+    const colRef = collection(db, 'admin_complaints');
+    let q;
+    if (params.complaintNo) {
+      q = query(colRef, where('complaintNo', '==', params.complaintNo.trim()));
+    } else if (params.date) {
+      const start = new Date(params.date + 'T00:00:00');
+      const end = new Date(params.date + 'T23:59:59');
+      q = query(colRef, 
+        where('timestamp', '>=', Timestamp.fromDate(start)),
+        where('timestamp', '<=', Timestamp.fromDate(end)),
+        orderBy('timestamp', 'desc')
+      );
+    } else {
+      q = query(colRef, orderBy('timestamp', 'desc'), limit(100));
+    }
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as object) } as any));
+  } catch (e) {
+    console.error('[SearchAdmin] Error', e);
+    return [];
+  }
+}
+
+// Director Office
+export async function addDirectorCase(data: Partial<DirectorCase>, file?: File) {
+  let attachmentUrl = "";
+  if (file) {
+    const storageRef = ref(storage, `director/${Date.now()}_${file.name}`);
+    await uploadBytes(storageRef, file);
+    attachmentUrl = await getDownloadURL(storageRef);
+  }
+
+  try {
+    const docData = sanitize({
+      ...data,
+      timestamp: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      attachmentUrl,
+      status: "جديد"
+    });
+    await addDoc(collection(db, 'director_cases'), docData);
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, 'director_cases');
+  }
+}
+
+export function listenToDirectorCases(callback: (cases: DirectorCase[]) => void) {
+  const q = query(collection(db, 'director_cases'), orderBy('timestamp', 'desc'));
+  return onSnapshot(q, (snapshot) => {
+    const cases = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as object) } as DirectorCase));
+    callback(cases);
+  }, (error) => {
+    handleFirestoreError(error, OperationType.LIST, 'director_cases');
+  });
+}
+
+// Inquiries
+export async function addInquiry(question: string) {
+  const user = auth.currentUser;
+  const employeeName = user ? (EMPLOYEE_MAP[user.email || ""] || user.displayName || user.email || "Unknown") : "ضيف";
+
+  try {
+    await addDoc(collection(db, 'inquiries'), {
+      question,
+      qUser: employeeName,
+      timestamp: serverTimestamp(),
+      answer: "",
+      aUser: ""
+    });
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, 'inquiries');
+  }
+}
+
+export function listenToInquiries(callback: (inquiries: Inquiry[]) => void) {
+  const q = query(collection(db, 'inquiries'), orderBy('timestamp', 'desc'), limit(50));
+  return onSnapshot(q, (snapshot) => {
+    const inquiries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Inquiry));
+    callback(inquiries);
+  }, (error) => {
+    handleFirestoreError(error, OperationType.LIST, 'inquiries');
+  });
+}
+
+// FAQ
+export async function getFAQs() {
+  try {
+    const q = query(collection(db, 'faq'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => doc.data() as any);
+  } catch (e) {
+    const err = e as any;
+    if (err.code === 'permission-denied') return [];
+    handleFirestoreError(e, OperationType.LIST, 'faq');
+    return [];
+  }
+}
+
+// Schedules
+export function listenToSchedules(monthYear: string, callback: (schedules: any[]) => void) {
+  const q = query(collection(db, 'schedules'), where('monthYear', '==', monthYear), orderBy('date', 'asc'));
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  }, (e) => {
+    // If no index exists yet, fall back to non-ordered
+    const qBasic = query(collection(db, 'schedules'), where('monthYear', '==', monthYear));
+    onSnapshot(qBasic, (snap) => {
+      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      callback(data.sort((a: any, b: any) => a.date.localeCompare(b.date)));
+    });
+  });
+}
+
+export async function updateSchedule(date: string, monthYear: string, data: any) {
+  try {
+    const docId = `${monthYear}_${date}`.replace(/[\/\s]/g, '_');
+    await setDoc(doc(db, 'schedules', docId), sanitize({
+      ...data,
+      date,
+      monthYear,
+      updatedAt: serverTimestamp()
+    }));
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, 'schedules');
+  }
+}
+
+export async function bulkUploadSchedules(schedules: any[]) {
+  try {
+    for (const s of schedules) {
+      const docId = `${s.monthYear}_${s.date}`.replace(/[\/\s]/g, '_');
+      await setDoc(doc(db, 'schedules', docId), sanitize({
+        ...s,
+        updatedAt: serverTimestamp()
+      }));
+    }
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, 'schedules');
   }
 }
 
@@ -383,53 +694,45 @@ export async function deleteSchedulesByMonth(monthYear: string) {
   try {
     const q = query(collection(db, 'schedules'), where('monthYear', '==', monthYear));
     const snapshot = await getDocs(q);
-    const batch = writeBatch(db);
-    snapshot.docs.forEach(d => batch.delete(d.ref));
-    await batch.commit();
-  } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, `schedules/${monthYear}`);
+    for (const docSnap of snapshot.docs) {
+      await deleteDoc(doc(db, 'schedules', docSnap.id));
+    }
+  } catch (e) {
+    handleFirestoreError(e, OperationType.DELETE, 'schedules');
   }
 }
 
 export async function getAvailableScheduleMonths(): Promise<string[]> {
   try {
-    const snapshot = await getDocs(collection(db, 'schedules'));
-    const months = new Set<string>();
-    snapshot.docs.forEach(d => {
-      const data = d.data();
-      if (data.monthYear) months.add(data.monthYear);
+    const q = query(collection(db, 'schedules'), limit(5000)); // Sample all since we need unique values
+    const snapshot = await getDocs(q);
+    const monthsSet = new Set<string>();
+    snapshot.docs.forEach(doc => {
+      const my = doc.data().monthYear;
+      if (my) monthsSet.add(my);
     });
-    return Array.from(months);
-  } catch (error) {
+    return Array.from(monthsSet).sort((a, b) => {
+      // Basic sorting might be tricky with Arabic names, but usually fine if they follow a pattern
+      // Or we can just return what we find
+      return b.localeCompare(a); 
+    });
+  } catch (e) {
     return [];
   }
 }
 
-export async function updateSchedule(date: string, monthYear: string, data: Partial<Schedule>) {
+// Hotline Tree
+export async function getHotlineTree() {
   try {
-    const id = `${date}_${monthYear}`.replace(/\//g, '-');
-    await setDoc(doc(db, 'schedules', id), { ...data, updatedAt: serverTimestamp() }, { merge: true });
-  } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `schedules/${date}_${monthYear}`);
+    const snapshot = await getDocs(collection(db, 'hotline_tree'));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (e) {
+    return [];
   }
 }
 
-export function listenToSchedules(monthYear: string, callback: (data: Schedule[]) => void) {
-  const q = query(collection(db, 'schedules'), where('monthYear', '==', monthYear));
-  return onSnapshot(q, (snapshot) => {
-    const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as Schedule[];
-    callback(data);
-  }, (error) => handleFirestoreError(error, OperationType.LIST, 'schedules'));
-}
-
-export function subscribeToPhonebook(callback: (data: PhonebookEntry[]) => void) {
-  return onSnapshot(collection(db, 'phonebook'), (snapshot) => {
-    const data = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })) as PhonebookEntry[];
-    callback(data);
-  }, (error) => handleFirestoreError(error, OperationType.LIST, 'phonebook'));
-}
-
-export async function searchPhonebook(entity: string, governorate: string): Promise<PhonebookEntry[]> {
+// Phonebook
+export async function searchPhonebook(entity: string, governorate: string) {
   try {
     const q = query(
       collection(db, 'phonebook'), 
@@ -437,236 +740,275 @@ export async function searchPhonebook(entity: string, governorate: string): Prom
       where('governorate', '==', governorate)
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(d => ({ ...d.data(), id: d.id })) as PhonebookEntry[];
-  } catch (error) {
+    return snapshot.docs.map(doc => doc.data());
+  } catch (e) {
     return [];
   }
 }
 
-export async function searchComplaints(filters: { date?: string, phoneNumber?: string, callerName?: string }): Promise<Complaint[]> {
+// Cabinet Tracking (Special complaints)
+export function listenToCabinetComplaints(callback: (complaints: Complaint[]) => void) {
+  const q = query(collection(db, 'complaints'), where('isCabinetComplaint', '==', true), orderBy('timestamp', 'desc'));
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint)));
+  }, (e) => handleFirestoreError(e, OperationType.LIST, 'complaints'));
+}
+
+// Ranking (Based on active complaints)
+export async function getUserRanking() {
   try {
-    let q = query(collection(db, 'complaints'), orderBy('timestamp', 'desc'));
-    
-    if (filters.date) {
-      const start = new Date(filters.date);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(filters.date);
-      end.setHours(23, 59, 59, 999);
-      q = query(q, where('timestamp', '>=', Timestamp.fromDate(start)), where('timestamp', '<=', Timestamp.fromDate(end)));
-    }
-    
+    const q = query(collection(db, 'complaints'), limit(500)); // Sample recent
     const snapshot = await getDocs(q);
-    let results = snapshot.docs.map(d => ({ 
-      ...d.data(), 
-      id: d.id,
-      timestamp: d.data().timestamp?.toDate() || new Date()
-    })) as Complaint[];
+    const counts: Record<string, number> = {};
+    
+    snapshot.docs.forEach(doc => {
+      const email = doc.data().employeeEmail;
+      const name = doc.data().employeeName;
+      if (email && email !== 'guest@citizen.service') {
+        counts[name || email] = (counts[name || email] || 0) + 1;
+      }
+    });
 
-    if (filters.phoneNumber) {
-      results = results.filter(r => r.phoneNumber.includes(filters.phoneNumber!));
-    }
-    if (filters.callerName) {
-      results = results.filter(r => r.callerName.includes(filters.callerName!));
-    }
-
-    return results;
-  } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, 'complaints (search)');
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, calls: count }))
+      .sort((a, b) => b.calls - a.calls)
+      .slice(0, 5)
+      .map((user, idx) => ({ ...user, rank: idx + 1 }));
+  } catch (e) {
     return [];
   }
 }
 
-export async function searchAdminComplaints(filters: { date?: string, complaintNo?: string }): Promise<AdminComplaint[]> {
+export async function getDailyRanking() {
   try {
-    let q = query(collection(db, 'adminComplaints'), orderBy('timestamp', 'desc'));
-    const snapshot = await getDocs(q);
-    let results = snapshot.docs.map(d => ({ 
-      ...d.data(), 
-      id: d.id,
-      timestamp: d.data().timestamp?.toDate() || new Date()
-    })) as AdminComplaint[];
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
-    if (filters.date) {
-      const searchDate = new Date(filters.date).toLocaleDateString('ar-EG');
-      results = results.filter(r => r.timestamp.toLocaleDateString('ar-EG') === searchDate);
+    // Get Schedule for today to identify shift employees
+    const currentMonthYear = now.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
+    const dayNum = String(now.getDate());
+    
+    const qSched = query(collection(db, 'schedules'), where('monthYear', '==', currentMonthYear), where('date', '==', dayNum));
+    const schedSnap = await getDocs(qSched);
+    
+    let shiftEmployees: string[] = [];
+    if (!schedSnap.empty) {
+      const data = schedSnap.docs[0].data();
+      const fields = ['shift24', 'shift36', 'cabinet1', 'cabinet2', 'cabinet3', 'careMorning', 'careNight'];
+      fields.forEach(f => {
+        if (data[f]) {
+          const names = data[f].split(/[-،,]/).map((s: string) => s.trim()).filter(Boolean);
+          shiftEmployees.push(...names);
+        }
+      });
     }
-    if (filters.complaintNo) {
-      results = results.filter(r => r.complaintNo.includes(filters.complaintNo!));
+
+    // Get complaints for today
+    const q = query(
+      collection(db, 'complaints'),
+      where('timestamp', '>=', Timestamp.fromDate(startOfDay)),
+      where('timestamp', '<=', Timestamp.fromDate(endOfDay))
+    );
+    const snapshot = await getDocs(q);
+    const counts: Record<string, number> = {};
+    
+    snapshot.docs.forEach(doc => {
+      const name = doc.data().employeeName;
+      if (name) {
+        counts[name] = (counts[name] || 0) + 1;
+      }
+    });
+
+    let results = Object.entries(counts)
+      .map(([name, count]) => ({ name, calls: count }));
+
+    // Only filter if we actually have a schedule for today
+    if (shiftEmployees.length > 0) {
+       results = results.filter(r => {
+         return shiftEmployees.some(se => {
+           const n1 = r.name.replace(/[أإآ]/g, 'ا').replace(/[ة]/g, 'ه').replace(/[ى]/g, 'ي');
+           const n2 = se.replace(/[أإآ]/g, 'ا').replace(/[ة]/g, 'ه').replace(/[ى]/g, 'ي');
+           return n1.includes(n2) || n2.includes(n1);
+         });
+       });
     }
-    return results;
-  } catch (error) {
+
+    return results
+      .sort((a, b) => b.calls - a.calls)
+      .map((user, idx) => ({ ...user, rank: idx + 1 }));
+  } catch (e) {
+    console.error("Daily ranking error:", e);
     return [];
+  }
+}
+
+export async function getMonthlyRanking() {
+  try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
+    const q = query(
+      collection(db, 'complaints'),
+      where('timestamp', '>=', Timestamp.fromDate(startOfMonth))
+    );
+    const snapshot = await getDocs(q);
+    const counts: Record<string, number> = {};
+    
+    snapshot.docs.forEach(doc => {
+      const name = doc.data().employeeName;
+      if (name) {
+        counts[name] = (counts[name] || 0) + 1;
+      }
+    });
+
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, calls: count }))
+      .sort((a, b) => b.calls - a.calls)
+      .map((user, idx) => ({ ...user, rank: idx + 1 }));
+  } catch (e) {
+    console.error("Monthly ranking error:", e);
+    return [];
+  }
+}
+
+// Dashboard Stats
+// Notifications
+export function listenToNotifications(email: string, callback: (notifications: any[]) => void) {
+  const q = query(
+    collection(db, 'notifications'),
+    where('userEmail', '==', email),
+    orderBy('timestamp', 'desc'),
+    limit(20)
+  );
+  
+  return onSnapshot(q, (snapshot) => {
+    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+  }, (e) => console.error("Notifications listener error:", e));
+}
+
+export async function markNotificationAsRead(notificationId: string) {
+  try {
+    await updateDoc(doc(db, 'notifications', notificationId), { status: 'read' });
+  } catch (e) {
+    console.error("Error marking notification as read:", e);
+  }
+}
+
+export async function addSystemNotification(email: string, message: string, actionLink?: string) {
+  try {
+    await addDoc(collection(db, 'notifications'), {
+      userEmail: email,
+      message,
+      status: 'unread',
+      timestamp: serverTimestamp(),
+      actionLink: actionLink || ''
+    });
+  } catch (e) {
+    console.error("Error adding notification:", e);
+  }
+}
+
+// User Management
+export async function getAllUsers() {
+  try {
+    const snapshot = await getDocs(collection(db, 'user_permissions'));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  } catch (e) {
+    handleFirestoreError(e, OperationType.LIST, 'user_permissions');
+    return [];
+  }
+}
+
+export async function updateUserPermissions(userId: string, data: any) {
+  try {
+    await updateDoc(doc(db, 'user_permissions', userId), sanitize(data));
+  } catch (e) {
+    handleFirestoreError(e, OperationType.UPDATE, `user_permissions/${userId}`);
+  }
+}
+
+export async function addUserPermission(email: string, role: string) {
+  const normalizedEmail = email.toLowerCase();
+  try {
+    await addDoc(collection(db, 'user_permissions'), sanitize({
+      email: normalizedEmail,
+      role: role,
+      addedAt: serverTimestamp()
+    }));
+  } catch (e) {
+    handleFirestoreError(e, OperationType.CREATE, 'user_permissions');
+  }
+}
+
+export async function deleteUserPermission(userId: string) {
+  try {
+    await deleteDoc(doc(db, 'user_permissions', userId));
+  } catch (e) {
+    handleFirestoreError(e, OperationType.DELETE, `user_permissions/${userId}`);
+  }
+}
+
+export async function getRoleCapabilities() {
+  try {
+    const snapshot = await getDocs(collection(db, 'role_capabilities'));
+    const data: any = {};
+    snapshot.docs.forEach(doc => {
+      data[doc.id] = doc.data();
+    });
+    return data;
+  } catch (e) {
+    return ROLE_CAPABILITIES;
+  }
+}
+
+export async function updateRoleCapabilities(role: string, capabilities: any) {
+  try {
+    await setDoc(doc(db, 'role_capabilities', role), sanitize(capabilities));
+  } catch (e) {
+    handleFirestoreError(e, OperationType.WRITE, `role_capabilities/${role}`);
   }
 }
 
 export async function getDashboardStats() {
   try {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    const complaintsRef = collection(db, 'complaints');
-    const todayQ = query(complaintsRef, where('timestamp', '>=', Timestamp.fromDate(today)));
-    const monthQ = query(complaintsRef, where('timestamp', '>=', Timestamp.fromDate(firstDayOfMonth)));
+    const colRef = collection(db, 'complaints');
+    const snapshot = await getDocs(query(colRef, limit(1000)));
+    const docs = snapshot.docs.map(d => d.data());
     
-    const [todaySnap, monthSnap, ongoingSnap, directorSnap] = await Promise.all([
-      getDocs(todayQ),
-      getDocs(monthQ),
-      getDocs(query(collection(db, 'adminComplaints'), where('workType', '==', 'الجاري'))),
-      getDocs(query(collection(db, 'directorCases'), where('status', '==', 'نشط')))
-    ]);
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const monthStr = todayStr.substring(0, 7);
 
-    const topGovs: Record<string, number> = {};
-    const topEntities: Record<string, number> = {};
-    const topSubjects: Record<string, number> = {};
+    let todayCount = 0;
+    let monthCount = 0;
+    const govs: Record<string, number> = {};
+    const entities: Record<string, number> = {};
+    const subjects: Record<string, number> = {};
 
-    todaySnap.docs.forEach(doc => {
-      const d = doc.data() as Complaint;
-      if (d.governorate) topGovs[d.governorate] = (topGovs[d.governorate] || 0) + 1;
-      if (d.responsibleEntity) topEntities[d.responsibleEntity] = (topEntities[d.responsibleEntity] || 0) + 1;
-      if (d.complaintSubject) topSubjects[d.complaintSubject] = (topSubjects[d.complaintSubject] || 0) + 1;
+    docs.forEach(d => {
+      const ts = d.timestamp?.toDate ? d.timestamp.toDate() : new Date(d.timestamp);
+      const dStr = ts.toISOString().split('T')[0];
+      
+      if (dStr === todayStr) todayCount++;
+      if (dStr.startsWith(monthStr)) monthCount++;
+      
+      if (d.governorate) govs[d.governorate] = (govs[d.governorate] || 0) + 1;
+      if (d.complaintEntity) entities[d.complaintEntity] = (entities[d.complaintEntity] || 0) + 1;
+      if (d.complaintSubject) subjects[d.complaintSubject] = (subjects[d.complaintSubject] || 0) + 1;
     });
 
     return {
-      todayCount: todaySnap.size,
-      monthCount: monthSnap.size,
-      ongoingCount: ongoingSnap.size,
-      directorActive: directorSnap.size,
-      topGovs,
-      topEntities,
-      topSubjects
+      todayCount,
+      monthCount,
+      ongoingCount: docs.filter(d => d.complaintStatus === 'جاري المتابعة').length,
+      directorActive: 0, // Placeholder
+      topGovs: govs,
+      topEntities: entities,
+      topSubjects: subjects
     };
-  } catch (error) {
+  } catch (e) {
+    console.error("Dashboard stats error", e);
     return null;
-  }
-}
-
-export async function getUserMonthlyCallCount(email: string): Promise<number> {
-  try {
-    const now = new Date();
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const q = query(
-      collection(db, 'complaints'), 
-      where('employeeEmail', '==', email),
-      where('timestamp', '>=', Timestamp.fromDate(start))
-    );
-    const snap = await getDocs(q);
-    return snap.size;
-  } catch (error) {
-    return 0;
-  }
-}
-
-export function listenToNotifications(email: string, callback: (data: AppNotification[]) => void) {
-  const q = query(collection(db, 'notifications'), where('userEmail', '==', email), orderBy('timestamp', 'desc'), limit(50));
-  return onSnapshot(q, (snapshot) => {
-    const data = snapshot.docs.map(doc => ({ 
-      ...doc.data(), 
-      id: doc.id,
-      timestamp: doc.data().timestamp?.toDate() || new Date()
-    })) as AppNotification[];
-    callback(data);
-  });
-}
-
-export async function markNotificationAsRead(id: string) {
-  await updateDoc(doc(db, 'notifications', id), { status: 'read' });
-}
-
-export function listenToCabinetComplaints(callback: (data: Complaint[]) => void) {
-  const q = query(collection(db, 'complaints'), where('isCabinetComplaint', '==', true), orderBy('timestamp', 'desc'));
-  return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(d => ({ ...d.data(), id: d.id, timestamp: d.data().timestamp?.toDate() })) as Complaint[]);
-  });
-}
-
-export const listenToInquiries = subscribeToInquiries;
-export const listenToDirectorCases = subscribeToDirectorCases;
-
-export async function getAllEmployees(): Promise<Employee[]> {
-  const snap = await getDocs(collection(db, 'employees'));
-  return snap.docs.map(d => ({ ...d.data(), id: d.id })) as Employee[];
-}
-
-export async function saveEmployee(data: Employee) {
-  if (data.id) {
-    const { id, ...rest } = data;
-    await updateDoc(doc(db, 'employees', id), rest);
-  } else {
-    await addDoc(collection(db, 'employees'), { ...data, createdAt: serverTimestamp() });
-  }
-}
-
-export const getFAQs = async (): Promise<FAQ[]> => {
-  const snap = await getDocs(collection(db, 'faqs'));
-  return snap.docs.map(d => ({ ...d.data(), id: d.id })) as FAQ[];
-};
-
-export async function reviewFollowUp(id: string, data: Partial<Complaint>) {
-  await updateDoc(doc(db, 'complaints', id), data);
-}
-
-export async function deleteBulkFollowUpData(collectionName: string = 'complaints') {
-  const q = query(collection(db, collectionName), where('isBulkUploaded', '==', true));
-  const snap = await getDocs(q);
-  const batch = writeBatch(db);
-  snap.docs.forEach(d => batch.delete(d.ref));
-  await batch.commit();
-  return snap.size;
-}
-
-export async function checkAndAddFollowUp(docId: any, complaint: any) {
-  if (complaint.needsFollowUp) {
-    // Logic could go here to create a notification or special follow-up record
-  }
-}
-
-export async function getDailyRanking(): Promise<any[]> {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const q = query(collection(db, 'complaints'), where('timestamp', '>=', Timestamp.fromDate(today)));
-  const snap = await getDocs(q);
-  const counts: Record<string, number> = {};
-  snap.docs.forEach(d => {
-    const name = d.data().employeeName;
-    if (name) counts[name] = (counts[name] || 0) + 1;
-  });
-  return Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
-}
-
-export async function getMonthlyRanking(): Promise<any[]> {
-  const now = new Date();
-  const start = new Date(now.getFullYear(), now.getMonth(), 1);
-  const q = query(collection(db, 'complaints'), where('timestamp', '>=', Timestamp.fromDate(start)));
-  const snap = await getDocs(q);
-  const counts: Record<string, number> = {};
-  snap.docs.forEach(d => {
-    const name = d.data().employeeName;
-    if (name) counts[name] = (counts[name] || 0) + 1;
-  });
-  return Object.entries(counts).map(([name, count]) => ({ name, count })).sort((a, b) => b.count - a.count);
-}
-
-export async function addPhonebookEntry(data: Omit<PhonebookEntry, 'id'>) {
-  try {
-    return await addDoc(collection(db, 'phonebook'), data);
-  } catch (error) {
-    handleFirestoreError(error, OperationType.CREATE, 'phonebook');
-  }
-}
-
-export async function updatePhonebookEntry(id: string, data: Partial<PhonebookEntry>) {
-  try {
-    await updateDoc(doc(db, 'phonebook', id), data);
-  } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, `phonebook/${id}`);
-  }
-}
-
-export async function deletePhonebookEntry(id: string) {
-  try {
-    await deleteDoc(doc(db, 'phonebook', id));
-  } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, `phonebook/${id}`);
   }
 }

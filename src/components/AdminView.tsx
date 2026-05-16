@@ -14,53 +14,13 @@ import DirectorAssignments from './DirectorAssignments';
 import Schedules from './Schedules';
 import { UserPermissions } from '../types';
 import * as XLSX from 'xlsx';
-import { bulkUploadAdminWork, deleteBulkAdminWork } from '../services/dataService';
-import { Timestamp } from 'firebase/firestore';
+import { bulkUploadAdminWork } from '../services/dataService';
 
 export default function AdminView({ activeSubTab, permissions }: { activeSubTab: string, permissions: UserPermissions | null }) {
   const [uploadLoading, setUploadLoading] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [uploadWorkType, setUploadWorkType] = useState('الجاري');
-  const [deleteLoading, setDeleteLoading] = useState(false);
   const isAdmin = permissions?.role === 'Admin';
-
-  const parseArabicTimestamp = (val: any) => {
-    if (!val) return null;
-    if (val instanceof Date) return val;
-    const s = String(val);
-    const dateMatch = s.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
-    const timeMatch = s.match(/(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
-    const isPM = s.includes('م');
-    
-    if (dateMatch && timeMatch) {
-      let hours = parseInt(timeMatch[1]);
-      const minutes = parseInt(timeMatch[2]);
-      const seconds = timeMatch[3] ? parseInt(timeMatch[3]) : 0;
-      const year = parseInt(dateMatch[1]);
-      const month = parseInt(dateMatch[2]) - 1;
-      const day = parseInt(dateMatch[3]);
-      
-      if (isPM && hours < 12) hours += 12;
-      if (!isPM && hours === 12) hours = 0;
-      
-      const date = new Date(year, month, day, hours, minutes, seconds);
-      return isNaN(date.getTime()) ? null : date;
-    }
-    return null;
-  };
-
-  const handleDeleteBulk = async () => {
-    if (!window.confirm('هل أنت متأكد من حذف جميع البيانات التي تم رفعها بنظام الرفع الجماعي؟ لا يمكن التراجع عن هذه الخطوة.')) return;
-    setDeleteLoading(true);
-    try {
-      const count = await deleteBulkAdminWork();
-      toast.success(`تم حذف ${count} سجل بنجاح`);
-    } catch (err: any) {
-      toast.error('خطأ في الحذف: ' + err.message);
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -81,22 +41,15 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
             return;
           }
 
-          const batchData = jsonData.slice(1).filter(row => row[2]).map(row => {
-            const rawTs = row[0];
-            const parsedDate = parseArabicTimestamp(rawTs);
-            const ts = parsedDate ? Timestamp.fromDate(parsedDate) : null;
-
-            return {
-              complaintNo: String(row[2] || '').replace(/"/g, '').trim(),
-              governorate: String(row[3] || '').replace(/"/g, '').trim(),
-              status: String(row[4] || 'تم الرد').replace(/"/g, '').trim(),
-              notes: String(row[5] || '').replace(/"/g, '').trim(),
-              registrant: String(row[6] || '').replace(/"/g, '').trim(),
-              workType: uploadWorkType,
-              employeeName: String(row[6] || permissions?.employeeData?.name || 'نظام').replace(/"/g, '').trim(),
-              timestamp: ts
-            };
-          });
+          const batchData = jsonData.slice(1).filter(row => row[2]).map(row => ({
+            complaintNo: String(row[2] || '').replace(/"/g, '').trim(),
+            governorate: String(row[3] || '').replace(/"/g, '').trim(),
+            status: String(row[4] || 'تم الرد').replace(/"/g, '').trim(),
+            notes: String(row[5] || '').replace(/"/g, '').trim(),
+            registrant: String(row[6] || '').replace(/"/g, '').trim(),
+            workType: uploadWorkType,
+            employeeName: String(row[6] || permissions?.employeeData?.name || 'نظام').replace(/"/g, '').trim()
+          }));
 
           await bulkUploadAdminWork(batchData);
           toast.success(`تم رفع ${batchData.length} سجل (${uploadWorkType}) بنجاح`);
@@ -179,23 +132,13 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
             </div>
             
             {isAdmin && (
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={handleDeleteBulk}
-                  disabled={deleteLoading}
-                  className="flex items-center gap-2 px-6 py-3 bg-rose-500 text-white rounded-2xl font-black text-sm shadow-xl shadow-rose-500/20 hover:bg-rose-400 transition-all active:scale-95 disabled:opacity-50"
-                >
-                  {deleteLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <X className="w-5 h-5" />}
-                  حذف الداتا القديمة
-                </button>
-                <button 
-                  onClick={() => setIsUploadModalOpen(true)}
-                  className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-600/20 hover:bg-emerald-500 transition-all active:scale-95"
-                >
-                  <FileText className="w-5 h-5" />
-                  رفع داتا قديمة
-                </button>
-              </div>
+              <button 
+                onClick={() => setIsUploadModalOpen(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-600/20 hover:bg-emerald-500 transition-all active:scale-95"
+              >
+                <FileText className="w-5 h-5" />
+                رفع داتا قديمة
+              </button>
             )}
           </div>
 
@@ -264,7 +207,6 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
                       (رقم الشكوى، المحافظة، الحالة، الملاحظات، المسجل)
                     </p>
                   </div>
-
                 </motion.div>
               </div>
             )}
