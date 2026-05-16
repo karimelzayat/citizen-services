@@ -151,40 +151,60 @@ export default function Schedules({ permissions }: { permissions: UserPermission
     if (!bulkData.trim()) return;
     setIsUploading(true);
     try {
-      const lines = bulkData.trim().split('\n');
-      const schedules = lines.map(line => {
-        const parts = line.split(/\t| {2,}/).map(p => p.trim());
+      const lines = bulkData.split(/\r?\n/).filter(line => line.trim());
+      const schedules = lines.map((line, index) => {
+        // الفصل باستخدام Tab (الأساسي في Excel) أو الفراغات المتعددة
+        let parts = line.split('\t').map(p => p.trim());
+        if (parts.length < 3) parts = line.split(/ {2,}/).map(p => p.trim());
+        
         if (parts.length < 3) return null;
         
-        const is12Cols = parts.length >= 11;
-        const rawMonth = is12Cols ? parts[2] : selectedMonth;
-        const normalizedMonth = normalizeString(rawMonth);
+        // تجاهل سطر العناوين
+        if (index === 0 && (parts[0].includes('التاريخ') || parts[1].includes('اليوم'))) return null;
+
+        // الكشف عما إذا كان العمود الثالث يحتوي على الشهر والسنة (مثل "مايو 2026")
+        const hasMonthCol = parts.length >= 10 && (/\d{4}/.test(parts[2]) || parts[2].includes('202'));
         
+        const rawMonth = hasMonthCol ? parts[2] : selectedMonth;
+        const normalizedMonth = normalizeString(rawMonth);
         const matchedMonth = availableMonths.find(opt => normalizeString(opt) === normalizedMonth) || rawMonth;
 
-        const offset = is12Cols ? 1 : 0;
+        const offset = hasMonthCol ? 1 : 0;
+        
+        // استخراج رقم اليوم من التاريخ (مثلاً 01/05/2026 يصبح 1)
+        let dateVal = parts[0];
+        if (dateVal.includes('/')) {
+          const dateParts = dateVal.split('/');
+          if (dateParts[0]) dateVal = parseInt(dateParts[0]).toString();
+        }
+
+        const clean = (val: string) => (!val || val === '-' || val === '.' || val === 'فراغ') ? '' : val;
 
         return {
-          date: parts[0],
+          date: dateVal,
           day: parts[1],
           monthYear: matchedMonth,
-          shift24: parts[2 + offset] || '',
-          shift36: parts[3 + offset] || '',
-          holidayMorning: parts[4 + offset] || '',
-          holidayNoon: parts[5 + offset] || '',
-          cabinet1: parts[6 + offset] || '',
-          cabinet2: parts[7 + offset] || '',
-          cabinet3: parts[8 + offset] || '',
-          careMorning: parts[9 + offset] || '',
-          careNight: parts[10 + offset] || ''
+          shift24: clean(parts[2 + offset]),
+          shift36: clean(parts[3 + offset]),
+          holidayMorning: clean(parts[4 + offset]),
+          holidayNoon: clean(parts[5 + offset]),
+          cabinet1: clean(parts[6 + offset]),
+          cabinet2: clean(parts[7 + offset]),
+          cabinet3: clean(parts[8 + offset]),
+          careMorning: clean(parts[9 + offset]) || '',
+          careNight: clean(parts[10 + offset]) || ''
         };
       }).filter(Boolean);
+
+      if (schedules.length === 0) {
+        toast.error('لم يتم العثور على بيانات صالحة');
+        return;
+      }
 
       await bulkUploadSchedules(schedules as any[]);
       toast.success(`تم رفع ${schedules.length} سجل بنجاح لشهر ${selectedMonth}`);
       
       const updatedMonths = await getAvailableScheduleMonths();
-
       const sorted = updatedMonths.sort((a, b) => parseArabicMonth(a) - parseArabicMonth(b));
       setAvailableMonths(sorted);
       
@@ -192,9 +212,8 @@ export default function Schedules({ permissions }: { permissions: UserPermission
       setBulkData('');
     } catch (e) {
       console.error(e);
-      toast.error('خطأ أثناء الرفع');
+      toast.error('حدث خطأ أثناء الرفع، يرجى التأكد من البيانات');
     } finally {
-
       setIsUploading(false);
     }
   };
