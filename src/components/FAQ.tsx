@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserPermissions } from '../types';
 import { getFAQs, bulkUploadFAQs } from '../services/dataService';
-import { FileText, Loader2, Search, Plus, QuestionMarkIcon } from 'lucide-react';
+import { FileText, Loader2, Search, Plus, HelpCircle } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { toast } from '../lib/toast';
 

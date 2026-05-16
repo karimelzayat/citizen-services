@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { addAdminComplaint } from '../services/dataService';
 import { GOVERNORATES_LIST } from '../constants';
-import { LayoutGrid, AlertTriangle, FileX, FileText, MapPin, Hash, CheckCircle2, Clock, Save, Search, Calendar, Info, Loader2 } from 'lucide-react';
+import { LayoutGrid, AlertTriangle, FileX, FileText, MapPin, Hash, CheckCircle2, Clock, Save, Search, Calendar, Info, Loader2, X, Plus, Upload } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import SearchableSelect from './ui/SearchableSelect';
 import { toast } from '../lib/toast';
@@ -166,36 +166,46 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
                     </button>
                   </div>
 
-                  <div className="space-y-4">
-                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300">1. اختر نوع العمل المراد رفعه:</label>
-                    <div className="grid grid-cols-1 gap-2">
-                      {['الجاري', 'توجية خطأ', 'شكاوي غير مسجلة'].map(type => (
-                        <button
-                          key={type}
-                          onClick={() => setUploadWorkType(type)}
-                          className={`p-4 rounded-2xl border-2 font-black transition-all text-right ${uploadWorkType === type ? 'bg-blue-50 border-blue-500 text-blue-600' : 'bg-slate-50 border-transparent text-slate-400'}`}
-                        >
-                          {type}
-                        </button>
-                      ))}
-                    </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    {[
+                      { id: 'الجاري', icon: LayoutGrid, color: 'blue', desc: 'رفع شكاوى الجاري المتابعة' },
+                      { id: 'توجية خطأ', icon: AlertTriangle, color: 'amber', desc: 'رفع سجلات التوجيه الخاطئ' },
+                      { id: 'شكاوي غير مسجلة', icon: FileX, color: 'rose', desc: 'رفع الشكاوى غير المسجلة بالنظام' }
+                    ].map(type => (
+                      <div key={type.id} className="relative group">
+                        <input 
+                          type="file" 
+                          accept=".xlsx,.xls"
+                          onChange={(e) => {
+                            setUploadWorkType(type.id);
+                            handleFileUpload(e);
+                          }}
+                          className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                          disabled={uploadLoading}
+                        />
+                        <div className={`flex items-center justify-between p-5 rounded-2xl border-2 border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-800/50 transition-all group-hover:border-${type.color}-500/50 group-hover:shadow-lg group-hover:shadow-${type.color}-500/5`}>
+                          <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 bg-${type.color}-100 dark:bg-${type.color}-900/30 text-${type.color}-600 dark:text-${type.color}-400 rounded-xl flex items-center justify-center`}>
+                              <type.icon className="w-6 h-6" />
+                            </div>
+                            <div className="text-right">
+                              <p className="font-black text-slate-900 dark:text-white leading-none mb-1">{type.id}</p>
+                              <p className="text-[10px] text-slate-400 font-bold">{type.desc}</p>
+                            </div>
+                          </div>
+                          <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center text-slate-400 group-hover:text-blue-600 transition-colors">
+                            {uploadLoading && uploadWorkType === type.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
 
-                  <div className="p-8 border-2 border-dashed border-slate-200 dark:border-white/10 rounded-[32px] text-center space-y-4 hover:border-blue-500/50 transition-colors relative cursor-pointer group">
-                    <input 
-                      type="file" 
-                      accept=".xlsx,.xls"
-                      onChange={handleFileUpload}
-                      className="absolute inset-0 opacity-0 cursor-pointer"
-                      disabled={uploadLoading}
-                    />
-                    <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
-                      {uploadLoading ? <Loader2 className="w-8 h-8 text-blue-600 animate-spin" /> : <Plus className="w-8 h-8 text-blue-600" />}
-                    </div>
-                    <div className="space-y-1">
-                      <p className="font-black text-slate-700 dark:text-slate-200">اضغط لرفع ملف (Excel)</p>
-                      <p className="text-[10px] text-slate-400">ترتيب الأعمدة: رقم الشكوى، المحافظة، الحالة، الملاحظات، المسجل (للتوجيه الخطأ)</p>
-                    </div>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-800/30">
+                    <p className="text-[10px] text-blue-600 dark:text-blue-400 font-black leading-relaxed">
+                      * ملاحظة: يجب أن يحتوي ملف Excel على الأعمدة التالية بالترتيب:
+                      (رقم الشكوى، المحافظة، الحالة، الملاحظات، المسجل)
+                    </p>
                   </div>
                 </motion.div>
               </div>
