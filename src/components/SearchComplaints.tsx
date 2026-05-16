@@ -153,26 +153,60 @@ export default function SearchComplaints({ permissions, mode = 'hotline' }: { pe
         </div>
       </div>
 
-      {results.length > 0 && (
-        <div className="flex flex-wrap items-center gap-3 animate-fade-in">
-            <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-100 dark:border-white/5 transition-all duration-700">
-               <button 
-                 onClick={() => setFilterType('all')} 
-                 className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-500 ${filterType === 'all' ? 'bg-blue-50 dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
-               >
-                 <Layers className="w-3.5 h-3.5" />
-                 الكل
-               </button>
-               <button 
-                 onClick={() => setFilterType('duplicates')} 
-                 className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${filterType === 'duplicates' ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20' : 'text-slate-400 hover:text-rose-500'}`}
-               >
-                 <Filter className="w-3.5 h-3.5" />
-                 المكرر
-               </button>
-            </div>
-        </div>
-      )}
+      {results.length > 0 && (() => {
+        const duplicatePhoneNumbers = results
+          .map(r => r.phoneNumber)
+          .filter((phone, index, self) => phone && self.filter(p => p === phone).length > 1);
+        const uniqueDuplicatePhones = Array.from(new Set(duplicatePhoneNumbers));
+        const hasDuplicates = uniqueDuplicatePhones.length > 0;
+
+        const getDuplicateColor = (phone: string) => {
+          const index = uniqueDuplicatePhones.indexOf(phone);
+          if (index === -1) return '';
+          const colors = [
+            'bg-rose-50/50 border-rose-100 dark:bg-rose-900/20 dark:border-rose-800/40',
+            'bg-amber-50/50 border-amber-100 dark:bg-amber-900/20 dark:border-amber-800/40',
+            'bg-emerald-50/50 border-emerald-100 dark:bg-emerald-900/20 dark:border-emerald-800/40',
+            'bg-indigo-50/50 border-indigo-100 dark:bg-indigo-900/20 dark:border-indigo-800/40',
+            'bg-violet-50/50 border-violet-100 dark:bg-violet-900/20 dark:border-violet-800/40',
+            'bg-cyan-50/50 border-cyan-100 dark:bg-cyan-900/20 dark:border-cyan-800/40',
+            'bg-fuchsia-50/50 border-fuchsia-100 dark:bg-fuchsia-900/20 dark:border-fuchsia-800/40',
+            'bg-orange-50/50 border-orange-100 dark:bg-orange-900/20 dark:border-orange-800/40',
+          ];
+          return colors[index % colors.length];
+        };
+
+        return (
+          <div className="flex flex-wrap items-center gap-3 animate-fade-in">
+              <div className="flex items-center gap-1 bg-white dark:bg-slate-800 p-1 rounded-xl border border-slate-100 dark:border-white/5 transition-all duration-700">
+                 <button 
+                   onClick={() => setFilterType('all')} 
+                   className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-500 ${filterType === 'all' ? 'bg-blue-50 dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-xs' : 'text-slate-400 dark:text-slate-400 hover:text-slate-600 dark:hover:text-slate-300'}`}
+                 >
+                   <Layers className="w-3.5 h-3.5" />
+                   الكل
+                 </button>
+                 <button 
+                   onClick={() => hasDuplicates && setFilterType('duplicates')} 
+                   disabled={!hasDuplicates}
+                   className={`relative flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                     filterType === 'duplicates' 
+                       ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20' 
+                       : hasDuplicates 
+                         ? 'text-slate-400 hover:text-rose-500' 
+                         : 'text-slate-300 cursor-not-allowed'
+                   }`}
+                 >
+                   <Filter className="w-3.5 h-3.5" />
+                   المكرر
+                   {hasDuplicates && (
+                     <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 border-2 border-white dark:border-slate-800 rounded-full shadow-sm animate-pulse"></span>
+                   )}
+                 </button>
+              </div>
+          </div>
+        );
+      })()}
 
       {/* Results Area */}
       <div className="min-h-[400px]">
@@ -207,66 +241,94 @@ export default function SearchComplaints({ permissions, mode = 'hotline' }: { pe
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-                  {filteredResults.map((c, idx) => (
-                    <motion.tr 
-                      key={c.id}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.02 }}
-                      className="group hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-all cursor-pointer"
-                      onClick={() => setSelectedComplaint(c)}
-                    >
-                      <td className="px-6 py-4">
-                         <div className="flex flex-col">
-                            <span className="text-xs font-black text-slate-900 dark:text-white mb-1">
-                              {c.timestamp && typeof (c.timestamp as any).toDate === 'function' 
-                                ? (c.timestamp as any).toDate().toLocaleDateString('ar-EG') 
-                                : new Date().toLocaleDateString('ar-EG')}
-                            </span>
-                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
-                              {c.timestamp && typeof (c.timestamp as any).toDate === 'function' 
-                                ? (c.timestamp as any).toDate().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) 
-                                : new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                         </div>
-                      </td>
-                      {mode === 'hotline' ? (
-                        <>
+                  {(() => {
+                    const duplicatePhoneNumbers = results
+                      .map(r => r.phoneNumber)
+                      .filter((phone, index, self) => phone && self.filter(p => p === phone).length > 1);
+                    const uniqueDuplicatePhones = Array.from(new Set(duplicatePhoneNumbers));
+
+                    const getDuplicateColor = (phone: string) => {
+                      const index = uniqueDuplicatePhones.indexOf(phone);
+                      if (index === -1) return '';
+                      const colors = [
+                        'bg-rose-50/50 dark:bg-rose-900/20 border-rose-100/50 dark:border-rose-800/30',
+                        'bg-blue-50/50 dark:bg-blue-900/20 border-blue-100/50 dark:border-blue-800/30',
+                        'bg-emerald-50/50 dark:bg-emerald-900/20 border-emerald-100/50 dark:border-emerald-800/30',
+                        'bg-amber-50/50 dark:bg-amber-900/20 border-amber-100/50 dark:border-amber-800/30',
+                        'bg-indigo-50/50 dark:bg-indigo-900/20 border-indigo-100/50 dark:border-indigo-800/30',
+                        'bg-violet-50/50 dark:bg-violet-900/20 border-violet-100/50 dark:border-violet-800/30',
+                        'bg-cyan-50/50 dark:bg-cyan-900/20 border-cyan-100/50 dark:border-cyan-800/30',
+                        'bg-fuchsia-50/50 dark:bg-fuchsia-900/20 border-fuchsia-100/50 dark:border-fuchsia-800/30',
+                      ];
+                      return colors[index % colors.length];
+                    };
+
+                    return filteredResults.map((c, idx) => {
+                      const colorClass = filterType === 'duplicates' ? getDuplicateColor(c.phoneNumber) : '';
+                      return (
+                        <motion.tr 
+                          key={c.id}
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: idx * 0.02 }}
+                          className={`group transition-all cursor-pointer border-l-4 ${colorClass || 'border-transparent hover:bg-blue-50/30 dark:hover:bg-blue-900/10'}`}
+                          onClick={() => setSelectedComplaint(c)}
+                        >
                           <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-slate-800 flex items-center justify-center text-blue-600 dark:text-blue-400 font-black text-xs shadow-sm border border-blue-100 dark:border-white/5">
-                                  {c.callerName.charAt(0)}
+                             <div className="flex flex-col">
+                                <span className="text-xs font-black text-slate-900 dark:text-white mb-1">
+                                  {c.timestamp && typeof (c.timestamp as any).toDate === 'function' 
+                                    ? (c.timestamp as any).toDate().toLocaleDateString('ar-EG') 
+                                    : new Date().toLocaleDateString('ar-EG')}
+                                </span>
+                                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">
+                                  {c.timestamp && typeof (c.timestamp as any).toDate === 'function' 
+                                    ? (c.timestamp as any).toDate().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) 
+                                    : new Date().toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                             </div>
+                          </td>
+                          {mode === 'hotline' ? (
+                            <>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shadow-sm border ${colorClass ? 'bg-white/50 dark:bg-slate-800/50 border-white/20' : 'bg-blue-50 dark:bg-slate-800 border-blue-100 dark:border-white/5 text-blue-600 dark:text-blue-400'}`}>
+                                      {c.callerName.charAt(0)}
+                                    </div>
+                                    <span className="font-black text-sm text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition-colors">{c.callerName}</span>
                                 </div>
-                                <span className="font-black text-sm text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition-colors">{c.callerName}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 text-xs font-mono tracking-widest text-slate-500 dark:text-slate-400">{c.phoneNumber}</td>
-                        </>
-                      ) : (
-                        <>
-                          <td className="px-6 py-4">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-amber-600 dark:text-amber-400 font-black text-xs shadow-sm border border-amber-100 dark:border-white/5">
-                                  <Hash className="w-4 h-4" />
+                              </td>
+                              <td className="px-6 py-4 text-xs font-mono tracking-widest text-slate-500 dark:text-slate-400">
+                                <span className={colorClass ? 'font-black text-slate-900 dark:text-white' : ''}>{c.phoneNumber}</span>
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-amber-600 dark:text-amber-400 font-black text-xs shadow-sm border border-amber-100 dark:border-white/5">
+                                      <Hash className="w-4 h-4" />
+                                    </div>
+                                    <span className="font-black text-sm text-slate-900 dark:text-slate-100 group-hover:text-amber-600 transition-colors">{c.complaintNo}</span>
                                 </div>
-                                <span className="font-black text-sm text-slate-900 dark:text-slate-100 group-hover:text-amber-600 transition-colors">{c.complaintNo}</span>
-                            </div>
+                              </td>
+                              <td className="px-6 py-4">
+                                <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{c.workType}</span>
+                              </td>
+                            </>
+                          )}
+                          <td className="px-6 py-4">
+                             <span className="px-3 py-1 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-[10px] font-black border border-slate-100 dark:border-white/5 uppercase tracking-widest">{c.governorate}</span>
                           </td>
                           <td className="px-6 py-4">
-                            <span className="text-xs font-bold text-slate-500 dark:text-slate-400">{c.workType}</span>
+                             <span className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-tight">
+                               {c.employeeName}
+                             </span>
                           </td>
-                        </>
-                      )}
-                      <td className="px-6 py-4">
-                         <span className="px-3 py-1 bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-lg text-[10px] font-black border border-slate-100 dark:border-white/5 uppercase tracking-widest">{c.governorate}</span>
-                      </td>
-                      <td className="px-6 py-4">
-                         <span className="text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-tight">
-                           {c.employeeName}
-                         </span>
-                      </td>
-                    </motion.tr>
-                  ))}
+                        </motion.tr>
+                      );
+                    });
+                  })()}
                 </tbody>
               </table>
             </div>
