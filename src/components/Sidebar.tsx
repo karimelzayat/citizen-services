@@ -55,15 +55,6 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
         { id: 'newComplaint', label: 'تسجيل مكالمة', icon: PlusCircle, show: permissions?.canRegisterHotline },
         { id: 'searchComplaint', label: 'البحث', icon: Search, show: permissions?.canSearchHotline },
         { id: 'followUp', label: 'متابعة المكالمات', icon: CheckSquare, show: permissions?.canFollowUpHotline },
-      ]
-    },
-    {
-      title: 'الأعمال الإدارية',
-      showSection: permissions?.showAdminSection,
-      items: [
-        { id: 'ongoingTab', label: 'الجاري', icon: Briefcase, show: permissions?.canRegisterOngoing },
-        { id: 'unregisteredTab', label: 'شكاوي غير مسجلة', icon: FileText, show: permissions?.canRegisterUnregistered },
-        { id: 'wrongDirectionTab', label: 'توجية خطأ', icon: GitBranch, show: permissions?.canRegisterWrongDirection },
         { id: 'directorTab', label: 'تكليفات المدير', icon: Briefcase, show: permissions?.canViewDirectorAssignments },
         { id: 'schedulesTab', label: 'الجداول والتبديلات', icon: Calendar, show: permissions?.canViewSchedules },
         { id: 'reportsTab', label: 'التقارير', icon: FileText, show: permissions?.canViewReports },
@@ -76,13 +67,6 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
         { id: 'inquiryButton', label: 'الاستفسار عن', icon: HelpCircle, show: permissions?.canViewInquiry },
         { id: 'phonebookButton', label: 'دليل الهاتف', icon: Contact, show: permissions?.canViewPhonebook },
         { id: 'faqTab', label: 'دليل الأسئلة (FAQ)', icon: BookOpen, show: permissions?.canViewFAQ },
-      ]
-    },
-    {
-      title: 'النظام',
-      showSection: permissions?.showSettingsSection,
-      items: [
-        { id: 'employeeManagement', label: 'إدارة الموظفين', icon: Settings, show: permissions?.canManageUsers },
       ]
     }
   ];
@@ -133,7 +117,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
             border border-slate-100 dark:border-white/5 hover:border-blue-500/30 overflow-hidden relative shadow-sm`}
         >
           <Home className={`w-5 h-5 ${collapsed ? 'text-blue-600 dark:text-blue-500' : 'text-slate-400 dark:text-slate-500 group-hover:text-blue-500'}`} />
-          {!collapsed && <span className="font-bold text-sm text-black dark:text-black group-hover:text-black dark:group-hover:text-black">العودة للرئيسية</span>}
+          {!collapsed && <span className="font-bold text-sm text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white">العودة للرئيسية</span>}
           {!collapsed && (
             <div className="absolute right-0 top-0 h-full w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
           )}
@@ -146,7 +130,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
             border border-rose-100 dark:border-rose-500/20 overflow-hidden relative shadow-sm`}
         >
           <LogOut className={`w-5 h-5 ${collapsed ? 'text-rose-500' : 'text-rose-400 group-hover:text-white'}`} />
-          {!collapsed && <span className="font-bold text-sm text-black dark:text-black">تسجيل الخروج</span>}
+          {!collapsed && <span className="font-bold text-sm">تسجيل الخروج</span>}
         </button>
       </div>
 
@@ -194,7 +178,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
                             ${collapsed ? 'justify-center px-0' : ''}`}
                         >
                           <item.icon className={`w-4.5 h-4.5 flex-shrink-0 transition-all group-hover:scale-110 ${activeTab === item.id ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
-                          {!collapsed && <span className="text-sm font-black text-black dark:text-black truncate tracking-tight">{item.label}</span>}
+                          {!collapsed && <span className="text-sm font-black truncate tracking-tight">{item.label}</span>}
                         </button>
                       </li>
                     ))}

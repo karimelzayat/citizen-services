@@ -197,11 +197,6 @@ export default function App() {
             case 'schedulesTab': return <Schedules permissions={permissions} />;
             case 'reportsTab': return <Reports permissions={permissions} />;
             case 'faqTab': return <FAQ permissions={permissions} />;
-            case 'ongoingTab':
-            case 'unregisteredTab':
-            case 'wrongDirectionTab':
-              return <AdminView activeSubTab={activeTab} permissions={permissions} />;
-            case 'employeeManagement':
             case 'settingsTab': return <SettingsView />;
             default: return <Dashboard />;
           }
