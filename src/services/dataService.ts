@@ -1,1014 +1,483 @@
-import { 
-  collection, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  doc, 
-  query, 
-  where, 
-  getDocs, 
-  orderBy, 
-  limit, 
-  Timestamp, 
-  serverTimestamp,
-  onSnapshot,
-  setDoc,
-  getDoc,
-  writeBatch,
-  getCountFromServer
-} from 'firebase/firestore';
-import { db, auth, storage } from '../lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Complaint, AdminComplaint, DirectorCase, Inquiry, UserPermissions, Employee } from '../types';
-import { ROLE_CAPABILITIES, DEFAULT_CAPABILITIES, EMPLOYEE_MAP, INITIAL_EMPLOYEES } from '../constants';
+import React, { useState } from 'react';
+import { addAdminComplaint } from '../services/dataService';
+import { GOVERNORATES_LIST } from '../constants';
+import { LayoutGrid, AlertTriangle, FileX, FileText, MapPin, Hash, CheckCircle2, Clock, Save, Search, Calendar, Info, Loader2, X, Plus, Upload } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import SearchableSelect from './ui/SearchableSelect';
+import { toast } from '../lib/toast';
 
-export enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
-}
 
-interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-  authInfo: {
-    userId?: string | null;
-    email?: string | null;
-    emailVerified?: boolean | null;
-    isAnonymous?: boolean | null;
-    tenantId?: string | null;
-    providerInfo?: {
-      providerId?: string | null;
-      email?: string | null;
-    }[];
-  }
-}
+import SearchComplaints from './SearchComplaints';
+import Reports from './Reports';
+import SettingsView from './SettingsView';
+import DirectorAssignments from './DirectorAssignments';
+import Schedules from './Schedules';
+import { UserPermissions } from '../types';
+import * as XLSX from 'xlsx';
+import { bulkUploadAdminWork, deleteBulkAdminWork } from '../services/dataService';
+import { Timestamp } from 'firebase/firestore';
 
-function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-      tenantId: auth.currentUser?.tenantId,
-      providerInfo: auth.currentUser?.providerData?.map(provider => ({
-        providerId: provider.providerId,
-        email: provider.email,
-      })) || []
-    },
-    operationType,
-    path
-  }
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
-}
+export default function AdminView({ activeSubTab, permissions }: { activeSubTab: string, permissions: UserPermissions | null }) {
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadWorkType, setUploadWorkType] = useState('الجاري');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const isAdmin = permissions?.role === 'Admin';
 
-// Employee & Permission Management
-export async function getUserPermissions(email: string | null | undefined): Promise<UserPermissions> {
-  const normalizedEmail = (email || "").trim().toLowerCase();
-  
-  // 1. High Priority Hardcoded Admins
-  const hardcodedAdmins = ['karimelzayat3@gmail.com', 'karimelzayat.1997@gmail.com'];
-  let hardcodedPerms: UserPermissions | null = null;
-  if (hardcodedAdmins.includes(normalizedEmail)) {
-    hardcodedPerms = { role: "Admin", ...ROLE_CAPABILITIES["Admin"] };
-  }
-
-  // 2. Try to get permissions from Employees collection
-  try {
-    const q = query(collection(db, 'employees'), where('email', '==', normalizedEmail));
-    const snapshot = await getDocs(q);
+  const parseArabicTimestamp = (val: any) => {
+    if (!val) return null;
+    if (val instanceof Date) return val;
+    const s = String(val);
+    const dateMatch = s.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
+    const timeMatch = s.match(/(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?/);
+    const isPM = s.includes('م');
     
-    if (!snapshot.empty) {
-      const data = snapshot.docs[0].data() as Employee;
-      const basePermissions = hardcodedPerms || { role: data.role, ...data.permissions };
-      return { 
-        ...basePermissions,
-        employeeData: { id: snapshot.docs[0].id, ...data }
-      } as UserPermissions;
-    }
-  } catch (e) {
-    console.error("Firebase error checking employee permissions:", e);
-  }
-  
-  if (hardcodedPerms) return hardcodedPerms;
-  return { role: "Guest", ...DEFAULT_CAPABILITIES };
-}
-
-export async function getAllEmployees(): Promise<Employee[]> {
-  try {
-    const snapshot = await getDocs(collection(db, 'employees'));
-    if (snapshot.empty && INITIAL_EMPLOYEES.length > 0) {
-      console.log("Seeding employees...");
-      for (const emp of INITIAL_EMPLOYEES) {
-        await saveEmployee({
-          ...emp,
-          role: 'Employee',
-          permissions: { ...ROLE_CAPABILITIES['Employee'] }
-        });
-      }
-      const newSnapshot = await getDocs(collection(db, 'employees'));
-      return newSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Employee));
-    }
-    return snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as object) } as Employee));
-  } catch (e) {
-    handleFirestoreError(e, OperationType.LIST, 'employees');
-    return [];
-  }
-}
-
-export async function saveEmployee(employee: Partial<Employee>) {
-  try {
-    const docData = sanitize({
-      ...employee,
-      updatedAt: serverTimestamp(),
-      createdAt: employee.id ? undefined : serverTimestamp()
-    });
-
-    if (employee.id) {
-      await updateDoc(doc(db, 'employees', employee.id), docData);
-      return employee.id;
-    } else {
-      const docRef = await addDoc(collection(db, 'employees'), docData);
-      return docRef.id;
-    }
-  } catch (e) {
-    handleFirestoreError(e, OperationType.WRITE, 'employees');
-  }
-}
-
-export async function deleteEmployee(id: string) {
-  try {
-    await deleteDoc(doc(db, 'employees', id));
-  } catch (e) {
-    handleFirestoreError(e, OperationType.DELETE, `employees/${id}`);
-  }
-}
-
-// Helper to recursively remove undefined values before sending to Firestore
-function sanitize(data: any): any {
-  if (data === undefined) return null;
-  if (data === null || typeof data !== 'object') return data;
-  
-  // Preserve special types that Firestore handles natively
-  if (data instanceof Date || data instanceof Timestamp) return data;
-  
-  // Preserve Firestore sentinels (like FieldValue from serverTimestamp)
-  // These are objects but have custom constructors
-  if (data.constructor && 
-      data.constructor.name !== 'Object' && 
-      data.constructor.name !== 'Array') {
-    return data;
-  }
-  
-  const cleaned: any = Array.isArray(data) ? [] : {};
-  Object.keys(data).forEach(key => {
-    const val = data[key];
-    if (val !== undefined) {
-      cleaned[key] = sanitize(val);
-    }
-  });
-  return cleaned;
-}
-
-// Complaints
-export async function addComplaint(complaint: Partial<Complaint>, file?: File) {
-  const user = auth.currentUser;
-  
-  let attachmentUrl = "";
-  if (file) {
-    const fileName = `${Date.now()}_${file.name}`;
-    const storageRef = ref(storage, `complaints/${fileName}`);
-    try {
-      await uploadBytes(storageRef, file);
-      attachmentUrl = await getDownloadURL(storageRef);
-    } catch (err) {
-      console.error("Storage upload failed", err);
-    }
-  }
-
-  // Use provided employeeName or try to look it up
-  let employeeName = complaint.employeeName;
-  if (!employeeName && user) {
-    employeeName = EMPLOYEE_MAP[user.email || ""] || user.displayName || user.email || "Unknown";
-  }
-  if (!employeeName && !user) {
-    employeeName = "مواطن (ضيف)";
-  }
-
-  try {
-    const docData = sanitize({
-      ...complaint,
-      timestamp: serverTimestamp(),
-      employeeName,
-      employeeEmail: user?.email || "guest@citizen.service",
-      attachmentUrl: attachmentUrl || "",
-      status: complaint.status || "جديد"
-    });
-    const docRef = await addDoc(collection(db, 'complaints'), docData);
-    return docRef.id;
-  } catch (err) {
-    handleFirestoreError(err, OperationType.WRITE, 'complaints');
-  }
-}
-
-export async function reviewFollowUp(pendingId: string, reviewData: any) {
-  try {
-    const pendingRef = doc(db, 'followUpPending', pendingId);
-    const pendingSnap = await getDoc(pendingRef);
-    
-    if (!pendingSnap.exists()) throw new Error("Document not found");
-    const data = pendingSnap.data();
-
-    await addDoc(collection(db, 'followUpCompleted'), sanitize({
-      ...data,
-      ...reviewData,
-      followUpStatus: 'completed',
-      followUpCompletedAt: serverTimestamp(),
-    }));
-
-    await deleteDoc(pendingRef);
-  } catch (e) {
-    handleFirestoreError(e, OperationType.UPDATE, `followUpPending/${pendingId}`);
-  }
-}
-
-export async function checkAndAddFollowUp(complaintId: string, data: any) {
-  // استبعاد المكالمات التي جهتها أو موضوعها "عدم اختصاص"
-  const entityStr = String(data.complaintEntity || '');
-  const subjectStr = String(data.complaintSubject || '');
-  
-  const isExcluded = entityStr.includes('عدم اختصاص') || subjectStr.includes('عدم اختصاص');
-  
-  // اختيار عشوائي بنسبة 5% من المكالمات غير المستبعدة
-  const isSelected = !isExcluded && Math.random() < 0.05;
-
-  if (isSelected) {
-    const user = auth.currentUser;
-    const employeeName = data.employeeName || (user ? (EMPLOYEE_MAP[user.email || ""] || user.displayName || user.email || 'نظام') : 'نظام');
-    
-    await addDoc(collection(db, 'followUpPending'), sanitize({
-      ...data,
-      originalDocId: complaintId,
-      followUpStatus: 'pending',
-      timestamp: serverTimestamp(),
-      employeeName,
-      employeeEmail: user?.email || '',
-    }));
-  }
-}
-
-export async function addFollowUpManual(data: any) {
-  try {
-    const user = auth.currentUser;
-    const employeeName = data.employeeName || (user ? (EMPLOYEE_MAP[user.email || ""] || user.displayName || user.email || 'نظام') : 'نظام');
-    
-    const docData = sanitize({
-      ...data,
-      timestamp: serverTimestamp(),
-      followUpStatus: 'pending',
-      employeeName,
-      employeeEmail: user?.email || '',
-      complaintStatus: 'تم الرد'
-    });
-    await addDoc(collection(db, 'followUpPending'), docData);
-  } catch (e) {
-    handleFirestoreError(e, OperationType.WRITE, 'followUpPending');
-  }
-}
-
-export async function deleteBulkFollowUpData(collectionName: 'followUpPending' | 'followUpCompleted') {
-  try {
-    const q = query(collection(db, collectionName), where('isBulkUploaded', '==', true));
-    const snapshot = await getDocs(q);
-    
-    const batch = writeBatch(db);
-    snapshot.docs.forEach((d) => {
-      batch.delete(d.ref);
-    });
-    
-    await batch.commit();
-    return snapshot.size;
-  } catch (e) {
-    handleFirestoreError(e, OperationType.DELETE, collectionName);
-    throw e;
-  }
-}
-
-export async function deleteBulkAdminWork() {
-  try {
-    const q = query(collection(db, 'admin_complaints'), where('isBulkUploaded', '==', true));
-    const snapshot = await getDocs(q);
-    const batch = writeBatch(db);
-    snapshot.docs.forEach((d) => {
-      batch.delete(d.ref);
-    });
-    await batch.commit();
-    return snapshot.size;
-  } catch (e) {
-    handleFirestoreError(e, OperationType.DELETE, 'admin_complaints');
-    throw e;
-  }
-}
-
-export async function bulkUploadInquiries(data: any[]) {
-  const CHUNK_SIZE = 400;
-  for (let i = 0; i < data.length; i += CHUNK_SIZE) {
-    const chunk = data.slice(i, i + CHUNK_SIZE);
-    try {
-      const batch = writeBatch(db);
-      chunk.forEach(item => {
-        const docRef = doc(collection(db, 'inquiries'));
-        batch.set(docRef, sanitize({
-          ...item,
-          timestamp: serverTimestamp()
-        }));
-      });
-      await batch.commit();
-    } catch (e) {
-      handleFirestoreError(e, OperationType.WRITE, 'inquiries');
-      throw e;
-    }
-  }
-}
-
-export async function bulkUploadPhonebook(data: any[]) {
-  const CHUNK_SIZE = 400;
-  for (let i = 0; i < data.length; i += CHUNK_SIZE) {
-    const chunk = data.slice(i, i + CHUNK_SIZE);
-    try {
-      const batch = writeBatch(db);
-      chunk.forEach(item => {
-        const docRef = doc(collection(db, 'phonebook'));
-        batch.set(docRef, sanitize(item));
-      });
-      await batch.commit();
-    } catch (e) {
-      handleFirestoreError(e, OperationType.WRITE, 'phonebook');
-      throw e;
-    }
-  }
-}
-
-export async function bulkUploadFAQs(data: any[]) {
-  const CHUNK_SIZE = 400;
-  for (let i = 0; i < data.length; i += CHUNK_SIZE) {
-    const chunk = data.slice(i, i + CHUNK_SIZE);
-    try {
-      const batch = writeBatch(db);
-      chunk.forEach(item => {
-        const docRef = doc(collection(db, 'faq'));
-        batch.set(docRef, sanitize(item));
-      });
-      await batch.commit();
-    } catch (e) {
-      handleFirestoreError(e, OperationType.WRITE, 'faq');
-      throw e;
-    }
-  }
-}
-
-export async function bulkUploadAdminWork(data: any[]) {
-  const CHUNK_SIZE = 400;
-  for (let i = 0; i < data.length; i += CHUNK_SIZE) {
-    const chunk = data.slice(i, i + CHUNK_SIZE);
-    try {
-      const batch = writeBatch(db);
-      chunk.forEach(item => {
-        const docRef = doc(collection(db, 'admin_complaints'));
-        batch.set(docRef, sanitize({
-          ...item,
-          isBulkUploaded: true,
-          timestamp: item.timestamp || serverTimestamp()
-        }));
-      });
-      await batch.commit();
-    } catch (e) {
-      handleFirestoreError(e, OperationType.WRITE, 'admin_complaints');
-      throw e;
-    }
-  }
-}
-
-export async function searchComplaints(params: { date?: string, phoneNumber?: string, callerName?: string }) {
-  try {
-    const colRef = collection(db, 'complaints');
-    let results: Complaint[] = [];
-
-    // Prioritize search by Phone or Name directly in Firestore
-    if (params.phoneNumber) {
-      const p = params.phoneNumber.trim();
-      console.log(`[Search] Searching by phone: ${p}`);
-      const q = query(colRef, where('phoneNumber', '==', p));
-      const snapshot = await getDocs(q);
-      results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
-    } 
-    else if (params.callerName) {
-      const name = params.callerName.trim();
-      console.log(`[Search] Searching by name: ${name}`);
-      // Try exact match first
-      const q = query(colRef, where('callerName', '==', name));
-      const snapshot = await getDocs(q);
-      results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
+    if (dateMatch && timeMatch) {
+      let hours = parseInt(timeMatch[1]);
+      const minutes = parseInt(timeMatch[2]);
+      const seconds = timeMatch[3] ? parseInt(timeMatch[3]) : 0;
+      const year = parseInt(dateMatch[1]);
+      const month = parseInt(dateMatch[2]) - 1;
+      const day = parseInt(dateMatch[3]);
       
-      // If no exact match and name is long enough, try prefix search? 
-      // Firestore query(where('name', '>=', name), where('name', '<=', name + '\uf8ff'))
-      if (results.length === 0 && name.length >= 3) {
-         const qPrefix = query(colRef, 
-           where('callerName', '>=', name), 
-           where('callerName', '<=', name + '\uf8ff'), 
-           limit(100)
-         );
-         const snapPrefix = await getDocs(qPrefix);
-         results = snapPrefix.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
-      }
-    }
-    // If only date is provided, use a range query
-    else if (params.date) {
-      console.log(`[Search] Searching by date range: ${params.date}`);
-      const start = new Date(params.date + 'T00:00:00');
-      const end = new Date(params.date + 'T23:59:59');
-      const q = query(colRef, 
-        where('timestamp', '>=', Timestamp.fromDate(start)),
-        where('timestamp', '<=', Timestamp.fromDate(end)),
-        orderBy('timestamp', 'desc')
-      );
-      const snapshot = await getDocs(q);
-      results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
-    }
-    // Default: Get 100 most recent
-    else {
-      console.log(`[Search] No params provided, fetching recent complaints`);
-      const q = query(colRef, orderBy('timestamp', 'desc'), limit(100));
-      const snapshot = await getDocs(q);
-      results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
-    }
-
-    // In-memory multi-filter for secondary parameters
-    if (results.length > 0) {
-      results = results.filter(c => {
-        // Filter by Date
-        if (params.date) {
-           if (!c.timestamp) return false;
-           try {
-             const ts = (c.timestamp as any).toDate ? (c.timestamp as any).toDate() : new Date(c.timestamp as any);
-             if (isNaN(ts.getTime())) {
-               // Handle corrupted data: if it's a map with _methodName it was corrupted by sanitize
-               // We can't know the exact time, but we know it's recent. 
-               // For now, if it's corrupted, we can't reliably filter by date, so we return false
-               // Unless we want to be generous? Local users might prefer seeing their data.
-               return false;
-             }
-             
-             // Compare in local date format (YYYY-MM-DD) to match params.date
-             // toISOString() is UTC, which can be off by a day for local users
-             const year = ts.getFullYear();
-             const month = String(ts.getMonth() + 1).padStart(2, '0');
-             const day = String(ts.getDate()).padStart(2, '0');
-             const localDate = `${year}-${month}-${day}`;
-             
-             if (localDate !== params.date) return false;
-           } catch (e) { return false; }
-        }
-
-        // Filter by Phone
-        if (params.phoneNumber) {
-          const p = params.phoneNumber.trim();
-          if (!c.phoneNumber || !c.phoneNumber.includes(p)) return false;
-        }
-
-        // Filter by Name
-        if (params.callerName) {
-          const n = params.callerName.trim();
-          if (!c.callerName || !c.callerName.includes(n)) return false;
-        }
-
-        return true;
-      });
-    }
-
-    // Sort result by timestamp
-    results.sort((a, b) => {
-      const tsA = (a.timestamp as any)?.toDate?.() || new Date(a.timestamp as any);
-      const tsB = (b.timestamp as any)?.toDate?.() || new Date(b.timestamp as any);
-      return tsB.getTime() - tsA.getTime();
-    });
-
-    console.log(`[Search] Final filtered count: ${results.length}`);
-    return results;
-  } catch (e) {
-    console.error('[Search] Error in searchComplaints', e);
-    return [];
-  }
-}
-
-export async function getUserMonthlyCallCount(email: string) {
-  try {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-    
-    const q = query(
-      collection(db, 'complaints'),
-      where('employeeEmail', '==', email),
-      where('timestamp', '>=', Timestamp.fromDate(startOfMonth)),
-      where('timestamp', '<=', Timestamp.fromDate(endOfMonth))
-    );
-    
-    const snapshot = await getCountFromServer(q);
-    return snapshot.data().count;
-  } catch (e) {
-    console.error("Error fetching monthly call count", e);
-    return 0;
-  }
-}
-
-// Admin Work
-export async function addAdminComplaint(data: Partial<AdminComplaint>) {
-  const user = auth.currentUser;
-  const employeeName = data.employeeName || (user ? (EMPLOYEE_MAP[user.email || ""] || user.displayName || user.email || "Unknown") : "ضيف");
-
-  try {
-    const docData = sanitize({
-      ...data,
-      timestamp: serverTimestamp(),
-      employeeName,
-      employeeEmail: user?.email || "guest@admin.service"
-    });
-    await addDoc(collection(db, 'admin_complaints'), docData);
-  } catch (e) {
-    handleFirestoreError(e, OperationType.WRITE, 'admin_complaints');
-  }
-}
-
-export async function searchAdminComplaints(params: { date?: string, complaintNo?: string }) {
-  try {
-    const colRef = collection(db, 'admin_complaints');
-    let q;
-    if (params.complaintNo) {
-      q = query(colRef, where('complaintNo', '==', params.complaintNo.trim()));
-    } else if (params.date) {
-      const start = new Date(params.date + 'T00:00:00');
-      const end = new Date(params.date + 'T23:59:59');
-      q = query(colRef, 
-        where('timestamp', '>=', Timestamp.fromDate(start)),
-        where('timestamp', '<=', Timestamp.fromDate(end)),
-        orderBy('timestamp', 'desc')
-      );
-    } else {
-      q = query(colRef, orderBy('timestamp', 'desc'), limit(100));
-    }
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as object) } as any));
-  } catch (e) {
-    console.error('[SearchAdmin] Error', e);
-    return [];
-  }
-}
-
-// Director Office
-export async function addDirectorCase(data: Partial<DirectorCase>, file?: File) {
-  let attachmentUrl = "";
-  if (file) {
-    const storageRef = ref(storage, `director/${Date.now()}_${file.name}`);
-    await uploadBytes(storageRef, file);
-    attachmentUrl = await getDownloadURL(storageRef);
-  }
-
-  try {
-    const docData = sanitize({
-      ...data,
-      timestamp: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      attachmentUrl,
-      status: "جديد"
-    });
-    await addDoc(collection(db, 'director_cases'), docData);
-  } catch (e) {
-    handleFirestoreError(e, OperationType.WRITE, 'director_cases');
-  }
-}
-
-export function listenToDirectorCases(callback: (cases: DirectorCase[]) => void) {
-  const q = query(collection(db, 'director_cases'), orderBy('timestamp', 'desc'));
-  return onSnapshot(q, (snapshot) => {
-    const cases = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as object) } as DirectorCase));
-    callback(cases);
-  }, (error) => {
-    handleFirestoreError(error, OperationType.LIST, 'director_cases');
-  });
-}
-
-// Inquiries
-export async function addInquiry(question: string) {
-  const user = auth.currentUser;
-  const employeeName = user ? (EMPLOYEE_MAP[user.email || ""] || user.displayName || user.email || "Unknown") : "ضيف";
-
-  try {
-    await addDoc(collection(db, 'inquiries'), {
-      question,
-      qUser: employeeName,
-      timestamp: serverTimestamp(),
-      answer: "",
-      aUser: ""
-    });
-  } catch (e) {
-    handleFirestoreError(e, OperationType.WRITE, 'inquiries');
-  }
-}
-
-export function listenToInquiries(callback: (inquiries: Inquiry[]) => void) {
-  const q = query(collection(db, 'inquiries'), orderBy('timestamp', 'desc'), limit(50));
-  return onSnapshot(q, (snapshot) => {
-    const inquiries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Inquiry));
-    callback(inquiries);
-  }, (error) => {
-    handleFirestoreError(error, OperationType.LIST, 'inquiries');
-  });
-}
-
-// FAQ
-export async function getFAQs() {
-  try {
-    const q = query(collection(db, 'faq'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => doc.data() as any);
-  } catch (e) {
-    const err = e as any;
-    if (err.code === 'permission-denied') return [];
-    handleFirestoreError(e, OperationType.LIST, 'faq');
-    return [];
-  }
-}
-
-// Schedules
-export function listenToSchedules(monthYear: string, callback: (schedules: any[]) => void) {
-  const q = query(collection(db, 'schedules'), where('monthYear', '==', monthYear), orderBy('date', 'asc'));
-  return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-  }, (e) => {
-    // If no index exists yet, fall back to non-ordered
-    const qBasic = query(collection(db, 'schedules'), where('monthYear', '==', monthYear));
-    onSnapshot(qBasic, (snap) => {
-      const data = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      callback(data.sort((a: any, b: any) => a.date.localeCompare(b.date)));
-    });
-  });
-}
-
-export async function updateSchedule(date: string, monthYear: string, data: any) {
-  try {
-    const docId = `${monthYear}_${date}`.replace(/[\/\s]/g, '_');
-    await setDoc(doc(db, 'schedules', docId), sanitize({
-      ...data,
-      date,
-      monthYear,
-      updatedAt: serverTimestamp()
-    }));
-  } catch (e) {
-    handleFirestoreError(e, OperationType.WRITE, 'schedules');
-  }
-}
-
-export async function bulkUploadSchedules(schedules: any[]) {
-  try {
-    for (const s of schedules) {
-      const docId = `${s.monthYear}_${s.date}`.replace(/[\/\s]/g, '_');
-      await setDoc(doc(db, 'schedules', docId), sanitize({
-        ...s,
-        updatedAt: serverTimestamp()
-      }));
-    }
-  } catch (e) {
-    handleFirestoreError(e, OperationType.WRITE, 'schedules');
-  }
-}
-
-export async function deleteSchedulesByMonth(monthYear: string) {
-  try {
-    const q = query(collection(db, 'schedules'), where('monthYear', '==', monthYear));
-    const snapshot = await getDocs(q);
-    for (const docSnap of snapshot.docs) {
-      await deleteDoc(doc(db, 'schedules', docSnap.id));
-    }
-  } catch (e) {
-    handleFirestoreError(e, OperationType.DELETE, 'schedules');
-  }
-}
-
-export async function getAvailableScheduleMonths(): Promise<string[]> {
-  try {
-    const q = query(collection(db, 'schedules'), limit(5000)); // Sample all since we need unique values
-    const snapshot = await getDocs(q);
-    const monthsSet = new Set<string>();
-    snapshot.docs.forEach(doc => {
-      const my = doc.data().monthYear;
-      if (my) monthsSet.add(my);
-    });
-    return Array.from(monthsSet).sort((a, b) => {
-      // Basic sorting might be tricky with Arabic names, but usually fine if they follow a pattern
-      // Or we can just return what we find
-      return b.localeCompare(a); 
-    });
-  } catch (e) {
-    return [];
-  }
-}
-
-// Hotline Tree
-export async function getHotlineTree() {
-  try {
-    const snapshot = await getDocs(collection(db, 'hotline_tree'));
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  } catch (e) {
-    return [];
-  }
-}
-
-// Phonebook
-export async function searchPhonebook(entity: string, governorate: string) {
-  try {
-    const q = query(
-      collection(db, 'phonebook'), 
-      where('entity', '==', entity),
-      where('governorate', '==', governorate)
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => doc.data());
-  } catch (e) {
-    return [];
-  }
-}
-
-// Cabinet Tracking (Special complaints)
-export function listenToCabinetComplaints(callback: (complaints: Complaint[]) => void) {
-  const q = query(collection(db, 'complaints'), where('isCabinetComplaint', '==', true), orderBy('timestamp', 'desc'));
-  return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint)));
-  }, (e) => handleFirestoreError(e, OperationType.LIST, 'complaints'));
-}
-
-// Ranking (Based on active complaints)
-export async function getUserRanking() {
-  try {
-    const q = query(collection(db, 'complaints'), limit(500)); // Sample recent
-    const snapshot = await getDocs(q);
-    const counts: Record<string, number> = {};
-    
-    snapshot.docs.forEach(doc => {
-      const email = doc.data().employeeEmail;
-      const name = doc.data().employeeName;
-      if (email && email !== 'guest@citizen.service') {
-        counts[name || email] = (counts[name || email] || 0) + 1;
-      }
-    });
-
-    return Object.entries(counts)
-      .map(([name, count]) => ({ name, calls: count }))
-      .sort((a, b) => b.calls - a.calls)
-      .slice(0, 5)
-      .map((user, idx) => ({ ...user, rank: idx + 1 }));
-  } catch (e) {
-    return [];
-  }
-}
-
-export async function getDailyRanking() {
-  try {
-    const now = new Date();
-    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-
-    // Get Schedule for today to identify shift employees
-    const currentMonthYear = now.toLocaleDateString('ar-EG', { month: 'long', year: 'numeric' });
-    const dayNum = String(now.getDate());
-    
-    const qSched = query(collection(db, 'schedules'), where('monthYear', '==', currentMonthYear), where('date', '==', dayNum));
-    const schedSnap = await getDocs(qSched);
-    
-    let shiftEmployees: string[] = [];
-    if (!schedSnap.empty) {
-      const data = schedSnap.docs[0].data();
-      const fields = ['shift24', 'shift36', 'cabinet1', 'cabinet2', 'cabinet3', 'careMorning', 'careNight'];
-      fields.forEach(f => {
-        if (data[f]) {
-          const names = data[f].split(/[-،,]/).map((s: string) => s.trim()).filter(Boolean);
-          shiftEmployees.push(...names);
-        }
-      });
-    }
-
-    // Get complaints for today
-    const q = query(
-      collection(db, 'complaints'),
-      where('timestamp', '>=', Timestamp.fromDate(startOfDay)),
-      where('timestamp', '<=', Timestamp.fromDate(endOfDay))
-    );
-    const snapshot = await getDocs(q);
-    const counts: Record<string, number> = {};
-    
-    snapshot.docs.forEach(doc => {
-      const name = doc.data().employeeName;
-      if (name) {
-        counts[name] = (counts[name] || 0) + 1;
-      }
-    });
-
-    let results = Object.entries(counts)
-      .map(([name, count]) => ({ name, calls: count }));
-
-    // Only filter if we actually have a schedule for today
-    if (shiftEmployees.length > 0) {
-       results = results.filter(r => {
-         return shiftEmployees.some(se => {
-           const n1 = r.name.replace(/[أإآ]/g, 'ا').replace(/[ة]/g, 'ه').replace(/[ى]/g, 'ي');
-           const n2 = se.replace(/[أإآ]/g, 'ا').replace(/[ة]/g, 'ه').replace(/[ى]/g, 'ي');
-           return n1.includes(n2) || n2.includes(n1);
-         });
-       });
-    }
-
-    return results
-      .sort((a, b) => b.calls - a.calls)
-      .map((user, idx) => ({ ...user, rank: idx + 1 }));
-  } catch (e) {
-    console.error("Daily ranking error:", e);
-    return [];
-  }
-}
-
-export async function getMonthlyRanking() {
-  try {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    
-    const q = query(
-      collection(db, 'complaints'),
-      where('timestamp', '>=', Timestamp.fromDate(startOfMonth))
-    );
-    const snapshot = await getDocs(q);
-    const counts: Record<string, number> = {};
-    
-    snapshot.docs.forEach(doc => {
-      const name = doc.data().employeeName;
-      if (name) {
-        counts[name] = (counts[name] || 0) + 1;
-      }
-    });
-
-    return Object.entries(counts)
-      .map(([name, count]) => ({ name, calls: count }))
-      .sort((a, b) => b.calls - a.calls)
-      .map((user, idx) => ({ ...user, rank: idx + 1 }));
-  } catch (e) {
-    console.error("Monthly ranking error:", e);
-    return [];
-  }
-}
-
-// Dashboard Stats
-// Notifications
-export function listenToNotifications(email: string, callback: (notifications: any[]) => void) {
-  const q = query(
-    collection(db, 'notifications'),
-    where('userEmail', '==', email),
-    orderBy('timestamp', 'desc'),
-    limit(20)
-  );
-  
-  return onSnapshot(q, (snapshot) => {
-    callback(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-  }, (e) => console.error("Notifications listener error:", e));
-}
-
-export async function markNotificationAsRead(notificationId: string) {
-  try {
-    await updateDoc(doc(db, 'notifications', notificationId), { status: 'read' });
-  } catch (e) {
-    console.error("Error marking notification as read:", e);
-  }
-}
-
-export async function addSystemNotification(email: string, message: string, actionLink?: string) {
-  try {
-    await addDoc(collection(db, 'notifications'), {
-      userEmail: email,
-      message,
-      status: 'unread',
-      timestamp: serverTimestamp(),
-      actionLink: actionLink || ''
-    });
-  } catch (e) {
-    console.error("Error adding notification:", e);
-  }
-}
-
-// User Management
-export async function getAllUsers() {
-  try {
-    const snapshot = await getDocs(collection(db, 'user_permissions'));
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-  } catch (e) {
-    handleFirestoreError(e, OperationType.LIST, 'user_permissions');
-    return [];
-  }
-}
-
-export async function updateUserPermissions(userId: string, data: any) {
-  try {
-    await updateDoc(doc(db, 'user_permissions', userId), sanitize(data));
-  } catch (e) {
-    handleFirestoreError(e, OperationType.UPDATE, `user_permissions/${userId}`);
-  }
-}
-
-export async function addUserPermission(email: string, role: string) {
-  const normalizedEmail = email.toLowerCase();
-  try {
-    await addDoc(collection(db, 'user_permissions'), sanitize({
-      email: normalizedEmail,
-      role: role,
-      addedAt: serverTimestamp()
-    }));
-  } catch (e) {
-    handleFirestoreError(e, OperationType.CREATE, 'user_permissions');
-  }
-}
-
-export async function deleteUserPermission(userId: string) {
-  try {
-    await deleteDoc(doc(db, 'user_permissions', userId));
-  } catch (e) {
-    handleFirestoreError(e, OperationType.DELETE, `user_permissions/${userId}`);
-  }
-}
-
-export async function getRoleCapabilities() {
-  try {
-    const snapshot = await getDocs(collection(db, 'role_capabilities'));
-    const data: any = {};
-    snapshot.docs.forEach(doc => {
-      data[doc.id] = doc.data();
-    });
-    return data;
-  } catch (e) {
-    return ROLE_CAPABILITIES;
-  }
-}
-
-export async function updateRoleCapabilities(role: string, capabilities: any) {
-  try {
-    await setDoc(doc(db, 'role_capabilities', role), sanitize(capabilities));
-  } catch (e) {
-    handleFirestoreError(e, OperationType.WRITE, `role_capabilities/${role}`);
-  }
-}
-
-export async function getDashboardStats() {
-  try {
-    const colRef = collection(db, 'complaints');
-    const snapshot = await getDocs(query(colRef, limit(1000)));
-    const docs = snapshot.docs.map(d => d.data());
-    
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
-    const monthStr = todayStr.substring(0, 7);
-
-    let todayCount = 0;
-    let monthCount = 0;
-    const govs: Record<string, number> = {};
-    const entities: Record<string, number> = {};
-    const subjects: Record<string, number> = {};
-
-    docs.forEach(d => {
-      const ts = d.timestamp?.toDate ? d.timestamp.toDate() : new Date(d.timestamp);
-      const dStr = ts.toISOString().split('T')[0];
+      if (isPM && hours < 12) hours += 12;
+      if (!isPM && hours === 12) hours = 0;
       
-      if (dStr === todayStr) todayCount++;
-      if (dStr.startsWith(monthStr)) monthCount++;
-      
-      if (d.governorate) govs[d.governorate] = (govs[d.governorate] || 0) + 1;
-      if (d.complaintEntity) entities[d.complaintEntity] = (entities[d.complaintEntity] || 0) + 1;
-      if (d.complaintSubject) subjects[d.complaintSubject] = (subjects[d.complaintSubject] || 0) + 1;
-    });
-
-    return {
-      todayCount,
-      monthCount,
-      ongoingCount: docs.filter(d => d.complaintStatus === 'جاري المتابعة').length,
-      directorActive: 0, // Placeholder
-      topGovs: govs,
-      topEntities: entities,
-      topSubjects: subjects
-    };
-  } catch (e) {
-    console.error("Dashboard stats error", e);
+      const date = new Date(year, month, day, hours, minutes, seconds);
+      return isNaN(date.getTime()) ? null : date;
+    }
     return null;
-  }
+  };
+
+  const handleDeleteBulk = async () => {
+    if (!window.confirm('هل أنت متأكد من حذف جميع البيانات التي تم رفعها بنظام الرفع الجماعي؟ لا يمكن التراجع عن هذه الخطوة.')) return;
+    setDeleteLoading(true);
+    try {
+      const count = await deleteBulkAdminWork();
+      toast.success(`تم حذف ${count} سجل بنجاح`);
+    } catch (err: any) {
+      toast.error('خطأ في الحذف: ' + err.message);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadLoading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const data = new Uint8Array(event.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+          
+          if (jsonData.length <= 1) {
+            toast.error('الملف فارغ أو لا يحتوي على بيانات');
+            return;
+          }
+
+          const batchData = jsonData.slice(1).filter(row => row[2]).map(row => {
+            const rawTs = row[0];
+            const parsedDate = parseArabicTimestamp(rawTs);
+            const ts = parsedDate ? Timestamp.fromDate(parsedDate) : null;
+
+            return {
+              complaintNo: String(row[2] || '').replace(/"/g, '').trim(),
+              governorate: String(row[3] || '').replace(/"/g, '').trim(),
+              status: String(row[4] || 'تم الرد').replace(/"/g, '').trim(),
+              notes: String(row[5] || '').replace(/"/g, '').trim(),
+              registrant: String(row[6] || '').replace(/"/g, '').trim(),
+              workType: uploadWorkType,
+              employeeName: String(row[6] || permissions?.employeeData?.name || 'نظام').replace(/"/g, '').trim(),
+              timestamp: ts
+            };
+          });
+
+          await bulkUploadAdminWork(batchData);
+          toast.success(`تم رفع ${batchData.length} سجل (${uploadWorkType}) بنجاح`);
+          setIsUploadModalOpen(false);
+        } catch (err: any) {
+          toast.error('خطأ في معالجة الملف');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } catch (err: any) {
+      toast.error('خطأ في قراءة الملف');
+    } finally {
+      setUploadLoading(false);
+      e.target.value = '';
+    }
+  };
+  const allWorkTypes = [
+    { id: 'الجاري', icon: LayoutGrid, color: 'blue', label: 'الجاري', show: permissions?.canRegisterOngoing },
+    { id: 'توجية خطأ', icon: AlertTriangle, color: 'amber', label: 'توجية خطأ', show: permissions?.canRegisterWrongDirection },
+    { id: 'شكاوي غير مسجلة', icon: FileX, color: 'rose', label: 'شكاوي غير مسجلة', show: permissions?.canRegisterUnregistered }
+  ];
+
+  const workTypes = allWorkTypes.filter(t => t.show);
+  
+  // Use the first available work type as initial state
+  const [workType, setWorkType] = useState(() => workTypes[0]?.id || 'الجاري');
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState({
+    complaintNo: '',
+    governorate: '',
+    status: 'تم الرد',
+    notes: '',
+    registrant: ''
+  });
+
+  if (activeSubTab === 'search' || activeSubTab === 'adminSearch') return <SearchComplaints permissions={permissions} mode="admin" />;
+  if (activeSubTab === 'reports' || activeSubTab === 'reportsTab') return <Reports permissions={permissions} />;
+  if (activeSubTab === 'directorTab') return <DirectorAssignments permissions={permissions} />;
+  if (activeSubTab === 'schedulesTab') return <Schedules permissions={permissions} />;
+  if (activeSubTab === 'userManagement') return <SettingsView />;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      await addAdminComplaint({ 
+        ...formData, 
+        workType: workType as any,
+        employeeName: permissions?.employeeData?.name || ''
+      });
+      
+      // Auto-reset and scroll to top
+      setFormData({
+        complaintNo: '',
+        governorate: '',
+        status: 'تم الرد',
+        notes: '',
+        registrant: ''
+      });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      toast.success('تم حفظ البيانات بنجاح');
+    } catch (err: any) {
+      toast.error('خطأ: ' + err.message);
+    } finally {
+
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6 animate-fade-in">
+      {activeSubTab === 'adminWork' || activeSubTab === 'register' ? (
+        <div className="space-y-6">
+           {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">تسجيل عمل الإدارة</h2>
+              <p className="text-slate-500 dark:text-slate-400 text-[10px] font-medium">توثيق العمل اليومي ومتابعة الشكاوى الجارية</p>
+            </div>
+            
+            {isAdmin && (
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={handleDeleteBulk}
+                  disabled={deleteLoading}
+                  className="flex items-center gap-2 px-6 py-3 bg-rose-500 text-white rounded-2xl font-black text-sm shadow-xl shadow-rose-500/20 hover:bg-rose-400 transition-all active:scale-95 disabled:opacity-50"
+                >
+                  {deleteLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <X className="w-5 h-5" />}
+                  حذف الداتا القديمة
+                </button>
+                <button 
+                  onClick={() => setIsUploadModalOpen(true)}
+                  className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-600/20 hover:bg-emerald-500 transition-all active:scale-95"
+                >
+                  <FileText className="w-5 h-5" />
+                  رفع داتا قديمة
+                </button>
+              </div>
+            )}
+          </div>
+
+          <AnimatePresence>
+            {isUploadModalOpen && (
+              <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4">
+                <motion.div 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={() => setIsUploadModalOpen(false)}
+                  className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+                />
+                <motion.div 
+                  initial={{ scale: 0.95, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.95, opacity: 0, y: 20 }}
+                  className="relative bg-white dark:bg-slate-900 w-full max-w-xl rounded-[40px] shadow-2xl p-10 space-y-8"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-2xl font-black text-slate-900 dark:text-white">رفع داتا الإدارة</h3>
+                    <button onClick={() => setIsUploadModalOpen(false)} className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-50 dark:bg-slate-800 font-bold">
+                      <X className="w-5 h-5 text-slate-400" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4">
+                    {[
+                      { id: 'الجاري', icon: LayoutGrid, color: 'blue', desc: 'رفع شكاوى الجاري المتابعة' },
+                      { id: 'توجية خطأ', icon: AlertTriangle, color: 'amber', desc: 'رفع سجلات التوجيه الخاطئ' },
+                      { id: 'شكاوي غير مسجلة', icon: FileX, color: 'rose', desc: 'رفع الشكاوى غير المسجلة بالنظام' }
+                    ].map(type => (
+                      <div key={type.id} className="relative group">
+                        <input 
+                          type="file" 
+                          accept=".xlsx,.xls"
+                          onChange={(e) => {
+                            setUploadWorkType(type.id);
+                            handleFileUpload(e);
+                          }}
+                          className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                          disabled={uploadLoading}
+                        />
+                        <div className={`flex items-center justify-between p-5 rounded-2xl border-2 border-slate-100 dark:border-white/5 bg-slate-50 dark:bg-slate-800/50 transition-all group-hover:border-${type.color}-500/50 group-hover:shadow-lg group-hover:shadow-${type.color}-500/5`}>
+                          <div className="flex items-center gap-4">
+                            <div className={`w-12 h-12 bg-${type.color}-100 dark:bg-${type.color}-900/30 text-${type.color}-600 dark:text-${type.color}-400 rounded-xl flex items-center justify-center`}>
+                              <type.icon className="w-6 h-6" />
+                            </div>
+                            <div className="text-right">
+                              <p className="font-black text-slate-900 dark:text-white leading-none mb-1">{type.id}</p>
+                              <p className="text-[10px] text-slate-400 font-bold">{type.desc}</p>
+                            </div>
+                          </div>
+                          <div className="w-10 h-10 rounded-full bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center text-slate-400 group-hover:text-blue-600 transition-colors">
+                            {uploadLoading && uploadWorkType === type.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-2xl border border-blue-100 dark:border-blue-800/30">
+                    <p className="text-[10px] text-blue-600 dark:text-blue-400 font-black leading-relaxed">
+                      * ملاحظة: يجب أن يحتوي ملف Excel على الأعمدة التالية بالترتيب:
+                      (رقم الشكوى، المحافظة، الحالة، الملاحظات، المسجل)
+                    </p>
+                  </div>
+
+                </motion.div>
+              </div>
+            )}
+          </AnimatePresence>
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="glass-card bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/40 dark:shadow-none p-6 rounded-[24px] transition-all duration-700">
+              <div className="space-y-6">
+                {/* Work Type Selection - Only show if more than 1 type is available */}
+                {workTypes.length > 1 && (
+                  <div className="space-y-4">
+                    <label className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest flex items-center gap-2">
+                       <Info className="w-3.5 h-3.5 text-blue-600" />
+                       تصنيف العمل
+                    </label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {workTypes.map(type => {
+                        const Icon = type.icon;
+                        const isActive = workType === type.id;
+                        return (
+                          <button 
+                            key={type.id}
+                            type="button"
+                            onClick={() => setWorkType(type.id)}
+                            className={`flex items-center gap-4 p-4 rounded-[16px] border-2 transition-all duration-700 text-right ${
+                              isActive 
+                                ? `bg-${type.color}-500 border-${type.color}-500 text-white shadow-xl shadow-${type.color}-500/20 font-black`
+                                : 'bg-slate-50 dark:bg-slate-800/40 border-transparent dark:border-white/5 text-slate-500 hover:border-slate-300 dark:hover:border-white/10 font-bold'
+                            }`}
+                          >
+                            <div className={`p-3 rounded-xl transition-all duration-500 shadow-sm ${isActive ? 'bg-white/20' : `bg-white dark:bg-slate-900 text-${type.color}-600 dark:text-${type.color}-400`}`}>
+                              <Icon className="w-5 h-5" />
+                            </div>
+                            <span className="text-base">{type.label}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <label className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2 uppercase tracking-widest leading-none">
+                       <Hash className="w-4 h-4 text-blue-600" />
+                       رقم الشكوى بالنظام
+                    </label>
+                    <input 
+                      type="text" 
+                      value={formData.complaintNo} 
+                      onChange={(e) => setFormData({...formData, complaintNo: e.target.value})} 
+                      required 
+                      className="form-input font-mono tracking-widest" 
+                      placeholder="0000-0000"
+                    />
+                  </div>
+
+                  {workType === 'الجاري' && (
+                    <div className="space-y-3">
+                      <label className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2 uppercase tracking-widest leading-none">
+                         <MapPin className="w-4 h-4 text-blue-600" />
+                         المحافظة
+                      </label>
+                      <SearchableSelect
+                        options={GOVERNORATES_LIST}
+                        value={formData.governorate}
+                        onChange={(val) => setFormData({...formData, governorate: val})}
+                        placeholder="اختر المحافظة..."
+                        required
+                      />
+                    </div>
+                  )}
+
+                  {workType === 'توجية خطأ' && (
+                    <div className="space-y-3">
+                      <label className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2 uppercase tracking-widest leading-none">
+                         <FileText className="w-4 h-4 text-amber-600" />
+                         مسجل الشكوى الحالي
+                      </label>
+                      <input 
+                        type="text" 
+                        value={formData.registrant} 
+                        onChange={(e) => setFormData({...formData, registrant: e.target.value})} 
+                        required 
+                        className="form-input"
+                        placeholder="اسم الموظف"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <AnimatePresence mode="wait">
+                  {workType === 'الجاري' && (
+                    <motion.div 
+                      key="status-section"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      className="space-y-6 pt-4 border-t border-slate-100 dark:border-white/5"
+                    >
+                      <div className="space-y-4">
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">موقف الشكوى الحالي</label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <button 
+                              type="button" 
+                              onClick={() => setFormData({...formData, status: 'تم الرد'})}
+                              className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all duration-500 shadow-sm ${formData.status === 'تم الرد' ? 'bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20 font-black' : 'bg-slate-50 dark:bg-slate-900 border-transparent dark:border-white/5 text-slate-500 font-bold'}`}
+                            >
+                              <CheckCircle2 className="w-5 h-5" />
+                              <span>تم الرد</span>
+                            </button>
+                            <button 
+                              type="button" 
+                              onClick={() => setFormData({...formData, status: 'جاري المتابعة'})}
+                              className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 transition-all duration-500 shadow-sm ${formData.status === 'جاري المتابعة' ? 'bg-amber-500 border-amber-500 text-white shadow-lg shadow-amber-500/20 font-black' : 'bg-slate-50 dark:bg-slate-900 border-transparent dark:border-white/5 text-slate-500 font-bold'}`}
+                            >
+                             <Clock className="w-5 h-5" />
+                             <span>جاري المتابعة / استعجال</span>
+                           </button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 dark:text-slate-300">ملاحظات إدراية</label>
+                        <textarea 
+                          rows={4} 
+                          value={formData.notes} 
+                          onChange={(e) => setFormData({...formData, notes: e.target.value})}
+                          className="form-input min-h-[120px] resize-none bg-slate-50 dark:bg-slate-800 border-transparent transition-all text-sm"
+                          placeholder="اكتب أي ملاحظات أو تفاصيل إضافية هنا..."
+                        ></textarea>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            </div>
+
+            <div className="flex justify-center py-6">
+               <button 
+                  type="submit" 
+                  disabled={isSubmitting || workTypes.length === 0}
+                  className="btn-primary min-w-[280px] flex items-center justify-center gap-3 shadow-blue-500/30"
+               >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <span>جاري الحفظ...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5" />
+                      <span>حفظ البيانات</span>
+                    </>
+                  )}
+               </button>
+            </div>
+          </form>
+        </div>
+      ) : (
+        <div className="space-y-8 animate-fade-in">
+           <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">سجل شكاوى الإدارة</h2>
+              <p className="text-slate-500 dark:text-slate-400 font-medium">مراجعة والبحث في الشكاوى المسجلة بنظام الإدارة</p>
+            </div>
+          </div>
+
+           <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/40 dark:shadow-none p-8 rounded-[32px] transition-all duration-700">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
+                 <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                       <Calendar className="w-4 h-4 text-blue-600" />
+                       الفترة الزمنية
+                    </label>
+                    <SearchableSelect
+                      options={[
+                        { value: 'today', label: 'اليوم' },
+                        { value: 'month', label: 'هذا الشهر' },
+                        { value: 'custom', label: 'فترة مخصصة...' }
+                      ]}
+                      value="today"
+                      onChange={() => {}}
+                    />
+                 </div>
+                 <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300">من تاريخ</label>
+                    <input type="date" className="form-input bg-slate-50 dark:bg-slate-800 border-transparent transition-all" />
+                 </div>
+                 <div className="space-y-2">
+                    <label className="text-sm font-bold text-slate-700 dark:text-slate-300">إلى تاريخ</label>
+                    <input type="date" className="form-input bg-slate-50 dark:bg-slate-800 border-transparent transition-all" />
+                 </div>
+              </div>
+              <div className="mt-8">
+                 <button className="btn-primary w-full md:w-auto md:px-12 flex items-center justify-center gap-2">
+                    <Search className="w-5 h-5" />
+                    <span>البحث في السجلات</span>
+                 </button>
+              </div>
+           </div>
+
+           <div className="flex flex-col items-center justify-center py-32 bg-white dark:bg-slate-900/50 rounded-[40px] border-2 border-dashed border-slate-200 dark:border-white/5 space-y-4 transition-all duration-700">
+              <div className="w-20 h-20 bg-slate-50 dark:bg-slate-800 rounded-3xl flex items-center justify-center transition-colors duration-500">
+                 <FileText className="w-10 h-10 text-slate-200 dark:text-slate-700" />
+              </div>
+              <div className="text-center">
+                 <p className="text-xl text-slate-400 font-black tracking-tight">لا توجد شكاوى مسجلة للعرض</p>
+                 <p className="text-slate-400 text-sm">حدد الفترة الزمنية واضغط على زر البحث</p>
+              </div>
+           </div>
+        </div>
+      )}
+    </div>
+  );
 }
