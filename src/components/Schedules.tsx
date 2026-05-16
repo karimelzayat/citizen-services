@@ -224,7 +224,11 @@ export default function Schedules({ permissions }: { permissions: UserPermission
   };
 
   const handleSwap = async (targetRow: any, targetField: string, targetValue: string) => {
-    const names = (targetValue || '').split(/[-،,]/).map(s => s.trim()).filter(Boolean);
+    // Robustly split names handling various Arabic and English separators
+    const names = (targetValue || '')
+      .split(/[-،,]/)
+      .map(s => s.trim())
+      .filter(n => n && n !== '-');
     
     if (names.length > 1) {
       setPickingSelection({ row: targetRow, field: targetField, names, fullValue: targetValue });
@@ -467,6 +471,7 @@ export default function Schedules({ permissions }: { permissions: UserPermission
                       ].map((col) => {
                         const val = (row as any)[col.field];
                         const isSelected = swapSource?.row.id === row.id && swapSource?.field === col.field;
+                        const isPicking = pickingSelection?.row.id === row.id && pickingSelection?.field === col.field;
                         const isHighlighted = isMe(val);
                         
                         let baseStyle = "p-6 text-[11px] font-bold transition-all";
@@ -477,7 +482,7 @@ export default function Schedules({ permissions }: { permissions: UserPermission
                           <td 
                             key={col.field}
                             onClick={() => isSwapMode && handleSwap(row, col.field, val)}
-                            className={`${baseStyle} ${isSwapMode ? 'cursor-pointer hover:ring-2 hover:ring-amber-500 hover:scale-105 rounded-lg' : ''} ${isSelected ? 'bg-amber-500 text-white ring-4 ring-amber-500/20 z-10 relative !rounded-lg' : isHighlighted ? 'bg-blue-600 text-white shadow-inner scale-105 rounded-lg' : ''}`}
+                            className={`${baseStyle} ${isSwapMode ? 'cursor-pointer hover:ring-2 hover:ring-amber-500 hover:scale-105 rounded-lg' : ''} ${isSelected ? 'bg-amber-500 text-white ring-4 ring-amber-500/20 z-10 relative !rounded-lg' : isPicking ? 'bg-amber-100 dark:bg-amber-900/30 ring-2 ring-amber-500 ring-offset-2 animate-pulse rounded-lg' : isHighlighted ? 'bg-blue-600 text-white shadow-inner scale-105 rounded-lg' : ''}`}
                           >
                             {val || '-'}
                           </td>
@@ -575,20 +580,25 @@ export default function Schedules({ permissions }: { permissions: UserPermission
           document.body
         )}
       </AnimatePresence>
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         {pickingSelection && createPortal(
-          <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 RTL">
+          <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4 RTL">
             <motion.div 
                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                onClick={() => setPickingSelection(null)}
-               className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+               className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
             />
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
-              className="relative bg-white dark:bg-slate-900 w-full max-w-sm rounded-[32px] shadow-2xl overflow-hidden p-6 text-right"
+              initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="relative bg-white dark:bg-slate-900 w-full max-w-sm rounded-[40px] shadow-2xl border border-white/10 overflow-hidden p-8 text-right"
             >
-              <h3 className="text-lg font-black text-slate-900 dark:text-white mb-4">اختر الموظف المراد تبديله:</h3>
-              <div className="space-y-2">
+              <div className="w-16 h-16 bg-amber-50 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center mb-6 mx-auto">
+                <ArrowLeftRight className="w-8 h-8 text-amber-600" />
+              </div>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 text-center">اختيار موظف محدد</h3>
+              <p className="text-slate-500 dark:text-slate-400 text-sm mb-6 text-center">تحتوي هذه الخلية على عدة موظفين، يرجى اختيار الاسم المراد تبديله:</p>
+              
+              <div className="space-y-3">
                 {pickingSelection.names.map((name, idx) => (
                   <button
                     key={idx}
@@ -596,27 +606,31 @@ export default function Schedules({ permissions }: { permissions: UserPermission
                       processSelection(pickingSelection.row, pickingSelection.field, name, pickingSelection.fullValue);
                       setPickingSelection(null);
                     }}
-                    className="w-full py-3 px-4 bg-slate-50 dark:bg-slate-800 hover:bg-blue-600 hover:text-white rounded-xl font-bold transition-all text-right flex items-center justify-between group"
+                    className="w-full py-4 px-6 bg-slate-50 dark:bg-slate-800 hover:bg-amber-500 hover:text-white rounded-[20px] font-black transition-all text-right flex items-center justify-between group shadow-sm hover:shadow-amber-500/20"
                   >
                     <span>{name}</span>
                     <ArrowLeftRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all" />
                   </button>
                 ))}
-                <button
-                  onClick={() => {
-                    processSelection(pickingSelection.row, pickingSelection.field, '', pickingSelection.fullValue);
-                    setPickingSelection(null);
-                  }}
-                  className="w-full py-3 px-4 border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-400 hover:border-rose-500 hover:text-rose-500 rounded-xl font-bold transition-all"
-                >
-                  تبديل مكان (فراغ)
-                </button>
+                
+                <div className="pt-2">
+                  <button
+                    onClick={() => {
+                      processSelection(pickingSelection.row, pickingSelection.field, '', pickingSelection.fullValue);
+                      setPickingSelection(null);
+                    }}
+                    className="w-full py-4 px-6 border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-400 hover:border-blue-500 hover:text-blue-500 rounded-[20px] font-bold transition-all flex items-center justify-center gap-2"
+                  >
+                    تبديل مع مكان فارغ
+                  </button>
+                </div>
               </div>
+              
               <button 
                 onClick={() => setPickingSelection(null)}
-                className="w-full mt-6 py-3 text-slate-400 font-bold hover:text-slate-600"
+                className="w-full mt-8 py-3 text-slate-400 font-bold hover:text-rose-500 transition-colors"
               >
-                إلغاء
+                إغلاق القائمة
               </button>
             </motion.div>
           </div>,
