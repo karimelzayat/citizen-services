@@ -1,9 +1,10 @@
 {
-  "projectId": "citzen-service",
-  "appId": "1:469038481710:web:f619fe4a75f52bafbc3abf",
-  "apiKey": "AIzaSyAZGN3ZwVoToE8oKKmH6xFyKDCbru7yBjw",
-  "authDomain": "citzen-service.firebaseapp.com",
-  "storageBucket": "citzen-service.firebasestorage.app",
-  "messagingSenderId": "469038481710",
-  "measurementId": "G-KEGY7P231K"
+  "projectId": "ai-studio-applet-webapp-21188",
+  "appId": "1:268913465769:web:cb8db10bb3a0513fa28cb8",
+  "apiKey": "AIzaSyAK90tQSi-wUOjDKEIvf0fnhqtwVRo1XSE",
+  "authDomain": "ai-studio-applet-webapp-21188.firebaseapp.com",
+  "firestoreDatabaseId": "citzen-db-v2",
+  "storageBucket": "ai-studio-applet-webapp-21188.firebasestorage.app",
+  "messagingSenderId": "268913465769",
+  "measurementId": ""
 }

@@ -16,7 +16,7 @@ const firebaseConfig = {
   messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfigFromJson.messagingSenderId,
   appId: env.VITE_FIREBASE_APP_ID || firebaseConfigFromJson.appId,
   measurementId: env.VITE_FIREBASE_MEASUREMENT_ID || firebaseConfigFromJson.measurementId,
-  firestoreDatabaseId: env.VITE_FIREBASE_DATABASE_ID || (firebaseConfigFromJson as any).firestoreDatabaseId,
+  firestoreDatabaseId: (firebaseConfigFromJson as any).firestoreDatabaseId || env.VITE_FIREBASE_DATABASE_ID,
 };
 
 const isConfigured = firebaseConfig.apiKey && firebaseConfig.apiKey !== "PLACEHOLDER";

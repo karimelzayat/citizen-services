@@ -305,21 +305,22 @@ export async function deleteBulkAdminWork() {
   try {
     const colRef = collection(db, 'admin_complaints');
     
-    // 1. Try to find records explicitly marked as bulk uploaded
+    // 1. Get ALL records from today (safe radical solution for current mess)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const qToday = query(colRef, where('timestamp', '>=', Timestamp.fromDate(today)));
+    const snapToday = await getDocs(qToday);
+    
+    // 2. Also check for records explicitly marked as bulk uploaded
     const qBulk = query(colRef, where('isBulkUploaded', '==', true));
     const snapBulk = await getDocs(qBulk);
     
-    // 2. Fallback: If no flagged records, try finding records from today (safe radical solution)
-    let docsToDelete = snapBulk.docs;
+    // Combine unique document IDs
+    const docMap = new Map();
+    snapToday.docs.forEach(d => docMap.set(d.id, d));
+    snapBulk.docs.forEach(d => docMap.set(d.id, d));
     
-    if (docsToDelete.length === 0) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const qToday = query(colRef, where('timestamp', '>=', Timestamp.fromDate(today)));
-      const snapToday = await getDocs(qToday);
-      docsToDelete = snapToday.docs;
-    }
-
+    const docsToDelete = Array.from(docMap.values());
     if (docsToDelete.length === 0) return 0;
 
     let deletedCount = 0;
@@ -335,7 +336,10 @@ export async function deleteBulkAdminWork() {
     }
     
     return deletedCount;
-  } catch (e) {
+  } catch (e: any) {
+    if (e.code === 'resource-exhausted') {
+      throw new Error('عذراً، تم الوصول للحد الأقصى المسموح به من العمليات اليوم في Firebase. يرجى المحاولة غداً أو التحقق من لوحة تحكم Firebase.');
+    }
     handleFirestoreError(e, OperationType.DELETE, 'admin_complaints (bulk)');
     throw e;
   }
