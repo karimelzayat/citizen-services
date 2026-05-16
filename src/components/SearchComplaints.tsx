@@ -41,7 +41,8 @@ export default function SearchComplaints({ permissions, mode = 'hotline' }: { pe
       if (mode === 'admin') {
         data = await searchAdminComplaints({ date: searchDate, complaintNo: complaintNo });
         // Filter for 'الجاري' if requested by user implicitly
-        data = data.filter((c: any) => c.workType === 'الجاري');
+        // Removed workType filter to allow all admin records
+
       } else {
         data = await searchComplaints({ 
           date: searchDate, 
