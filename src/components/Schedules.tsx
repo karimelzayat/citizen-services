@@ -580,8 +580,8 @@ export default function Schedules({ permissions }: { permissions: UserPermission
           document.body
         )}
       </AnimatePresence>
-      {/* Name Selection Modal - Simplified and Integrated */}
-      {pickingSelection && (
+      {/* Name Selection Modal - Using Portal for perfect viewport centering */}
+      {pickingSelection && createPortal(
         <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 RTL" dir="rtl">
           <div 
              onClick={() => setPickingSelection(null)}
@@ -639,7 +639,8 @@ export default function Schedules({ permissions }: { permissions: UserPermission
               إلغاء العملية
             </button>
           </motion.div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
