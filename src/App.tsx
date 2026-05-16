@@ -432,7 +432,7 @@ export default function App() {
 
                 <div className="flex items-center gap-2">
                   <button onClick={() => setIsHotlineTreeOpen(true)} className="nav-tool-btn group" title="شجرة الخط الساخن">
-                    <GitBranch className="w-4 h-4 text-slate-500 group-hover:text-blue-600 transition-colors" />
+                    <GitBranch size={22} className="text-slate-500 group-hover:text-blue-600 transition-colors" />
                   </button>
                   <div 
                     className="relative"
@@ -440,7 +440,7 @@ export default function App() {
                     onMouseLeave={() => setIsRankingModalOpen(false)}
                   >
                     <button className="nav-tool-btn group" title="ترتيب الموظفين">
-                      <Trophy className="w-4 h-4 text-slate-500 group-hover:text-amber-500 transition-colors" />
+                      <Trophy size={22} className="text-slate-500 group-hover:text-amber-500 transition-colors" />
                     </button>
                     <RankingPopover isOpen={isRankingModalOpen} />
                   </div>
@@ -451,7 +451,7 @@ export default function App() {
                       className="nav-tool-btn group" 
                       title="الإشعارات"
                     >
-                      <Bell className="w-4 h-4 text-slate-500 group-hover:text-blue-600 transition-colors" />
+                      <Bell size={22} className="text-slate-500 group-hover:text-blue-600 transition-colors" />
                       {notifications.filter(n => n.status === 'unread').length > 0 && (
                         <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 animate-bounce">
                           {notifications.filter(n => n.status === 'unread').length}
