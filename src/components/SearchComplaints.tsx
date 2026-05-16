@@ -17,6 +17,7 @@ export default function SearchComplaints({ permissions, mode = 'hotline' }: { pe
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'duplicates'>('all');
+  const [selectedComplaint, setSelectedComplaint] = useState<any | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState<any>({});
   const [currentPage, setCurrentPage] = useState(1);
