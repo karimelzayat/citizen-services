@@ -579,23 +579,12 @@ export async function searchAdminComplaints(params: { date?: string, complaintNo
   try {
     const colRef = collection(db, 'admin_complaints');
     let q;
-    // If both date and complaint number are provided, query by date range first then filter client-side
-    if (params.complaintNo && params.date) {
-      const start = new Date(params.date + 'T00:00:00');
-      const end = new Date(params.date + 'T23:59:59');
-      q = query(
-        colRef,
-        where('timestamp', '>=', Timestamp.fromDate(start)),
-        where('timestamp', '<=', Timestamp.fromDate(end)),
-        orderBy('timestamp', 'desc')
-      );
-    } else if (params.complaintNo) {
+    if (params.complaintNo) {
       q = query(colRef, where('complaintNo', '==', params.complaintNo.trim()));
     } else if (params.date) {
       const start = new Date(params.date + 'T00:00:00');
       const end = new Date(params.date + 'T23:59:59');
-      q = query(
-        colRef,
+      q = query(colRef, 
         where('timestamp', '>=', Timestamp.fromDate(start)),
         where('timestamp', '<=', Timestamp.fromDate(end)),
         orderBy('timestamp', 'desc')
@@ -604,20 +593,12 @@ export async function searchAdminComplaints(params: { date?: string, complaintNo
       q = query(colRef, orderBy('timestamp', 'desc'), limit(100));
     }
     const snapshot = await getDocs(q);
-    let results = snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as object) } as any));
-    // Apply complaint number filter if both params were given
-    if (params.complaintNo && params.date) {
-      const target = params.complaintNo.trim();
-      results = results.filter(r => (r.complaintNo ? r.complaintNo.trim() === target : false));
-    }
-    return results;
+    return snapshot.docs.map(doc => ({ id: doc.id, ...(doc.data() as object) } as any));
   } catch (e) {
     console.error('[SearchAdmin] Error', e);
     return [];
   }
 }
-
-
 
 // Director Office
 export async function addDirectorCase(data: Partial<DirectorCase>, file?: File) {
