@@ -302,60 +302,80 @@ export async function deleteBulkFollowUpData(collectionName: 'followUpPending' |
 }
 
 export async function bulkUploadInquiries(data: any[]) {
-  try {
-    const batch = writeBatch(db);
-    data.forEach(item => {
-      const docRef = doc(collection(db, 'inquiries'));
-      batch.set(docRef, sanitize({
-        ...item,
-        timestamp: serverTimestamp()
-      }));
-    });
-    await batch.commit();
-  } catch (e) {
-    handleFirestoreError(e, OperationType.WRITE, 'inquiries');
+  const CHUNK_SIZE = 400;
+  for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+    const chunk = data.slice(i, i + CHUNK_SIZE);
+    try {
+      const batch = writeBatch(db);
+      chunk.forEach(item => {
+        const docRef = doc(collection(db, 'inquiries'));
+        batch.set(docRef, sanitize({
+          ...item,
+          timestamp: serverTimestamp()
+        }));
+      });
+      await batch.commit();
+    } catch (e) {
+      handleFirestoreError(e, OperationType.WRITE, 'inquiries');
+      throw e;
+    }
   }
 }
 
 export async function bulkUploadPhonebook(data: any[]) {
-  try {
-    const batch = writeBatch(db);
-    data.forEach(item => {
-      const docRef = doc(collection(db, 'phonebook'));
-      batch.set(docRef, sanitize(item));
-    });
-    await batch.commit();
-  } catch (e) {
-    handleFirestoreError(e, OperationType.WRITE, 'phonebook');
+  const CHUNK_SIZE = 400;
+  for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+    const chunk = data.slice(i, i + CHUNK_SIZE);
+    try {
+      const batch = writeBatch(db);
+      chunk.forEach(item => {
+        const docRef = doc(collection(db, 'phonebook'));
+        batch.set(docRef, sanitize(item));
+      });
+      await batch.commit();
+    } catch (e) {
+      handleFirestoreError(e, OperationType.WRITE, 'phonebook');
+      throw e;
+    }
   }
 }
 
 export async function bulkUploadFAQs(data: any[]) {
-  try {
-    const batch = writeBatch(db);
-    data.forEach(item => {
-      const docRef = doc(collection(db, 'faq'));
-      batch.set(docRef, sanitize(item));
-    });
-    await batch.commit();
-  } catch (e) {
-    handleFirestoreError(e, OperationType.WRITE, 'faq');
+  const CHUNK_SIZE = 400;
+  for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+    const chunk = data.slice(i, i + CHUNK_SIZE);
+    try {
+      const batch = writeBatch(db);
+      chunk.forEach(item => {
+        const docRef = doc(collection(db, 'faq'));
+        batch.set(docRef, sanitize(item));
+      });
+      await batch.commit();
+    } catch (e) {
+      handleFirestoreError(e, OperationType.WRITE, 'faq');
+      throw e;
+    }
   }
 }
 
 export async function bulkUploadAdminWork(data: any[]) {
-  try {
-    const batch = writeBatch(db);
-    data.forEach(item => {
-      const docRef = doc(collection(db, 'admin_complaints'));
-      batch.set(docRef, sanitize({
-        ...item,
-        timestamp: serverTimestamp()
-      }));
-    });
-    await batch.commit();
-  } catch (e) {
-    handleFirestoreError(e, OperationType.WRITE, 'admin_complaints');
+  const CHUNK_SIZE = 400;
+  for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+    const chunk = data.slice(i, i + CHUNK_SIZE);
+    try {
+      const batch = writeBatch(db);
+      chunk.forEach(item => {
+        const docRef = doc(collection(db, 'admin_complaints'));
+        batch.set(docRef, sanitize({
+          ...item,
+          timestamp: serverTimestamp()
+        }));
+      });
+      await batch.commit();
+    } catch (e) {
+      handleFirestoreError(e, OperationType.WRITE, 'admin_complaints');
+      throw e;
+    }
   }
 }
 
