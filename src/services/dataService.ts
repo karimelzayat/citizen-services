@@ -303,14 +303,40 @@ export async function deleteBulkFollowUpData(collectionName: 'followUpPending' |
 
 export async function deleteBulkAdminWork() {
   try {
-    const q = query(collection(db, 'admin_complaints'), where('isBulkUploaded', '==', true));
+    const colRef = collection(db, 'admin_complaints');
+    const q = query(colRef, where('isBulkUploaded', '==', true));
     const snapshot = await getDocs(q);
-    const batch = writeBatch(db);
-    snapshot.docs.forEach((d) => {
-      batch.delete(d.ref);
-    });
-    await batch.commit();
-    return snapshot.size;
+    
+    if (snapshot.empty) {
+      // Fallback: check if they were uploaded to 'adminComplaints' (old naming)
+      const qOld = query(collection(db, 'adminComplaints'), where('isBulkUploaded', '==', true));
+      const snapOld = await getDocs(qOld);
+      if (snapOld.empty) return 0;
+      
+      let deletedCount = 0;
+      for (let i = 0; i < snapOld.docs.length; i += 500) {
+        const batch = writeBatch(db);
+        snapOld.docs.slice(i, i + 500).forEach(d => {
+          batch.delete(d.ref);
+          deletedCount++;
+        });
+        await batch.commit();
+      }
+      return deletedCount;
+    }
+
+    let deletedCount = 0;
+    const docs = snapshot.docs;
+    for (let i = 0; i < docs.length; i += 500) {
+      const batch = writeBatch(db);
+      docs.slice(i, i + 500).forEach(d => {
+        batch.delete(d.ref);
+        deletedCount++;
+      });
+      await batch.commit();
+    }
+    
+    return deletedCount;
   } catch (e) {
     handleFirestoreError(e, OperationType.DELETE, 'admin_complaints');
     throw e;
