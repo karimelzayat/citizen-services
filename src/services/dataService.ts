@@ -301,6 +301,22 @@ export async function deleteBulkFollowUpData(collectionName: 'followUpPending' |
   }
 }
 
+export async function deleteBulkAdminWork() {
+  try {
+    const q = query(collection(db, 'admin_complaints'), where('isBulkUploaded', '==', true));
+    const snapshot = await getDocs(q);
+    const batch = writeBatch(db);
+    snapshot.docs.forEach((d) => {
+      batch.delete(d.ref);
+    });
+    await batch.commit();
+    return snapshot.size;
+  } catch (e) {
+    handleFirestoreError(e, OperationType.DELETE, 'admin_complaints');
+    throw e;
+  }
+}
+
 export async function bulkUploadInquiries(data: any[]) {
   const CHUNK_SIZE = 400;
   for (let i = 0; i < data.length; i += CHUNK_SIZE) {
@@ -368,7 +384,8 @@ export async function bulkUploadAdminWork(data: any[]) {
         const docRef = doc(collection(db, 'admin_complaints'));
         batch.set(docRef, sanitize({
           ...item,
-          timestamp: serverTimestamp()
+          isBulkUploaded: true,
+          timestamp: item.timestamp || serverTimestamp()
         }));
       });
       await batch.commit();
