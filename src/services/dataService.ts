@@ -304,32 +304,30 @@ export async function deleteBulkFollowUpData(collectionName: 'followUpPending' |
 export async function deleteBulkAdminWork() {
   try {
     const colRef = collection(db, 'admin_complaints');
-    const q = query(colRef, where('isBulkUploaded', '==', true));
-    const snapshot = await getDocs(q);
     
-    if (snapshot.empty) {
-      // Fallback: check if they were uploaded to 'adminComplaints' (old naming)
-      const qOld = query(collection(db, 'adminComplaints'), where('isBulkUploaded', '==', true));
-      const snapOld = await getDocs(qOld);
-      if (snapOld.empty) return 0;
-      
-      let deletedCount = 0;
-      for (let i = 0; i < snapOld.docs.length; i += 500) {
-        const batch = writeBatch(db);
-        snapOld.docs.slice(i, i + 500).forEach(d => {
-          batch.delete(d.ref);
-          deletedCount++;
-        });
-        await batch.commit();
-      }
-      return deletedCount;
+    // 1. Try to find records explicitly marked as bulk uploaded
+    const qBulk = query(colRef, where('isBulkUploaded', '==', true));
+    const snapBulk = await getDocs(qBulk);
+    
+    // 2. Fallback: If no flagged records, try finding records from today (safe radical solution)
+    let docsToDelete = snapBulk.docs;
+    
+    if (docsToDelete.length === 0) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const qToday = query(colRef, where('timestamp', '>=', Timestamp.fromDate(today)));
+      const snapToday = await getDocs(qToday);
+      docsToDelete = snapToday.docs;
     }
 
+    if (docsToDelete.length === 0) return 0;
+
     let deletedCount = 0;
-    const docs = snapshot.docs;
-    for (let i = 0; i < docs.length; i += 500) {
+    // Firestore batch limit is 500
+    for (let i = 0; i < docsToDelete.length; i += 500) {
       const batch = writeBatch(db);
-      docs.slice(i, i + 500).forEach(d => {
+      const chunk = docsToDelete.slice(i, i + 500);
+      chunk.forEach((d) => {
         batch.delete(d.ref);
         deletedCount++;
       });
@@ -338,7 +336,7 @@ export async function deleteBulkAdminWork() {
     
     return deletedCount;
   } catch (e) {
-    handleFirestoreError(e, OperationType.DELETE, 'admin_complaints');
+    handleFirestoreError(e, OperationType.DELETE, 'admin_complaints (bulk)');
     throw e;
   }
 }
