@@ -117,7 +117,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
             border border-slate-100 dark:border-white/5 hover:border-blue-500/30 overflow-hidden relative shadow-sm`}
         >
           <Home className={`w-5 h-5 ${collapsed ? 'text-blue-600 dark:text-blue-500' : 'text-slate-400 dark:text-slate-500 group-hover:text-blue-500'}`} />
-          {!collapsed && <span className="font-bold text-sm text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white">العودة للرئيسية</span>}
+          {!collapsed && <span className="font-bold text-sm text-black dark:text-black group-hover:text-black dark:group-hover:text-black">العودة للرئيسية</span>}
           {!collapsed && (
             <div className="absolute right-0 top-0 h-full w-1 bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity" />
           )}
@@ -130,7 +130,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
             border border-rose-100 dark:border-rose-500/20 overflow-hidden relative shadow-sm`}
         >
           <LogOut className={`w-5 h-5 ${collapsed ? 'text-rose-500' : 'text-rose-400 group-hover:text-white'}`} />
-          {!collapsed && <span className="font-bold text-sm">تسجيل الخروج</span>}
+          {!collapsed && <span className="font-bold text-sm text-black dark:text-black">تسجيل الخروج</span>}
         </button>
       </div>
 
@@ -178,7 +178,7 @@ export default function Sidebar({ activeTab, onTabChange, permissions, collapsed
                             ${collapsed ? 'justify-center px-0' : ''}`}
                         >
                           <item.icon className={`w-4.5 h-4.5 flex-shrink-0 transition-all group-hover:scale-110 ${activeTab === item.id ? 'text-white' : 'text-slate-400 dark:text-slate-500'}`} />
-                          {!collapsed && <span className="text-sm font-black truncate tracking-tight">{item.label}</span>}
+                          {!collapsed && <span className="text-sm font-black text-black dark:text-black truncate tracking-tight">{item.label}</span>}
                         </button>
                       </li>
                     ))}

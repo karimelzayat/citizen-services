@@ -240,7 +240,13 @@ export async function reviewFollowUp(pendingId: string, reviewData: any) {
 }
 
 export async function checkAndAddFollowUp(complaintId: string, data: any) {
-  const isExcluded = data.complaintEntity === 'عدم اختصاص' || data.complaintSubject === 'عدم اختصاص';
+  // استبعاد المكالمات التي جهتها أو موضوعها "عدم اختصاص"
+  const entityStr = String(data.complaintEntity || '');
+  const subjectStr = String(data.complaintSubject || '');
+  
+  const isExcluded = entityStr.includes('عدم اختصاص') || subjectStr.includes('عدم اختصاص');
+  
+  // اختيار عشوائي بنسبة 5% من المكالمات غير المستبعدة
   const isSelected = !isExcluded && Math.random() < 0.05;
 
   if (isSelected) {

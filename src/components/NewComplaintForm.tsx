@@ -110,7 +110,7 @@ export default function NewComplaintForm({ permissions }: { permissions: UserPer
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <label className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest leading-none block mb-1">الاسم بالكامل</label>
+                <label className="text-sm font-black text-black dark:text-black uppercase tracking-widest leading-none block mb-1">الاسم بالكامل</label>
                 <div className="relative">
                    <User className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                    <input type="text" name="callerName" required value={formData.callerName} onChange={handleInputChange} className="form-input pr-10" placeholder="أدخل اسم المتصل" />
@@ -118,7 +118,7 @@ export default function NewComplaintForm({ permissions }: { permissions: UserPer
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest leading-none block mb-1">المحافظة</label>
+                <label className="text-sm font-black text-black dark:text-black uppercase tracking-widest leading-none block mb-1">المحافظة</label>
                 <SearchableSelect
                     options={GOVERNORATES_LIST}
                     value={formData.governorate}
@@ -129,7 +129,7 @@ export default function NewComplaintForm({ permissions }: { permissions: UserPer
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-black text-slate-700 dark:text-slate-300 uppercase tracking-widest leading-none block mb-1">رقم الهاتف </label>
+                <label className="text-sm font-black text-black dark:text-black uppercase tracking-widest leading-none block mb-1">رقم الهاتف </label>
                 <div className="relative">
                    <Phone className="absolute right-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
                    <input type="tel" name="phoneNumber" required pattern="[0-9]{11}" placeholder="01xxxxxxxxx" value={formData.phoneNumber} onChange={handleInputChange} className="form-input pr-10 font-mono" />
@@ -140,7 +140,7 @@ export default function NewComplaintForm({ permissions }: { permissions: UserPer
             {/* Row 2: Entity and Subject */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                 <label className="text-sm font-bold text-slate-700 dark:text-slate-300">جهة الشكوى</label>
+                 <label className="text-sm font-bold text-black dark:text-black">جهة الشكوى</label>
                  <SearchableSelect
                     options={GOVERNORATES_ENTITIES}
                     value={formData.complaintEntity}
@@ -151,7 +151,7 @@ export default function NewComplaintForm({ permissions }: { permissions: UserPer
               </div>
 
               <div className="space-y-2">
-                 <label className="text-sm font-bold text-slate-700 dark:text-slate-300">موضوع المكالمة</label>
+                 <label className="text-sm font-bold text-black dark:text-black">موضوع المكالمة</label>
                  <SearchableSelect
                     options={COMPLAINT_SUBJECTS}
                     value={formData.complaintSubject}
@@ -230,7 +230,7 @@ export default function NewComplaintForm({ permissions }: { permissions: UserPer
           {/* Section: Status and Details */}
           <div className="space-y-8">
             <div className="space-y-4 bg-slate-50 dark:bg-slate-800 p-6 rounded-3xl border border-slate-100 dark:border-white/5 transition-colors duration-700">
-              <span className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">حالة المكالمة الحالية</span>
+              <span className="text-sm font-black text-black dark:text-black uppercase tracking-widest">حالة المكالمة الحالية</span>
               <div className="flex flex-wrap gap-4">
                 <button 
                   type="button" 
@@ -254,7 +254,7 @@ export default function NewComplaintForm({ permissions }: { permissions: UserPer
             </div>
 
             <div className="space-y-3">
-              <label className="text-sm font-black text-slate-700 dark:text-slate-300 flex items-center gap-2">
+              <label className="text-sm font-black text-black dark:text-black flex items-center gap-2">
                 <AlertCircle className="w-4 h-4 text-blue-600" />
                 تفاصيل المكالمة
               </label>

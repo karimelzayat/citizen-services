@@ -170,7 +170,15 @@ export default function FollowUp({ permissions }: { permissions: UserPermissions
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Complaint));
-      setComplaints(data);
+      
+      // ترتيب تنازلي حسب التاريخ (الأحدث أولاً) لضمان الدقة في العرض
+      const sortedData = data.sort((a, b) => {
+        const timeA = a.timestamp instanceof Timestamp ? a.timestamp.toMillis() : 0;
+        const timeB = b.timestamp instanceof Timestamp ? b.timestamp.toMillis() : 0;
+        return timeB - timeA;
+      });
+
+      setComplaints(sortedData);
       setLoading(false);
       setCurrentPage(1); // Reset to first page on tab or data change
     });
