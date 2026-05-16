@@ -17,9 +17,10 @@ export default function SearchComplaints({ permissions, mode = 'hotline' }: { pe
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [filterType, setFilterType] = useState<'all' | 'duplicates'>('all');
-  const [selectedComplaint, setSelectedComplaint] = useState<any | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState<any>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 50;
 
   const handleEditClick = (complaint: any) => {
     setSelectedComplaint(complaint);
@@ -48,6 +49,7 @@ export default function SearchComplaints({ permissions, mode = 'hotline' }: { pe
         });
       }
       setResults(data);
+      setCurrentPage(1);
       if (overrideDate !== undefined) {
         setDate(overrideDate);
         setPhone('');
@@ -237,9 +239,10 @@ export default function SearchComplaints({ permissions, mode = 'hotline' }: { pe
              <p className="text-slate-400 text-lg font-black uppercase tracking-[0.3em] italic">مزامنة البيانات الحية...</p>
           </div>
         ) : filteredResults.length > 0 ? (
-          <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden transition-all duration-700">
-            <div className="overflow-x-auto">
-              <table className="w-full text-right border-collapse">
+          <div className="space-y-4">
+            <div className="bg-white dark:bg-slate-900 rounded-[24px] border border-slate-100 dark:border-white/5 shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden transition-all duration-700">
+              <div className="overflow-x-auto">
+                <table className="w-full text-right border-collapse">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-white/5">
                     <th className="px-6 py-3 text-xs font-black text-slate-400 uppercase tracking-widest">التوقيت</th>
@@ -283,14 +286,18 @@ export default function SearchComplaints({ permissions, mode = 'hotline' }: { pe
                       return colors[index % colors.length];
                     };
 
-                    return filteredResults.map((c, idx) => {
+                    const indexOfLastItem = currentPage * itemsPerPage;
+                    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+                    const currentItems = filteredResults.slice(indexOfFirstItem, indexOfLastItem);
+
+                    return currentItems.map((c, idx) => {
                       const colorClass = filterType === 'duplicates' ? getDuplicateColor(c.phoneNumber) : '';
                       return (
                         <motion.tr 
                           key={c.id}
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: idx * 0.02 }}
+                          transition={{ delay: (idx % 20) * 0.01 }}
                           className={`group transition-all cursor-pointer border-l-4 ${colorClass || 'border-transparent hover:bg-blue-50/30 dark:hover:bg-blue-900/10'}`}
                           onClick={() => setSelectedComplaint(c)}
                         >
@@ -313,7 +320,7 @@ export default function SearchComplaints({ permissions, mode = 'hotline' }: { pe
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-xs shadow-sm border ${colorClass ? 'bg-white/50 dark:bg-slate-800/50 border-white/20' : 'bg-blue-50 dark:bg-slate-800 border-blue-100 dark:border-white/5 text-blue-600 dark:text-blue-400'}`}>
-                                      {c.callerName.charAt(0)}
+                                      {c.callerName ? c.callerName.charAt(0) : '?'}
                                     </div>
                                     <span className="font-black text-sm text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition-colors">{c.callerName}</span>
                                 </div>
@@ -353,6 +360,42 @@ export default function SearchComplaints({ permissions, mode = 'hotline' }: { pe
               </table>
             </div>
           </div>
+
+          {/* Pagination Controls */}
+          {filteredResults.length > itemsPerPage && (
+            <div className="flex items-center justify-center gap-2 py-4">
+              <button 
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 text-xs font-black disabled:opacity-50"
+              >
+                السابق
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, Math.ceil(filteredResults.length / itemsPerPage)) }).map((_, i) => {
+                  const pageNum = i + 1;
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-8 h-8 rounded-lg text-[10px] font-black transition-all ${currentPage === pageNum ? 'bg-blue-600 text-white shadow-lg' : 'bg-slate-50 dark:bg-slate-800 text-slate-400'}`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+                {Math.ceil(filteredResults.length / itemsPerPage) > 5 && <span className="text-slate-300">...</span>}
+              </div>
+              <button 
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredResults.length / itemsPerPage)))}
+                disabled={currentPage === Math.ceil(filteredResults.length / itemsPerPage)}
+                className="px-4 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 text-xs font-black disabled:opacity-50"
+              >
+                التالي
+              </button>
+            </div>
+          )}
+        </div>
         ) : (
           <motion.div 
             initial={{ opacity: 0, scale: 0.98 }}

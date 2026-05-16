@@ -42,13 +42,13 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
           }
 
           const batchData = jsonData.slice(1).filter(row => row[2]).map(row => ({
-            complaintNo: String(row[2] || ''),
-            governorate: String(row[3] || ''),
-            status: String(row[4] || 'تم الرد'),
-            notes: String(row[5] || ''),
-            registrant: String(row[6] || ''),
+            complaintNo: String(row[2] || '').replace(/"/g, '').trim(),
+            governorate: String(row[3] || '').replace(/"/g, '').trim(),
+            status: String(row[4] || 'تم الرد').replace(/"/g, '').trim(),
+            notes: String(row[5] || '').replace(/"/g, '').trim(),
+            registrant: String(row[6] || '').replace(/"/g, '').trim(),
             workType: uploadWorkType,
-            employeeName: String(row[6] || permissions?.employeeData?.name || 'نظام')
+            employeeName: String(row[6] || permissions?.employeeData?.name || 'نظام').replace(/"/g, '').trim()
           }));
 
           await bulkUploadAdminWork(batchData);
