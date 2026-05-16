@@ -78,10 +78,10 @@ export default function Schedules({ permissions }: { permissions: UserPermission
       
       const months = await getAvailableScheduleMonths();
       if (months.length > 0) {
-        const sorted = months.sort((a, b) => parseArabicMonth(a) - parseArabicMonth(b));
+        const sorted = months.sort((a, b) => parseArabicMonth(b) - parseArabicMonth(a));
         setAvailableMonths(sorted);
         if (sorted.length > 0 && !sorted.includes(selectedMonth)) {
-          setSelectedMonth(sorted[sorted.length - 1]);
+          setSelectedMonth(sorted[0]);
         }
       } else {
         setAvailableMonths([currentMonth]);
@@ -207,7 +207,7 @@ export default function Schedules({ permissions }: { permissions: UserPermission
       toast.success(`تم رفع ${schedules.length} سجل بنجاح لشهر ${selectedMonth}`);
       
       const updatedMonths = await getAvailableScheduleMonths();
-      const sorted = updatedMonths.sort((a, b) => parseArabicMonth(a) - parseArabicMonth(b));
+      const sorted = updatedMonths.sort((a, b) => parseArabicMonth(b) - parseArabicMonth(a));
       setAvailableMonths(sorted);
       
       setShowUploadModal(false);
@@ -228,10 +228,10 @@ export default function Schedules({ permissions }: { permissions: UserPermission
       toast.success('تم مسح بيانات الشهر بنجاح');
       const updatedMonths = await getAvailableScheduleMonths();
 
-      const sorted = updatedMonths.sort((a, b) => parseArabicMonth(a) - parseArabicMonth(b));
+      const sorted = updatedMonths.sort((a, b) => parseArabicMonth(b) - parseArabicMonth(a));
       setAvailableMonths(sorted);
       if (sorted.length > 0) {
-        setSelectedMonth(sorted[sorted.length - 1]);
+        setSelectedMonth(sorted[0]);
       } else {
         setSelectedMonth(currentMonth);
         setAvailableMonths([currentMonth]);
