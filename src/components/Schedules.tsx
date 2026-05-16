@@ -93,7 +93,13 @@ export default function Schedules({ permissions }: { permissions: UserPermission
   useEffect(() => {
     setLoading(true);
     const unsubscribe = listenToSchedules(selectedMonth, (data) => {
-      setDbSchedules(data);
+      // ترتيب البيانات عددياً حسب اليوم لضمان التسلسل الصحيح (1، 2، 3...) حتى لو كان التاريخ بصيغة نصية
+      const sortedData = [...data].sort((a, b) => {
+        const d1 = parseInt(a.date) || 0;
+        const d2 = parseInt(b.date) || 0;
+        return d1 - d2;
+      });
+      setDbSchedules(sortedData);
       setLoading(false);
     });
     return () => unsubscribe();
@@ -171,12 +177,8 @@ export default function Schedules({ permissions }: { permissions: UserPermission
 
         const offset = hasMonthCol ? 1 : 0;
         
-        // استخراج رقم اليوم من التاريخ (مثلاً 01/05/2026 يصبح 1)
+        // الاحتفاظ بالتاريخ كاملاً كما هو موجود في الجدول (مثلاً 01/05/2026) بناءً على طلب المستخدم
         let dateVal = parts[0];
-        if (dateVal.includes('/')) {
-          const dateParts = dateVal.split('/');
-          if (dateParts[0]) dateVal = parseInt(dateParts[0]).toString();
-        }
 
         const clean = (val: string) => (!val || val === '-' || val === '.' || val === 'فراغ') ? '' : val;
 
