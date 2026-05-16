@@ -39,8 +39,9 @@ export default function Schedules({ permissions }: { permissions: UserPermission
   const [isDeleting, setIsDeleting] = useState(false);
   const [showMonthDropdown, setShowMonthDropdown] = useState(false);
   const [isSwapMode, setIsSwapMode] = useState(false);
-  const [swapSource, setSwapSource] = useState<{ row: any, field: string, value: string } | null>(null);
+  const [swapSource, setSwapSource] = useState<{ row: any, field: string, employee: string, fullValue: string } | null>(null);
   const [isSwapping, setIsSwapping] = useState(false);
+  const [pickingSelection, setPickingSelection] = useState<{ row: any, field: string, names: string[], fullValue: string } | null>(null);
 
   const parseArabicMonth = (str: string) => {
     const months = ["يناير", "فبراير", "مارس", "أبريل", "إبريل", "مايو", "يونيو", "يوليو", "أغسطس", "سبتمبر", "أكتوبر", "نوفمبر", "ديسمبر"];
@@ -223,19 +224,29 @@ export default function Schedules({ permissions }: { permissions: UserPermission
   };
 
   const handleSwap = async (targetRow: any, targetField: string, targetValue: string) => {
+    const names = (targetValue || '').split(/[-،,]/).map(s => s.trim()).filter(Boolean);
+    
+    if (names.length > 1) {
+      setPickingSelection({ row: targetRow, field: targetField, names, fullValue: targetValue });
+    } else {
+      processSelection(targetRow, targetField, names[0] || '', targetValue);
+    }
+  };
+
+  const processSelection = async (targetRow: any, targetField: string, employee: string, fullValue: string) => {
     if (!swapSource) {
-      setSwapSource({ row: targetRow, field: targetField, value: targetValue });
-      toast.info(`تم اختيار ${targetValue || 'خانة فارغة'}. الآن اختر الموظف البديل.`);
+      setSwapSource({ row: targetRow, field: targetField, employee, fullValue });
+      toast.info(`تم اختيار (${employee || 'فراغ'}). الآن اختر الموظف البديل.`);
       return;
     }
 
-    if (swapSource.row.id === targetRow.id && swapSource.field === targetField) {
+    if (swapSource.row.id === targetRow.id && swapSource.field === targetField && swapSource.employee === employee) {
       setSwapSource(null);
       toast.info('تم إلغاء الاختيار');
       return;
     }
 
-    if (!window.confirm(`هل أنت متأكد من تبديل (${swapSource.value || 'فراغ'}) بـ (${targetValue || 'فراغ'})؟`)) {
+    if (!window.confirm(`هل أنت متأكد من تبديل الموظف (${swapSource.employee || 'فراغ'}) بـ (${employee || 'فراغ'})؟`)) {
       setSwapSource(null);
       return;
     }
@@ -244,12 +255,28 @@ export default function Schedules({ permissions }: { permissions: UserPermission
     try {
       const { updateSchedule } = await import('../services/dataService');
       
+      const replaceInString = (original: string, toRemove: string, toAdd: string) => {
+        if (!original) return toAdd;
+        const parts = original.split(/([-،,])/);
+        let replaced = false;
+        const result = parts.map(p => {
+          if (!replaced && p.trim() === toRemove.trim()) {
+            replaced = true;
+            return toAdd || '';
+          }
+          return p;
+        }).filter(p => p !== undefined).join('');
+        return result.replace(/^[-\s،,]+|[ \-\s،,]+$/g, '').replace(/[-\s،,]{2,}/g, ' - ');
+      };
+
       // Update first record
-      const updatedSourceRow = { ...swapSource.row, [swapSource.field]: targetValue };
+      const newValue1 = replaceInString(swapSource.fullValue, swapSource.employee, employee);
+      const updatedSourceRow = { ...swapSource.row, [swapSource.field]: newValue1 };
       await updateSchedule(swapSource.row.date, selectedMonth, updatedSourceRow);
       
       // Update second record
-      const updatedTargetRow = { ...targetRow, [targetField]: swapSource.value };
+      const newValue2 = replaceInString(fullValue, employee, swapSource.employee);
+      const updatedTargetRow = { ...targetRow, [targetField]: newValue2 };
       await updateSchedule(targetRow.date, selectedMonth, updatedTargetRow);
 
       toast.success('تم التبديل بنجاح');
@@ -531,6 +558,54 @@ export default function Schedules({ permissions }: { permissions: UserPermission
                   إلغاء
                 </button>
               </div>
+            </motion.div>
+          </div>,
+          document.body
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {pickingSelection && createPortal(
+          <div className="fixed inset-0 z-[10001] flex items-center justify-center p-4 RTL">
+            <motion.div 
+               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+               onClick={() => setPickingSelection(null)}
+               className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }}
+              className="relative bg-white dark:bg-slate-900 w-full max-w-sm rounded-[32px] shadow-2xl overflow-hidden p-6 text-right"
+            >
+              <h3 className="text-lg font-black text-slate-900 dark:text-white mb-4">اختر الموظف المراد تبديله:</h3>
+              <div className="space-y-2">
+                {pickingSelection.names.map((name, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      processSelection(pickingSelection.row, pickingSelection.field, name, pickingSelection.fullValue);
+                      setPickingSelection(null);
+                    }}
+                    className="w-full py-3 px-4 bg-slate-50 dark:bg-slate-800 hover:bg-blue-600 hover:text-white rounded-xl font-bold transition-all text-right flex items-center justify-between group"
+                  >
+                    <span>{name}</span>
+                    <ArrowLeftRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all" />
+                  </button>
+                ))}
+                <button
+                  onClick={() => {
+                    processSelection(pickingSelection.row, pickingSelection.field, '', pickingSelection.fullValue);
+                    setPickingSelection(null);
+                  }}
+                  className="w-full py-3 px-4 border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-400 hover:border-rose-500 hover:text-rose-500 rounded-xl font-bold transition-all"
+                >
+                  تبديل مكان (فراغ)
+                </button>
+              </div>
+              <button 
+                onClick={() => setPickingSelection(null)}
+                className="w-full mt-6 py-3 text-slate-400 font-bold hover:text-slate-600"
+              >
+                إلغاء
+              </button>
             </motion.div>
           </div>,
           document.body
