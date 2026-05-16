@@ -179,13 +179,23 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
             </div>
             
             {isAdmin && (
-              <button 
-                onClick={() => setIsUploadModalOpen(true)}
-                className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-600/20 hover:bg-emerald-500 transition-all active:scale-95"
-              >
-                <FileText className="w-5 h-5" />
-                رفع داتا قديمة
-              </button>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={handleDeleteBulk}
+                  disabled={deleteLoading}
+                  className="flex items-center gap-2 px-6 py-3 bg-rose-500 text-white rounded-2xl font-black text-sm shadow-xl shadow-rose-500/20 hover:bg-rose-400 transition-all active:scale-95 disabled:opacity-50"
+                >
+                  {deleteLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <X className="w-5 h-5" />}
+                  حذف الداتا القديمة
+                </button>
+                <button 
+                  onClick={() => setIsUploadModalOpen(true)}
+                  className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-600/20 hover:bg-emerald-500 transition-all active:scale-95"
+                >
+                  <FileText className="w-5 h-5" />
+                  رفع داتا قديمة
+                </button>
+              </div>
             )}
           </div>
 
@@ -255,16 +265,6 @@ export default function AdminView({ activeSubTab, permissions }: { activeSubTab:
                     </p>
                   </div>
 
-                  <div className="pt-4 border-t border-slate-100 dark:border-white/5">
-                    <button
-                      onClick={handleDeleteBulk}
-                      disabled={deleteLoading}
-                      className="w-full p-4 rounded-2xl bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 font-black text-xs hover:bg-rose-100 transition-all flex items-center justify-center gap-2"
-                    >
-                      {deleteLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <X className="w-4 h-4" />}
-                      حذف جميع البيانات المرفوعة بالخطأ
-                    </button>
-                  </div>
                 </motion.div>
               </div>
             )}
