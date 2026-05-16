@@ -580,63 +580,67 @@ export default function Schedules({ permissions }: { permissions: UserPermission
           document.body
         )}
       </AnimatePresence>
-      <AnimatePresence mode="wait">
-        {pickingSelection && createPortal(
-          <div className="fixed inset-0 z-[10002] flex items-center justify-center p-4 RTL">
-            <motion.div 
-               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-               onClick={() => setPickingSelection(null)}
-               className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
-            />
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              className="relative bg-white dark:bg-slate-900 w-full max-w-sm rounded-[40px] shadow-2xl border border-white/10 overflow-hidden p-8 text-right"
+      {/* Name Selection Modal - Simplified and Integrated */}
+      {pickingSelection && (
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 RTL" dir="rtl">
+          <div 
+             onClick={() => setPickingSelection(null)}
+             className="absolute inset-0 bg-slate-900/80 backdrop-blur-md transition-opacity duration-500"
+          />
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0, y: 30 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[40px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] border border-white/10 overflow-hidden p-8"
+          >
+            <div className="flex flex-col items-center text-center mb-8">
+              <div className="w-20 h-20 bg-amber-500/10 rounded-[28px] flex items-center justify-center mb-6 shadow-inner">
+                <ArrowLeftRight className="w-10 h-10 text-amber-500" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">اختيار موظف محدد</h3>
+              <p className="text-slate-500 dark:text-slate-400 font-medium px-4">يرجى اختيار الاسم الذي ترغب في نقله أو تبديله من هذه القائمة:</p>
+            </div>
+            
+            <div className="space-y-3 max-h-[400px] overflow-y-auto px-2 custom-scrollbar">
+              {pickingSelection.names.map((name, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    const { row, field, fullValue } = pickingSelection;
+                    processSelection(row, field, name, fullValue);
+                    setPickingSelection(null);
+                  }}
+                  className="w-full py-5 px-6 bg-slate-50 dark:bg-slate-800/50 hover:bg-amber-500 hover:text-white rounded-[24px] font-black transition-all text-right flex items-center justify-between group border border-slate-100 dark:border-white/5"
+                >
+                  <span className="text-lg">{name}</span>
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform -translate-x-4 group-hover:translate-x-0">
+                    <ArrowLeftRight className="w-5 h-5" />
+                  </div>
+                </button>
+              ))}
+              
+              <div className="pt-4">
+                <button
+                  onClick={() => {
+                    const { row, field, fullValue } = pickingSelection;
+                    processSelection(row, field, '', fullValue);
+                    setPickingSelection(null);
+                  }}
+                  className="w-full py-4 px-6 border-2 border-dashed border-slate-200 dark:border-slate-800 text-slate-400 hover:border-blue-500 hover:text-blue-500 hover:bg-blue-50/30 rounded-[24px] font-bold transition-all flex items-center justify-center gap-3"
+                >
+                  نقل إلى/من (مكان فارغ)
+                </button>
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => setPickingSelection(null)}
+              className="w-full mt-8 py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-black rounded-[24px] hover:bg-rose-500 hover:text-white transition-all shadow-sm"
             >
-              <div className="w-16 h-16 bg-amber-50 dark:bg-amber-900/30 rounded-2xl flex items-center justify-center mb-6 mx-auto">
-                <ArrowLeftRight className="w-8 h-8 text-amber-600" />
-              </div>
-              <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 text-center">اختيار موظف محدد</h3>
-              <p className="text-slate-500 dark:text-slate-400 text-sm mb-6 text-center">تحتوي هذه الخلية على عدة موظفين، يرجى اختيار الاسم المراد تبديله:</p>
-              
-              <div className="space-y-3">
-                {pickingSelection.names.map((name, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      processSelection(pickingSelection.row, pickingSelection.field, name, pickingSelection.fullValue);
-                      setPickingSelection(null);
-                    }}
-                    className="w-full py-4 px-6 bg-slate-50 dark:bg-slate-800 hover:bg-amber-500 hover:text-white rounded-[20px] font-black transition-all text-right flex items-center justify-between group shadow-sm hover:shadow-amber-500/20"
-                  >
-                    <span>{name}</span>
-                    <ArrowLeftRight className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-all" />
-                  </button>
-                ))}
-                
-                <div className="pt-2">
-                  <button
-                    onClick={() => {
-                      processSelection(pickingSelection.row, pickingSelection.field, '', pickingSelection.fullValue);
-                      setPickingSelection(null);
-                    }}
-                    className="w-full py-4 px-6 border-2 border-dashed border-slate-200 dark:border-slate-700 text-slate-400 hover:border-blue-500 hover:text-blue-500 rounded-[20px] font-bold transition-all flex items-center justify-center gap-2"
-                  >
-                    تبديل مع مكان فارغ
-                  </button>
-                </div>
-              </div>
-              
-              <button 
-                onClick={() => setPickingSelection(null)}
-                className="w-full mt-8 py-3 text-slate-400 font-bold hover:text-rose-500 transition-colors"
-              >
-                إغلاق القائمة
-              </button>
-            </motion.div>
-          </div>,
-          document.body
-        )}
-      </AnimatePresence>
+              إلغاء العملية
+            </button>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }
