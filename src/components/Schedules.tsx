@@ -510,20 +510,21 @@ export default function Schedules({ permissions }: { permissions: UserPermission
         )}
       </div>
 
+      {/* Upload Modal - High priority viewport centering */}
       <AnimatePresence>
         {showUploadModal && createPortal(
-          <div className="fixed inset-0 z-[10000] flex items-center justify-center p-4 md:p-8 overflow-hidden RTL">
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 md:p-8 RTL" dir="rtl">
             <motion.div 
                initial={{ opacity: 0 }}
                animate={{ opacity: 1 }}
                exit={{ opacity: 0 }}
                onClick={() => setShowUploadModal(false)}
-               className="absolute inset-0 bg-slate-900/60 backdrop-blur-md"
+               className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
             />
             <motion.div 
-              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              initial={{ scale: 0.95, opacity: 0, y: 30 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              exit={{ scale: 0.95, opacity: 0, y: 30 }}
               className="relative bg-white dark:bg-slate-900 w-full max-w-4xl rounded-[48px] border border-white/10 shadow-2xl overflow-hidden p-10 flex flex-col h-full max-h-[85vh] text-right"
             >
               <div className="flex items-center justify-between mb-8">
