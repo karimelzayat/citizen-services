@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { addInquiry, listenToInquiries } from '../services/dataService';
-import { Inquiry } from '../types';
-import { MessageSquare, Send, Search, Reply, User, CheckCircle2, Clock } from 'lucide-react';
+import { addInquiry, listenToInquiries, bulkUploadInquiries } from '../services/dataService';
+import { Inquiry, UserPermissions } from '../types';
+import { MessageSquare, Send, Search, Reply, User, CheckCircle2, Clock, FileText, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from '../lib/toast';
+import * as XLSX from 'xlsx';
 
-export default function InquiryDatabase() {
+export default function InquiryDatabase({ permissions }: { permissions: UserPermissions | null }) {
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [question, setQuestion] = useState('');
   const [search, setSearch] = useState('');
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const isAdmin = permissions?.role === 'Admin';
 
   useEffect(() => {
     const unsubscribe = listenToInquiries(setInquiries);
@@ -23,6 +26,47 @@ export default function InquiryDatabase() {
       toast.success('تم إرسال استفسارك بنجاح');
     } catch (err: any) {
       toast.error('خطأ: ' + err.message);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadLoading(true);
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const data = new Uint8Array(event.target?.result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+          
+          if (jsonData.length <= 1) {
+            toast.error('الملف فارغ أو لا يحتوي على بيانات');
+            return;
+          }
+
+          const batchData = jsonData.slice(1).filter(row => row[0]).map(row => ({
+            question: String(row[0] || ''),
+            answer: String(row[1] || ''),
+            qUser: String(row[2] || 'موظف سابق'),
+            aUser: String(row[3] || (row[1] ? 'نظام' : ''))
+          }));
+
+          await bulkUploadInquiries(batchData);
+          toast.success(`تم رفع ${batchData.length} استفسار بنجاح`);
+        } catch (err: any) {
+          toast.error('خطأ في معالجة الملف');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } catch (err: any) {
+      toast.error('خطأ في قراءة الملف');
+    } finally {
+      setUploadLoading(false);
+      e.target.value = '';
     }
   };
 
@@ -43,12 +87,29 @@ export default function InquiryDatabase() {
              <span className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1.5 block">قاعدة المعرفة الحية</span>
           </div>
         </div>
-        <div className="flex -space-x-2 rtl:space-x-reverse">
-           {[1, 2, 3].map(i => (
-             <div key={i} className="w-6 h-6 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[8px] font-bold">
-                {String.fromCharCode(64 + i)}
-             </div>
-           ))}
+        
+        <div className="flex items-center gap-2">
+          {isAdmin && (
+            <div className="relative">
+              <input 
+                type="file" 
+                accept=".xlsx,.xls" 
+                onChange={handleFileUpload} 
+                className="absolute inset-0 opacity-0 cursor-pointer" 
+                disabled={uploadLoading}
+              />
+              <button className="w-8 h-8 flex items-center justify-center bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-lg hover:bg-emerald-200 transition-all active:scale-95" title="رفع داتا قديمة">
+                {uploadLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+              </button>
+            </div>
+          )}
+          <div className="flex -space-x-2 rtl:space-x-reverse">
+             {[1, 2, 3].map(i => (
+               <div key={i} className="w-6 h-6 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[8px] font-bold">
+                  {String.fromCharCode(64 + i)}
+               </div>
+             ))}
+          </div>
         </div>
       </div>
 
