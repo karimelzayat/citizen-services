@@ -142,7 +142,7 @@ export default function Schedules({ permissions }: { permissions: UserPermission
       if (meWords.length <= 2) {
         return matches.length === meWords.length && meWords[0] === indWords[0];
       }
-      
+
       return false;
     });
   };
@@ -184,6 +184,7 @@ export default function Schedules({ permissions }: { permissions: UserPermission
       toast.success(`تم رفع ${schedules.length} سجل بنجاح لشهر ${selectedMonth}`);
       
       const updatedMonths = await getAvailableScheduleMonths();
+
       const sorted = updatedMonths.sort((a, b) => parseArabicMonth(a) - parseArabicMonth(b));
       setAvailableMonths(sorted);
       
@@ -193,6 +194,7 @@ export default function Schedules({ permissions }: { permissions: UserPermission
       console.error(e);
       toast.error('خطأ أثناء الرفع');
     } finally {
+
       setIsUploading(false);
     }
   };
@@ -204,6 +206,7 @@ export default function Schedules({ permissions }: { permissions: UserPermission
       await deleteSchedulesByMonth(selectedMonth);
       toast.success('تم مسح بيانات الشهر بنجاح');
       const updatedMonths = await getAvailableScheduleMonths();
+
       const sorted = updatedMonths.sort((a, b) => parseArabicMonth(a) - parseArabicMonth(b));
       setAvailableMonths(sorted);
       if (sorted.length > 0) {
@@ -215,11 +218,13 @@ export default function Schedules({ permissions }: { permissions: UserPermission
     } catch (e) {
       toast.error('خطأ أثناء المسح');
     } finally {
+
       setIsDeleting(false);
     }
   };
 
   const handleSwap = async (targetRow: any, targetField: string, targetValue: string) => {
+    // Robustly split names handling various Arabic and English separators
     const names = (targetValue || '')
       .split(/[-،,]/)
       .map(s => s.trim())
@@ -256,10 +261,13 @@ export default function Schedules({ permissions }: { permissions: UserPermission
       
       const replaceInString = (original: string, toRemove: string, toAdd: string) => {
         let names = (original || '').split(/[-،,]/).map(n => n.trim()).filter(Boolean);
+        
         if (!toRemove) {
+          // If we're swapping into an empty slot, just add the name
           if (toAdd) names.push(toAdd);
           return names.join(' - ');
         }
+
         let replaced = false;
         const resultNames = names.map(n => {
           if (!replaced && n === toRemove) {
@@ -268,14 +276,21 @@ export default function Schedules({ permissions }: { permissions: UserPermission
           }
           return n;
         }).filter(Boolean);
-        if (!replaced && toAdd) resultNames.push(toAdd);
+
+        // Handle case where we're swapping A for B but A wasn't in list (e.g. empty cell)
+        if (!replaced && toAdd) {
+          resultNames.push(toAdd);
+        }
+
         return resultNames.join(' - ');
       };
 
+      // Update first record
       const newValue1 = replaceInString(swapSource.fullValue, swapSource.employee, employee);
       const updatedSourceRow = { ...swapSource.row, [swapSource.field]: newValue1 };
       await updateSchedule(swapSource.row.date, selectedMonth, updatedSourceRow);
       
+      // Update second record
       const newValue2 = replaceInString(fullValue, employee, swapSource.employee);
       const updatedTargetRow = { ...targetRow, [targetField]: newValue2 };
       await updateSchedule(targetRow.date, selectedMonth, updatedTargetRow);
@@ -336,103 +351,166 @@ export default function Schedules({ permissions }: { permissions: UserPermission
         )}
       </div>
 
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-32 gap-6">
-           <div className="relative">
-              <div className="w-20 h-20 border-4 border-blue-600/20 border-t-blue-600 rounded-full animate-spin" />
-              <div className="absolute inset-0 flex items-center justify-center">
-                 <RefreshCw className="w-8 h-8 text-blue-600 animate-pulse" />
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-xl shadow-slate-200/20 dark:shadow-none p-8 mb-8 rounded-[40px] flex flex-col md:flex-row items-center justify-between relative group">
+        <div className="absolute top-0 right-0 w-2 h-full bg-blue-600 rounded-r-[40px]"></div>
+        <div className="absolute top-0 right-0 w-full h-full bg-blue-600 opacity-0 group-hover:opacity-[0.02] transform scale-x-0 group-hover:scale-x-100 origin-right transition-all duration-700 rounded-[40px]"></div>
+        
+        <div className="relative z-10 text-right">
+          <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">الفترة الزمنية المختارة:</label>
+          <div className="flex items-center gap-3">
+             <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-blue-600" />
+             </div>
+             <div className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+               {selectedMonth}
+             </div>
+          </div>
+        </div>
+ 
+        <div className="relative z-10 mt-6 md:mt-0">
+          <div className="relative">
+            <button
+              onClick={() => setShowMonthDropdown(!showMonthDropdown)}
+              className="flex items-center justify-between min-w-[300px] px-6 py-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-white/5 font-black text-blue-600 hover:bg-slate-100 transition-all group"
+            >
+              <div className="flex items-center gap-3">
+                <Calendar className="w-5 h-5 opacity-60" />
+                <span>{selectedMonth}</span>
               </div>
-           </div>
-           <p className="text-xl font-black text-slate-400">جاري تحميل البيانات...</p>
-        </div>
-      ) : (
-        <div className="bg-white dark:bg-slate-900 rounded-[48px] shadow-2xl shadow-blue-500/5 border border-slate-100 dark:border-white/5 overflow-x-auto custom-scrollbar">
-          <table className="w-full min-w-[1400px] border-collapse text-right">
-            <thead>
-              <tr className="border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-white/5">
-                <th className="p-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">التاريخ</th>
-                <th className="p-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">اليوم</th>
-                <th className="p-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">شفت 24 ساعة</th>
-                <th className="p-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">شفت 36 ساعة</th>
-                <th className="p-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">عطلة (9:30-12)</th>
-                <th className="p-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">عطلة (12-2:30)</th>
-                <th className="p-6 text-right text-[10px] font-black text-emerald-500 uppercase tracking-widest whitespace-nowrap">مجلس الوزراء (1)</th>
-                <th className="p-6 text-right text-[10px] font-black text-emerald-500 uppercase tracking-widest whitespace-nowrap">مجلس الوزراء (2)</th>
-                <th className="p-6 text-right text-[10px] font-black text-emerald-500 uppercase tracking-widest whitespace-nowrap">مجلس الوزراء (3)</th>
-                <th className="p-6 text-right text-[10px] font-black text-amber-500 uppercase tracking-widest whitespace-nowrap">الرعاية (صباحاً)</th>
-                <th className="p-6 text-right text-[10px] font-black text-amber-500 uppercase tracking-widest whitespace-nowrap">الرعاية (ليلاً)</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-white/5">
-              {dbSchedules.map((row, i) => {
-                const hasMe = isMe(row.shift24) || isMe(row.shift36) || isMe(row.holidayNoon) || isMe(row.holidayMorning) || isMe(row.cabinet1) || isMe(row.cabinet2) || isMe(row.cabinet3) || isMe(row.careMorning) || isMe(row.careNight);
+              <ChevronDown className={`w-5 h-5 transition-transform ${showMonthDropdown ? 'rotate-180' : ''}`} />
+            </button>
 
-                return (
-                  <tr 
-                    key={row.id || i} 
-                    className={`hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors group ${hasMe ? 'bg-blue-50/50 dark:bg-blue-500/10' : ''}`}
+            <AnimatePresence>
+              {showMonthDropdown && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowMonthDropdown(false)}></div>
+                  <motion.div
+                    initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                    className="absolute top-full mt-2 left-0 w-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/10 rounded-3xl shadow-2xl z-50 overflow-hidden max-h-[500px] overflow-y-auto custom-scrollbar"
                   >
-                    <td className="p-6 text-xs font-mono text-slate-400 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                         {hasMe && <User className="w-3 h-3 text-blue-600 animate-pulse" />}
-                         {row.date}
-                      </div>
-                    </td>
-                    <td className="p-6 text-[13px] font-black text-blue-600 dark:text-blue-400 whitespace-nowrap">{row.day}</td>
-                    
-                    {[
-                      { field: 'shift24', color: 'blue' },
-                      { field: 'shift36', color: 'blue' },
-                      { field: 'holidayMorning', color: 'blue' },
-                      { field: 'holidayNoon', color: 'blue' },
-                      { field: 'cabinet1', color: 'emerald' },
-                      { field: 'cabinet2', color: 'emerald' },
-                      { field: 'cabinet3', color: 'emerald' },
-                      { field: 'careMorning', color: 'amber' },
-                      { field: 'careNight', color: 'amber' }
-                    ].map((col) => {
-                      const val = (row as any)[col.field];
-                      const isSelected = swapSource?.row.id === row.id && swapSource?.field === col.field;
-                      const isPicking = pickingSelection?.row.id === row.id && pickingSelection?.field === col.field;
-                      const isHighlighted = isMe(val);
-                      
-                      let baseStyle = "p-6 text-[11px] font-bold transition-all";
-                      if (col.color === 'emerald') baseStyle = "p-6 text-[11px] font-black transition-all text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10";
-                      if (col.color === 'amber') baseStyle = "p-6 text-[11px] font-bold transition-all text-amber-600 dark:text-amber-400 bg-amber-50/30 dark:bg-amber-900/10";
-
-                      return (
-                        <td 
-                          key={col.field}
-                          onClick={() => isSwapMode && handleSwap(row, col.field, val)}
-                          className={`${baseStyle} ${isSwapMode ? 'cursor-pointer hover:ring-2 hover:ring-amber-500 hover:scale-105 rounded-lg' : ''} ${isSelected ? 'bg-amber-500 text-white ring-4 ring-amber-500/20 z-10 relative !rounded-lg' : isPicking ? 'bg-amber-100 dark:bg-amber-900/30 ring-2 ring-amber-500 ring-offset-2 animate-pulse rounded-lg' : isHighlighted ? 'bg-blue-600 text-white shadow-inner scale-105 rounded-lg' : ''}`}
+                    <div className="p-2 space-y-1">
+                      {availableMonths.map((month) => (
+                        <button
+                          key={month}
+                          onClick={() => {
+                            setSelectedMonth(month);
+                            setShowMonthDropdown(false);
+                          }}
+                          className={`w-full text-right px-5 py-3 rounded-xl font-bold transition-all flex items-center justify-between ${
+                            selectedMonth === month 
+                              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' 
+                              : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-white/5'
+                          }`}
                         >
-                          {val || '-'}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                );
-              })}
-              {dbSchedules.length === 0 && (
-                <tr>
-                  <td colSpan={11} className="p-32 text-center">
-                     <div className="flex flex-col items-center gap-4">
-                        <div className="w-20 h-20 rounded-[32px] bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-2">
-                           <AlertCircle className="w-10 h-10 text-slate-300" />
-                        </div>
-                        <p className="text-xl font-black text-slate-300">لا توجد بيانات لهذا الشهر</p>
-                        {isAdmin && <p className="text-sm text-slate-400 font-medium">اضغط على زر الرفع لإضافة جدول جديد</p>}
-                     </div>
-                  </td>
-                </tr>
+                          <span>{month}</span>
+                          {selectedMonth === month && <CheckCircle2 className="w-4 h-4" />}
+                        </button>
+                      ))}
+                    </div>
+                  </motion.div>
+                </>
               )}
-            </tbody>
-          </table>
+            </AnimatePresence>
+          </div>
         </div>
-      )}
+      </div>
 
-      {/* Modals Container */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/5 shadow-2xl shadow-slate-200/20 dark:shadow-none rounded-[40px] overflow-hidden">
+        {loading ? (
+          <div className="p-32 flex flex-col items-center justify-center gap-6">
+             <div className="w-16 h-16 border-4 border-blue-600/10 border-t-blue-600 rounded-full animate-spin"></div>
+             <p className="text-slate-400 font-black animate-pulse">جاري جلب بيانات الجدول...</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse min-w-[1400px] text-right">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-white/5">
+                  <th className="p-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">التاريخ</th>
+                  <th className="p-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">اليوم</th>
+                  <th className="p-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">شفت 24 ساعة</th>
+                  <th className="p-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">شفت 36 ساعة</th>
+                  <th className="p-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">عطلة (9:30-12)</th>
+                  <th className="p-6 text-right text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">عطلة (12-2:30)</th>
+                  <th className="p-6 text-right text-[10px] font-black text-emerald-500 uppercase tracking-widest whitespace-nowrap">مجلس الوزراء (1)</th>
+                  <th className="p-6 text-right text-[10px] font-black text-emerald-500 uppercase tracking-widest whitespace-nowrap">مجلس الوزراء (2)</th>
+                  <th className="p-6 text-right text-[10px] font-black text-emerald-500 uppercase tracking-widest whitespace-nowrap">مجلس الوزراء (3)</th>
+                  <th className="p-6 text-right text-[10px] font-black text-amber-500 uppercase tracking-widest whitespace-nowrap">الرعاية (صباحاً)</th>
+                  <th className="p-6 text-right text-[10px] font-black text-amber-500 uppercase tracking-widest whitespace-nowrap">الرعاية (ليلاً)</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+                {dbSchedules.map((row, i) => {
+                  const hasMe = isMe(row.shift24) || isMe(row.shift36) || isMe(row.holidayNoon) || isMe(row.holidayMorning) || isMe(row.cabinet1) || isMe(row.cabinet2) || isMe(row.cabinet3) || isMe(row.careMorning) || isMe(row.careNight);
+
+                  return (
+                    <tr 
+                      key={row.id || i} 
+                      className={`hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition-colors group ${hasMe ? 'bg-blue-50/50 dark:bg-blue-500/10' : ''}`}
+                    >
+                      <td className="p-6 text-xs font-mono text-slate-400 whitespace-nowrap">
+                        <div className="flex items-center gap-2">
+                           {hasMe && <User className="w-3 h-3 text-blue-600 animate-pulse" />}
+                           {row.date}
+                        </div>
+                      </td>
+                      <td className="p-6 text-[13px] font-black text-blue-600 dark:text-blue-400 whitespace-nowrap">{row.day}</td>
+                      
+                      {[
+                        { field: 'shift24', color: 'blue' },
+                        { field: 'shift36', color: 'blue' },
+                        { field: 'holidayMorning', color: 'blue' },
+                        { field: 'holidayNoon', color: 'blue' },
+                        { field: 'cabinet1', color: 'emerald' },
+                        { field: 'cabinet2', color: 'emerald' },
+                        { field: 'cabinet3', color: 'emerald' },
+                        { field: 'careMorning', color: 'amber' },
+                        { field: 'careNight', color: 'amber' }
+                      ].map((col) => {
+                        const val = (row as any)[col.field];
+                        const isSelected = swapSource?.row.id === row.id && swapSource?.field === col.field;
+                        const isPicking = pickingSelection?.row.id === row.id && pickingSelection?.field === col.field;
+                        const isHighlighted = isMe(val);
+                        
+                        let baseStyle = "p-6 text-[11px] font-bold transition-all";
+                        if (col.color === 'emerald') baseStyle = "p-6 text-[11px] font-black transition-all text-emerald-600 dark:text-emerald-400 bg-emerald-50/30 dark:bg-emerald-900/10";
+                        if (col.color === 'amber') baseStyle = "p-6 text-[11px] font-bold transition-all text-amber-600 dark:text-amber-400 bg-amber-50/30 dark:bg-amber-900/10";
+
+                        return (
+                          <td 
+                            key={col.field}
+                            onClick={() => isSwapMode && handleSwap(row, col.field, val)}
+                            className={`${baseStyle} ${isSwapMode ? 'cursor-pointer hover:ring-2 hover:ring-amber-500 hover:scale-105 rounded-lg' : ''} ${isSelected ? 'bg-amber-500 text-white ring-4 ring-amber-500/20 z-10 relative !rounded-lg' : isPicking ? 'bg-amber-100 dark:bg-amber-900/30 ring-2 ring-amber-500 ring-offset-2 animate-pulse rounded-lg' : isHighlighted ? 'bg-blue-600 text-white shadow-inner scale-105 rounded-lg' : ''}`}
+                          >
+                            {val || '-'}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+                {dbSchedules.length === 0 && (
+                  <tr>
+                    <td colSpan={11} className="p-32 text-center">
+                       <div className="flex flex-col items-center gap-4">
+                          <div className="w-20 h-20 rounded-[32px] bg-slate-50 dark:bg-slate-800 flex items-center justify-center mb-2">
+                             <AlertCircle className="w-10 h-10 text-slate-300" />
+                          </div>
+                          <p className="text-xl font-black text-slate-300">لا توجد بيانات لهذا الشهر</p>
+                          {isAdmin && <p className="text-sm text-slate-400 font-medium">اضغط على زر الرفع لإضافة جدول جديد</p>}
+                       </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Upload Modal - High priority viewport centering */}
       <AnimatePresence>
         {showUploadModal && createPortal(
           <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 md:p-8 RTL" dir="rtl">
@@ -466,9 +544,7 @@ export default function Schedules({ permissions }: { permissions: UserPermission
               </div>
 
               <div className="mb-6 p-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/20 rounded-[32px] flex items-start gap-4">
-                 <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/40 rounded-xl flex items-center justify-center shrink-0">
-                    <Info className="w-6 h-6 text-blue-600" />
-                 </div>
+                 <Info className="w-6 h-6 text-blue-600 shrink-0 mt-1" />
                  <div className="space-y-2 text-right w-full">
                     <p className="text-sm font-black text-blue-900 dark:text-blue-100">تعليمات التنسيق (12 عمود):</p>
                     <p className="text-xs text-blue-700/80 dark:text-blue-300 font-medium leading-relaxed italic">
@@ -481,7 +557,7 @@ export default function Schedules({ permissions }: { permissions: UserPermission
                 value={bulkData}
                 onChange={(e) => setBulkData(e.target.value)}
                 placeholder="الصق البيانات هنا..."
-                className="flex-1 w-full bg-slate-50 dark:bg-slate-850 p-6 rounded-[32px] border-2 border-transparent focus:border-blue-600 outline-none font-mono text-sm dark:text-white transition-all resize-none text-right shadow-inner"
+                className="flex-1 w-full bg-slate-50 dark:bg-slate-850 p-6 rounded-[32px] border-2 border-transparent focus:border-blue-600 outline-none font-mono text-sm dark:text-white transition-all resize-none text-right"
               />
 
               <div className="mt-10 flex items-center gap-4">
@@ -505,70 +581,68 @@ export default function Schedules({ permissions }: { permissions: UserPermission
           document.body
         )}
       </AnimatePresence>
-
-      <AnimatePresence>
-        {pickingSelection && createPortal(
-          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 RTL" dir="rtl">
-            <motion.div 
-               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-               onClick={() => setPickingSelection(null)}
-               className="absolute inset-0 bg-slate-900/80 backdrop-blur-md"
-            />
-            <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 30 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 30 }}
-              className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[40px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] border border-white/10 overflow-hidden p-8"
+      {/* Name Selection Modal - Using Portal for perfect viewport centering */}
+      {pickingSelection && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 RTL" dir="rtl">
+          <div 
+             onClick={() => setPickingSelection(null)}
+             className="absolute inset-0 bg-slate-900/80 backdrop-blur-md transition-opacity duration-500"
+          />
+          <motion.div 
+            initial={{ scale: 0.9, opacity: 0, y: 30 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[40px] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.5)] border border-white/10 overflow-hidden p-8"
+          >
+            <div className="flex flex-col items-center text-center mb-8">
+              <div className="w-20 h-20 bg-amber-500/10 rounded-[28px] flex items-center justify-center mb-6 shadow-inner">
+                <ArrowLeftRight className="w-10 h-10 text-amber-500" />
+              </div>
+              <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">اختيار موظف محدد</h3>
+              <p className="text-slate-500 dark:text-slate-400 font-medium px-4">يرجى اختيار الاسم الذي ترغب في نقله أو تبديله من هذه القائمة:</p>
+            </div>
+            
+            <div className="space-y-3 max-h-[400px] overflow-y-auto px-2 custom-scrollbar">
+              {pickingSelection.names.map((name, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => {
+                    const { row, field, fullValue } = pickingSelection;
+                    processSelection(row, field, name, fullValue);
+                    setPickingSelection(null);
+                  }}
+                  className="w-full py-5 px-6 bg-slate-50 dark:bg-slate-800/50 hover:bg-amber-500 hover:text-white rounded-[24px] font-black transition-all text-right flex items-center justify-between group border border-slate-100 dark:border-white/5"
+                >
+                  <span className="text-lg">{name}</span>
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform -translate-x-4 group-hover:translate-x-0">
+                    <ArrowLeftRight className="w-5 h-5" />
+                  </div>
+                </button>
+              ))}
+              
+              <div className="pt-4">
+                <button
+                  onClick={() => {
+                    const { row, field, fullValue } = pickingSelection;
+                    processSelection(row, field, '', fullValue);
+                    setPickingSelection(null);
+                  }}
+                  className="w-full py-4 px-6 border-2 border-dashed border-slate-200 dark:border-slate-800 text-slate-400 hover:border-blue-500 hover:text-blue-500 hover:bg-blue-50/30 rounded-[24px] font-bold transition-all flex items-center justify-center gap-3"
+                >
+                  نقل إلى/من (مكان فارغ)
+                </button>
+              </div>
+            </div>
+            
+            <button 
+              onClick={() => setPickingSelection(null)}
+              className="w-full mt-8 py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-black rounded-[24px] hover:bg-rose-500 hover:text-white transition-all shadow-sm"
             >
-              <div className="flex flex-col items-center text-center mb-8">
-                <div className="w-20 h-20 bg-amber-500/10 rounded-[28px] flex items-center justify-center mb-6 shadow-inner">
-                  <ArrowLeftRight className="w-10 h-10 text-amber-500" />
-                </div>
-                <h3 className="text-2xl font-black text-slate-900 dark:text-white mb-2">اختيار موظف محدد</h3>
-                <p className="text-slate-500 dark:text-slate-400 font-medium px-4">يرجى اختيار الاسم الذي ترغب في نقله أو تبديله من هذه القائمة:</p>
-              </div>
-              
-              <div className="space-y-3 max-h-[400px] overflow-y-auto px-2 custom-scrollbar text-right">
-                {pickingSelection.names.map((name, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => {
-                      const { row, field, fullValue } = pickingSelection;
-                      processSelection(row, field, name, fullValue);
-                      setPickingSelection(null);
-                    }}
-                    className="w-full py-5 px-6 bg-slate-50 dark:bg-slate-800/50 hover:bg-amber-500 hover:text-white rounded-[24px] font-black transition-all text-right flex items-center justify-between group border border-slate-100 dark:border-white/5 shadow-sm"
-                  >
-                    <span className="text-lg">{name}</span>
-                    <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all transform -translate-x-4 group-hover:translate-x-0">
-                      <ArrowLeftRight className="w-5 h-5" />
-                    </div>
-                  </button>
-                ))}
-                
-                <div className="pt-4">
-                  <button
-                    onClick={() => {
-                      const { row, field, fullValue } = pickingSelection;
-                      processSelection(row, field, '', fullValue);
-                      setPickingSelection(null);
-                    }}
-                    className="w-full py-4 px-6 border-2 border-dashed border-slate-200 dark:border-slate-800 text-slate-400 hover:border-blue-500 hover:text-blue-500 hover:bg-blue-50/30 rounded-[24px] font-bold transition-all flex items-center justify-center gap-3"
-                  >
-                    نقل إلى/من (مكان فارغ)
-                  </button>
-                </div>
-              </div>
-              
-              <button 
-                onClick={() => setPickingSelection(null)}
-                className="w-full mt-8 py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-black rounded-[24px] hover:bg-rose-500 hover:text-white transition-all shadow-sm"
-              >
-                إلغاء العملية
-              </button>
-            </motion.div>
-          </div>,
-          document.body
-        )}
-      </AnimatePresence>
+              إلغاء العملية
+            </button>
+          </motion.div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
