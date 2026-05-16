@@ -256,17 +256,29 @@ export default function Schedules({ permissions }: { permissions: UserPermission
       const { updateSchedule } = await import('../services/dataService');
       
       const replaceInString = (original: string, toRemove: string, toAdd: string) => {
-        if (!original) return toAdd;
-        const parts = original.split(/([-،,])/);
+        let names = (original || '').split(/[-،,]/).map(n => n.trim()).filter(Boolean);
+        
+        if (!toRemove) {
+          // If we're swapping into an empty slot, just add the name
+          if (toAdd) names.push(toAdd);
+          return names.join(' - ');
+        }
+
         let replaced = false;
-        const result = parts.map(p => {
-          if (!replaced && p.trim() === toRemove.trim()) {
+        const resultNames = names.map(n => {
+          if (!replaced && n === toRemove) {
             replaced = true;
-            return toAdd || '';
+            return toAdd;
           }
-          return p;
-        }).filter(p => p !== undefined).join('');
-        return result.replace(/^[-\s،,]+|[ \-\s،,]+$/g, '').replace(/[-\s،,]{2,}/g, ' - ');
+          return n;
+        }).filter(Boolean);
+
+        // Handle case where we're swapping A for B but A wasn't in list (e.g. empty cell)
+        if (!replaced && toAdd) {
+          resultNames.push(toAdd);
+        }
+
+        return resultNames.join(' - ');
       };
 
       // Update first record
